@@ -1,4 +1,3 @@
-
 module Stratego-WebDSL-Java-XML
 
 imports
@@ -12,8 +11,8 @@ language General properties
                   
   name          : Stratego-WebDSL-Java-XML
   aliases       : 
-  id            : org.strategoxt.imp.editors.strategowebdsl
-  extends       : Root
+  id            : org.webdsl.stratego_editor
+  extends       : Stratego-Java-15
                   
   description   : "sdf2imp-generated editor for the Stratego-WebDSL-Java-XML language"
   url           : http://strategoxt.org

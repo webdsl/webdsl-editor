@@ -13,7 +13,7 @@ language Description
                   
   name          : WebDSL
   aliases       : WebDiesel
-  id            : org.strategoxt.imp.generated.webdsl
+  id            : org.webdsl.editor
                   
   description   : "Spoofax/IMP-generated editor for the WebDSL language"
   url           : http://strategoxt.org

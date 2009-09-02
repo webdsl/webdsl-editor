@@ -3,7 +3,7 @@
 <project name="Stratego-WebDSL" default="standalone">
     
         <!-- External .def location -->
-        <property name="externaldef" location="${webdsl.location}/src/org/webdsl/dsl/syntax/Stratego-Java-WebDSL-XML.def"/>
+        <property name="externaldef" location="${webdsl.location}/src/org/webdsl/dsl/syntax/Stratego-WebDSL-Java-XML.def"/>
     
         <!-- Project directories -->
         <property name="trans" location="trans"/>
@@ -14,14 +14,10 @@
         <property name="dist" location="bin/dist"/>
         
         <!-- Key input modules -->
-        <property name="sdfmodule" value="Stratego-Java-WebDSL-XML"/>
-        <property name="esvmodule" value="Stratego-Java-WebDSL-XML"/>
+        <property name="sdfmodule" value="Stratego-WebDSL-Java-XML"/>
+        <property name="esvmodule" value="Stratego-WebDSL-Java-XML"/>
         <property name="strmodule" location="stratego-webdsl"/>
 	    <available file="${trans}/${strmodule}.str" property="strmodule.present"/>
-        
-        <!-- External .def location (optional)
-        <property name="externaldef" location="syntax/${sdfmodule}.def"/>
-        -->
         
         <!-- Environment configuration -->
         <property name="build.strategoxt" location="${user.home}/.nix-profile/bin"/>
@@ -103,7 +99,7 @@
             <copy file="${externaldef}" todir="include"/>
         </target>
     
-        <target name="rtg2sig" depends="init,sdf2rtg">
+        <target name="rtg2sig" depends="init,sdf2rtg" if="strmodule.present" unless="external-def">
             <apply executable="${build.strategoxt}/rtg2sig" dest="${build}" failonerror="true">
                 <arg value="-i"/>
                 <srcfile/>
@@ -115,7 +111,7 @@
             </apply>
         </target>
         
-        <target name="sdf2rtg" depends="init,pack-sdf">
+        <target name="sdf2rtg" depends="init,pack-sdf" if="strmodule.present" unless="external-def">
             <apply executable="${build.strategoxt}/sdf2rtg" dest="${build}" failonerror="true">
                 <arg value="-i"/>
                 <srcfile/>
