@@ -2,6 +2,11 @@
 
 <project name="WebDSL" default="standalone">
     
+        <!-- External .def location -->
+        <property name="externaldef" location="${webdsl.location}/src/org/webdsl/dsl/syntax/WebDSL.def"/>
+    
+        <!-- (standard build.xml below this line) -->
+    
         <!-- Project directories -->
         <property name="trans" location="trans"/>
         <property name="syntax" location="syntax"/>
@@ -15,10 +20,6 @@
         <property name="esvmodule" value="WebDSL"/>
         <property name="strmodule" location="webdsl"/>
 	    <available file="${trans}/${strmodule}.str" property="strmodule.present"/>
-        
-        <!-- External .def location (optional)
-        <property name="externaldef" location="syntax/${sdfmodule}.def"/>
-        -->
         
         <!-- Environment configuration -->
         <property name="build.strategoxt" location="${user.home}/.nix-profile/bin"/>
@@ -100,7 +101,7 @@
             <copy file="${externaldef}" todir="include"/>
         </target>
     
-        <target name="rtg2sig" depends="init,sdf2rtg">
+        <target name="rtg2sig" depends="init,sdf2rtg" if="strmodule.present" unless="external-def">
             <apply executable="${build.strategoxt}/rtg2sig" dest="${build}" failonerror="true">
                 <arg value="-i"/>
                 <srcfile/>
@@ -112,7 +113,7 @@
             </apply>
         </target>
         
-        <target name="sdf2rtg" depends="init,pack-sdf">
+        <target name="sdf2rtg" depends="init,pack-sdf" if="strmodule.present" unless="external-def">
             <apply executable="${build.strategoxt}/sdf2rtg" dest="${build}" failonerror="true">
                 <arg value="-i"/>
                 <srcfile/>
