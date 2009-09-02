@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?eclipse version="3.0"?>
+
+<plugin>
+       <extension point="org.eclipse.imp.runtime.languageDescription">
+          <language extensions="str" description="StrategoWebDSL" language="Stratego-WebDSL-Java-XML" derivedFrom="DynamicRoot"></language>
+       </extension>
+       <extension id="org.stratego_webdsl.editor.parser" name="WebDSL Parser" point="org.eclipse.imp.runtime.parser">
+          <parser class="org.stratego_webdsl.editor.StrategoWebDSLParseController" language="WebDSL">
+          </parser>
+       </extension>    
+    </plugin>
