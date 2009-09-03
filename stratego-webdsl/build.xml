@@ -48,7 +48,7 @@
         </target>
     
         <target name="sdf2table" depends="make-permissive">
-            <apply executable="${build.strategoxt}/sdf2table" dest="${dist}" failonerror="true">
+            <apply executable="${build.strategoxt}/sdf2table" dest="include" failonerror="true">
                 <arg value="-i"/>
                 <srcfile/>
                 <arg value="-o"/>
@@ -155,7 +155,7 @@
                 <srcfilelist dir="${build}" files="**/*.str"/>
                 <targetfileset dir="${dist}" includes="**/*"/>
             </dependset>
-            <apply executable="${build.strategoxt}/{strcExecutable}" dest="${dist}" failonerror="true">
+            <apply executable="${build.strategoxt}/{strcExecutable}" dest="include" failonerror="true">
                 <arg value=".str"/>
                 <arg value="-i"/>
                 <srcfile/>

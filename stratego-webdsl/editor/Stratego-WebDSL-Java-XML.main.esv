@@ -1,11 +1,13 @@
 module Stratego-WebDSL-Java-XML
 
 imports
+  Stratego-WebDSL-Java-XML-Analysis
   Stratego-WebDSL-Java-XML-Colorer
-  Stratego-WebDSL-Java-XML-Folding.generated
-  Stratego-WebDSL-Java-XML-Outliner.generated
-  Stratego-WebDSL-Java-XML-Compiler.generated
-  Stratego-WebDSL-Java-XML-Syntax.generated
+  Stratego-WebDSL-Java-XML-Folding
+  Stratego-WebDSL-Java-XML-Outliner
+  Stratego-WebDSL-Java-XML-Occurrences
+  Stratego-WebDSL-Java-XML-References
+  Stratego-WebDSL-Java-XML-Syntax
 
 language General properties
                   
