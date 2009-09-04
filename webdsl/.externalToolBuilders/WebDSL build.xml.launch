@@ -20,8 +20,8 @@
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="org.webdsl.editor"/>
 <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.ant.ui.AntClasspathProvider"/>
 <mapAttribute key="org.eclipse.ui.externaltools.ATTR_ANT_PROPERTIES">
-<mapEntry key="webdsl.location" value="${workspace_loc:/webdsl}"/>
 <mapEntry key="eclipse.running" value="true"/>
+<mapEntry key="externaldef" value="${workspace_loc:/webdsl}/${webdsl.location}/src/org/webdsl/dsl/syntax/WebDSL.def"/>
 </mapAttribute>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LAUNCH_CONFIGURATION_BUILD_SCOPE" value="${project}"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="${workspace_loc:/org.webdsl.editor/build.xml}"/>

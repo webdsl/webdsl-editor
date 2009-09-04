@@ -5,6 +5,8 @@
         <!-- External .def location -->
         <property name="externaldef" location="${webdsl.location}/src/org/webdsl/dsl/syntax/Stratego-WebDSL-Java-XML.def"/>
     
+        <!-- (standard build.xml below this line) -->
+    
         <!-- Project directories -->
         <property name="trans" location="trans"/>
         <property name="syntax" location="syntax"/>

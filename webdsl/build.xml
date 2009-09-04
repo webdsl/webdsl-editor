@@ -2,11 +2,6 @@
 
 <project name="WebDSL" default="standalone">
     
-        <!-- External .def location -->
-        <property name="externaldef" location="${webdsl.location}/src/org/webdsl/dsl/syntax/WebDSL.def"/>
-    
-        <!-- (standard build.xml below this line) -->
-    
         <!-- Project directories -->
         <property name="trans" location="trans"/>
         <property name="syntax" location="syntax"/>
