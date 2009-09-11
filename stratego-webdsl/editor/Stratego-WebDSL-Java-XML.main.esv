@@ -1,4 +1,4 @@
-module Stratego-WebDSL-Java-XML
+module Stratego-WebDSL-Java-XML.main
 
 imports
   Stratego-WebDSL-Java-XML-Analysis

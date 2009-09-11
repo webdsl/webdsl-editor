@@ -1,12 +1,15 @@
-module feedback
+module webdsl
 
 imports
   libstratego-lib
   libwebdsl-front
   libwebdsl-generator
-  stratego-editor-support
+  //stratego-editor-support
 
 strategies // editor service interface
+
+  main-webdsl =
+    fatal-err(|"Not designed to be invoked directly")
 
   editor-analyze:
     (ast, path, fullpath) -> results
