@@ -15,23 +15,21 @@ strategies // editor service interface
     (ast, path, fullpath) -> results
     with
       try(dr-scope-all-end);
-      with(
-        <set-verbosity> 3;
-        set-default-config;
-        <debug(!"MAIN FILE: ")> <get-main-file-name <+ !"?">
-      );
+      dr-scope-all-start
+    with
+      <set-verbosity> 3;
+      set-default-config;
+      <debug(!"MAIN FILE: ")> <get-main-file-name <+ !"?">;
       
       results := <try(avoid-modules); webdsl-collect-all-errors; debug(!"collected errors: ")> ast;
 
-      <analyze-definitions> ast;
-      dr-scope-all-start
+      <analyze-definitions> ast
   
   avoid-modules:
     Module(x, y) -> Application(x, y)
 
-  // FIXME: reorder tuple args
   reference-resolve:
-    (source, filename, reference, path) -> target
+    (reference, position, ast, path, fullpath) -> target
     where
       <debug(!"reference-resolve invoked ")> reference; 
       reference' := <desugar-top> reference;
@@ -39,7 +37,7 @@ strategies // editor service interface
       debug(!"reference-resolve resolved ")
   
   reference-info:
-    (source, filename, target, path) -> info
+    (reference, position, ast, path, fullpath) -> info
     where
       <debug(!"reference-info invoked ")> target;
       info := <pp-webdsl-to-string> target

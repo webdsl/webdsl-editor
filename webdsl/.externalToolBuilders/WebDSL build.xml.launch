@@ -22,6 +22,8 @@
 <mapAttribute key="org.eclipse.ui.externaltools.ATTR_ANT_PROPERTIES">
 <mapEntry key="eclipse.running" value="true"/>
 <mapEntry key="externaldef" value="${workspace_loc:/webdsl}/src/org/webdsl/dsl/syntax/WebDSL.def"/>
+<mapEntry key="externaljarflags" value="-la org.webdsl.webdsl_front -la org.webdsl.webdsl_generator"/>
+<mapEntry key="externaljar" value="${workspace_loc:/webdsl}/src/webdsl.jar"/>
 </mapAttribute>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LAUNCH_CONFIGURATION_BUILD_SCOPE" value="${project}"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="${workspace_loc:/org.webdsl.editor/build.xml}"/>
