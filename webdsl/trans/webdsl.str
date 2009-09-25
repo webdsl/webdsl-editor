@@ -37,7 +37,7 @@ strategies // editor service interface
       debug(!"reference-resolve resolved ")
   
   reference-info:
-    (reference, position, ast, path, fullpath) -> info
+    (target, position, ast, path, fullpath) -> info
     where
       <debug(!"reference-info invoked ")> target;
       info := <pp-webdsl-to-string> target
