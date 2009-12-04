@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>org.webdsl.stratego_editor</name>
+	<name>org.webdsl.editor</name>
 	<comment></comment>
 	<projects>
-		<project>webdsl</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -12,7 +11,7 @@
 			<arguments>
 				<dictionary>
 					<key>LaunchConfigHandle</key>
-					<value>&lt;project&gt;/.externalToolBuilders/Stratego-WebDSL-Java-XML build.xml.launch</value>
+					<value>&lt;project&gt;/.externalToolBuilders/WebDSL build.xml.launch</value>
 				</dictionary>
 			</arguments>
 		</buildCommand>

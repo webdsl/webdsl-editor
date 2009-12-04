@@ -16,9 +16,9 @@
 	     <property name="build" location="bin"/>
 	     <property name="dist" location="bin/dist"/>
 	     
-	     <!-- External .def and .jar locations
 	     <property name="externaldef" location="syntax/${sdfmodule}.def"/>
-	     <property name="externaljar" value="../lib.jar"/>
+		 <!-- External .def and .jar locations
+		     <property name="externaljar" value="../lib.jar"/>
 	     <property name="externaljarflags" value="-la org.lib"/>
 	     -->
 	 
@@ -38,9 +38,9 @@
 	                     -la stratego-lib -la stratego-sglr
 	     	            -la stratego-gpp -la stratego-xtc
 	     	            -la stratego-aterm
-	     	            -I ${user.home}/workspace/webdsl/src
+	     	            -I ${user.home}/Documents/EclipseWorkspaces/Development/webdsl/src
 	     	"/>
-		    <property name="build.jvmargs" value="-client -Xverify:none -Xss4m -Xmx512m"/>
+		    <property name="build.jvmargs" value="-client -Xverify:none -Xss4m -Xmx1024m"/>
 	     
 	     <!-- Initialization -->
 	     <available file="${trans}/${strmodule}.str" property="build.stratego.enabled"/>
