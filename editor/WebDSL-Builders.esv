@@ -10,3 +10,30 @@ builders External service provider resources
   provider : include/webdsl.ctree
   provider : include/webdsl.jar
 */
+
+//	provider: include/acoda/APath.ctree
+//	provider: include/acoda/aterm2sql.ctree
+//	provider: include/acoda/augmentLayout.ctree
+//	provider: include/acoda/dataModelView.ctree
+//	provider: include/acoda/dataModelViewInverse.ctree
+//	provider: include/acoda/detect.ctree
+//	provider: include/acoda/flattenHibernateDatabase.ctree
+//	provider: include/acoda/m32schema.ctree
+//	provider: include/acoda/m3.ctree
+//	provider: include/acoda/migrate.ctree
+//	provider: include/acoda/migrate-dsl.ctree
+//	provider: include/acoda/migrate-dsl-dummy.ctree
+//	provider: include/acoda/mmt2sql.ctree
+//	provider: include/acoda/mmt.ctree
+	provider: include/acoda/optimizeWebdsl.ctree
+//	provider: include/acoda/pp-layout.ctree
+//	provider: include/acoda/pp-modules.ctree
+//	provider: include/acoda/processLayoutParse.ctree
+//	provider: include/acoda/Sdf2.ctree
+//	provider: include/acoda/transformationDetection.ctree
+//	provider: include/acoda/transform.ctree
+//	provider: include/acoda/webdsl2m3.ctree
+//	provider: include/acoda/WebDSLViews.ctree
+
+
+	builder	: "Optimize"	= optimize-webdsl-transformation (openeditor) (realtime)

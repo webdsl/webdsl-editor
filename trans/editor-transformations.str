@@ -1,0 +1,16 @@
+module editor-transformations
+
+imports
+  libstratego-lib
+  libstratego-gpp
+  libstratego-aterm
+  optimizeWebDSL
+
+rules
+  
+  optimize-webdsl-transformation :
+    (selected, position, ast, path, project-path) -> ("optimization.bla", optimized)
+   	with
+      cleanModel := <cleanupDeadCode> selected;
+      indexOptimizations := <findIndexOptimization> cleanModel;
+      optimized := <applyOptimizations(|indexOptimizations)> cleanModel
