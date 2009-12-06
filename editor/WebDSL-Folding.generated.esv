@@ -40,7 +40,7 @@ folding Default folding definitions
   AccessControlPointcutElement.AccessControlPointcutElement
   Selector.Selector
   MatchDefinition.MatchDefinition
-  ListStarOfFormalArg1
+  ListStarOfFormalArg3
   SimpleSelector.ElemSimpleAttrSelector
   SimpleSelector.ElemClassAttrSelector
   LayoutDefinition.LayoutDefinition
