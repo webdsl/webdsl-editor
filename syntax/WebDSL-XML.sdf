@@ -1,0 +1,28 @@
+module WebDSL-XML
+  
+exports
+  context-free syntax
+  
+    "<" QualName Attribute* "/>" -> TemplateElement {cons("XMLEmptyElement")}
+    
+    "<" QualName Attribute* ">"
+      TemplateElement*
+      "</" QualName ">" -> TemplateElement {cons("XMLElement")}
+
+exports
+  context-free syntax
+
+    QualName "=" Exp -> Attribute {cons("Attribute")}
+    
+exports
+
+  lexical syntax
+    Qualifier? NCName -> QualName    
+    NCName ":"        -> Qualifier
+
+  
+    [A-Za-z\_] [A-Za-z0-9\.\-\_]* -> NCName
+
+  lexical restrictions
+    NCName -/- [A-Za-z0-9\.\-\_]
+  

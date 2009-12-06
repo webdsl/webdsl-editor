@@ -1,0 +1,201 @@
+module WebDSL-UI
+
+imports
+  WebDSL-Action
+  WebDSL-Lexical
+
+exports
+
+  sorts TemplateDefinition Modifier Exp
+
+  context-free syntax
+    
+    "define" -> Keyword
+  %%"action" -> Keyword
+    "for"    -> Keyword
+
+  context-free syntax
+
+    TemplateDefinition -> Definition
+
+    "define" Modifier*
+       Id "(" {FormalArg ","}* ")"
+%%       ( "requires" {TemplateArg "," }* )?
+       TemplateArgs
+       "{" TemplateElement* "}"             -> TemplateDefinition {cons("Define")}
+
+    "requires" {TemplateArg "," }*			-> TemplateArgs{cons("TemplateArgs"), prefer}
+    Id "(" {Sort ","}* ")"                  -> TemplateArg {cons("TemplateArg")}
+    
+      -> TemplateArgs{cons("None")}
+
+    %%"define" Modifier*
+    %%   Id UNDEFINED*
+    %%   "{" TemplateElement* "}"             -> TemplateDefinition {cons("Define")}
+
+    "page"                                  -> Modifier {cons("Page")}
+    "email"                                 -> Modifier {cons("Email")}
+    "template"                              -> Modifier {cons("Template")}
+    "feed"                                  -> Modifier {cons("Feed")}
+    "local"                                 -> Modifier {cons("Local")}
+    "no-span" 								-> Modifier {cons("NoSpan")}    
+    "inputtemplate"									-> Modifier {cons("InputTemplate"), prefer} 
+    %%defines input template, in which case the first argument is an input variable
+
+    InitAction                              -> TemplateElement
+    Action                                  -> TemplateElement
+    VarDecl                                 -> TemplateElement
+    %% still allow ";" behind page var for backwards comp., remove VarDeclStat-> TemplateElement to disallow
+    VarDeclStat                             -> TemplateElement
+    TemplateDefinition                      -> TemplateElement
+    TemplateCall                            -> TemplateElement {avoid}
+    String                                  -> TemplateElement {cons("Text")}
+
+
+    "where" Exp                              -> Filter {cons("FilterNoOrderByNoLimit")}
+    "order" "by" OrderExp                    -> Filter {cons("FilterNoWhereNoLimit")}
+    "where" Exp "order" "by" OrderExp        -> Filter {cons("FilterNoLimit")}
+    "where" Exp Limit                        -> Filter {cons("FilterNoOrderBy")}
+    "order" "by" OrderExp Limit              -> Filter {cons("FilterNoWhere")}
+    Limit                                    -> Filter {cons("FilterNoWhereNoOrderBy")}
+    "where" Exp "order" "by" OrderExp Limit  -> Filter {cons("Filter")}
+    Exp                                      -> OrderExp {cons("OrderNonSpecific")}
+    Exp "asc"                                -> OrderExp {cons("OrderAscending")}
+    Exp "desc"                               -> OrderExp {cons("OrderDescending")}
+    "limit" Exp "offset" Exp                 -> Limit {cons("Limit")}
+    "limit" Exp                              -> Limit {cons("LimitNoOffset")}
+    "offset" Exp                             -> Limit {cons("LimitNoLimit")}
+
+
+    "for" "(" Id ":" Sort "in" Exp Filter ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("For")}
+    
+    %% Reject
+   %%"for" "(" Id ":" Sort "in" HqlExp Filter ")" "{" TemplateElement* "}" -> TemplateElement {reject}
+    
+    "for" "(" Id ":" Sort "in" Exp ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("ForNoFilter"), prefer}
+
+    "for" "(" Id ":" Sort Filter ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("ForAll")}
+
+    "for" "(" Id ":" Sort ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("ForAllNoFilter")}
+    
+    "for" "(" Id ":" "Int" "from" Exp "to" Exp ")" 
+      "{" TemplateElement* "}" ForSeparator        -> TemplateElement {cons("ForCount")}
+    
+    "separated-by" "{" TemplateElement* "}" -> ForSeparator{cons("ForSeparator")}
+    -> ForSeparator{cons("None")}
+
+    %%
+
+    "select" "(" Id ":" Sort "," String "," Exp ")" -> TemplateElement {cons("SelectNoPropsNoElems")}
+    "select" "(" Id ":" Sort "," String "," Exp ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("SelectNoElems")}
+    "select" "(" Id ":" Sort "," String "," Exp ")" "[" {PropertyAssignment ","}* "]" "{" TemplateElement* "}" -> TemplateElement {cons("Select")}
+    "select" "(" Id ":" Sort "," String "," Exp ")" "{" TemplateElement* "}" -> TemplateElement {cons("SelectNoProps")}
+    
+    "select" "(" Exp "from" Exp ")" -> TemplateElement {cons("SelectFromListNoPropsNoElems")}
+    "select" "(" Exp "from" Exp ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("SelectFromListNoElems")}
+    "select" "(" Exp "from" Exp ")" "[" {PropertyAssignment ","}* "]" "{" TemplateElement* "}" -> TemplateElement {cons("SelectFromList")}
+    "select" "(" Exp "from" Exp ")" "{" TemplateElement* "}" -> TemplateElement {cons("SelectFromListNoProps")}
+
+    "if" "(" Exp ")" "{" TemplateElement* "}" "else" "{" TemplateElement* "}" -> TemplateElement {cons("IfTempl"),prefer}
+    "if" "(" Exp ")" "{" TemplateElement* "}"                                 -> TemplateElement {cons("IfNoElseTempl")}
+
+
+    "if" "(" Exp ")" "{" TemplateElement* "}" ElseIfTempl+ ElseTempl? -> TemplateElement {cons("IfElseIfTempl"),prefer}
+    "else" "if" "(" Exp ")" "{" TemplateElement* "}"                  -> ElseIfTempl {cons("ElseIfTempl"),prefer}
+    "else" "{" TemplateElement* "}"                                   -> ElseTempl  {cons("ElseTempl"),prefer}
+
+
+    "case" "(" {Exp ","}* ")" "{" TemplateCaseAlt* "}" 	-> TemplateElement {cons("TemplateCase")}
+    {ConstValue ","}* "{" TemplateElement* "}"          -> TemplateCaseAlt {cons("TemplateCaseAlt")}
+    "default"  "{" TemplateElement* "}"                 -> TemplateCaseAlt {cons("TemplateCaseAltDefault")}
+
+  %%
+
+    TemplateCallId                                             -> TemplateCall {cons("TemplateCallNoArgs")}
+    TemplateCallId "(" {Exp ","}* ")"                          -> TemplateCall {cons("TemplateCallNoBody")}
+    TemplateCallId "(" {Exp ","}* ")" TemplateBody -> TemplateCall {cons("TemplateCallNoAssigns")}
+  
+    TemplateCallId "(" {Exp ","}* ")" "[" {PropertyAssignment ","}*"]" -> TemplateCall {cons("TemplateCallPropsNoBody")}
+    TemplateCallId "[" {PropertyAssignment ","}*"]" -> TemplateCall {cons("TemplateCallProps")}
+    TemplateCallId "[" {PropertyAssignment ","}*"]" TemplateBody -> TemplateCall {cons("TemplateCallPropsNoArgs")}
+
+    TemplateCallId  TemplateBody -> TemplateCall {cons("TemplateCallBody")}
+    TemplateCallId "(" {Exp ","}* ")" "[" {PropertyAssignment ","}*"]" TemplateBody -> TemplateCall {cons("TemplateCall")}
+    
+    "{" TemplateElement* "}" -> TemplateBody {cons("TemplateBody")}
+    "with" "{" ArgDefine* "}" -> TemplateBody {cons("TemplateWith")}
+    TemplateCallId "(" {FormalArg ","}* ")"
+      "{" TemplateElement* "}" -> ArgDefine {cons("ArgDefine")}
+
+    "with" "{" TemplateElement* "}"                -> TemplateCall {reject}
+    
+    %%disambiguate
+    "define"                        -> TemplateCallId {reject}
+    "for"                        -> TemplateCallId {reject}
+    "placeholder"                        -> TemplateCallId {reject}
+    
+  %%
+  
+    %% deprecated
+    "navigate" "(" PageCall ")" UNDEFINED* "{" TemplateElement* "}" -> TemplateElement {cons("NavigateCall"), prefer}
+    "navigate" "(" PageCall ")" "[" {PropertyAssignment ","}* "]" "{" TemplateElement* "}" -> TemplateElement {cons("NavigateCall"), prefer}
+
+    "navigate" PageCall UNDEFINED* "{" TemplateElement* "}" -> TemplateElement {cons("NavigateCall"), prefer}
+    "navigate" PageCall "[" {PropertyAssignment ","}* "]" "{" TemplateElement* "}" -> TemplateElement {cons("NavigateCall"), prefer}
+
+    Id "(" {Exp ","}* ")"  -> PageCall {cons("PageCall")}
+
+    %%disambiguate
+    "navigate" -> TemplateCallId {reject}
+    
+  %%
+
+    %% deprecated
+    "action" "(" Exp "," ActionCallOrInline ")" UNDEFINED* -> TemplateElement {cons("Submit"), prefer}
+    "action" "(" Exp "," ActionCallOrInline ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("Submit"), prefer}
+    "actionLink" "(" Exp "," ActionCallOrInline ")" UNDEFINED* -> TemplateElement {cons("SubmitLink"), prefer}
+    "actionLink" "(" Exp "," ActionCallOrInline ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("SubmitLink"), prefer}
+
+    "submit" "(" Exp "," ActionCallOrInline ")" UNDEFINED* -> TemplateElement {cons("Submit"), prefer}
+    "submit" "(" Exp "," ActionCallOrInline ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("Submit"), prefer}
+    "submitlink" "(" Exp "," ActionCallOrInline ")" UNDEFINED* -> TemplateElement {cons("SubmitLink"), prefer}
+    "submitlink" "(" Exp "," ActionCallOrInline ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("SubmitLink"), prefer}
+
+    ActionCall -> ActionCallOrInline
+    InlineAction -> ActionCallOrInline
+
+    Id "(" {Exp ","}* ")"  -> ActionCall {cons("ActionCall")}
+    
+    %%disambiguate
+    "action"                        -> TemplateCallId {reject}
+    "actionLink"                  -> TemplateCallId {reject}
+    "submit"                   -> TemplateCallId {reject}
+    "submitlink"                   -> TemplateCallId {reject}
+    
+    
+  %%
+    
+    Id ":=" PropertyValue				           -> PropertyAssignment {cons("PropertyAssignment")}
+    Id											   -> PropertyValue {prefer}
+    String										   -> PropertyValue {cons("String"),prefer}  %% needed to deconfuse StyleValue and Exp
+    Exp								        	   -> PropertyValue {avoid}
+    "[" {PropertyValue "," }* "]"				   -> PropertyValue{cons("PropertyValueList"), prefer}
+    StyleValue									   -> PropertyValue
+    
+  context-free syntax
+  %%
+    
+    "if" "(" Exp ")" "{" TemplateElement* "}"      -> TemplateCall {reject}
+    "else" "{" TemplateElement* "}"                -> TemplateCall {reject}
+    "separated-by" "{" TemplateElement* "}"        -> TemplateCall {reject}
+
+    "init" Block  		-> InitAction {cons("InitAction"),prefer}
+    "action" 
+      Id "(" {FormalArg ","}* ")" 
+      Block  			-> Action {cons("Action")}
+
+

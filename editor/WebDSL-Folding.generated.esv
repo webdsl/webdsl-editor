@@ -1,0 +1,48 @@
+module WebDSL-Folding.generated
+
+folding Default folding definitions
+  
+  // Folding rules indicate grammar productions to be foldable,
+  // and take one of the following forms, and :
+  //
+  //   - <sort>.<constructor>
+  //   - <sort>._,
+  //   - _.<constructor>
+  
+  TemplateArgs.TemplateArgs
+  TemplateArg.TemplateArg
+  Expression_HQL.Elements
+  Path_HQL.Path
+  Expression_HQL.Indices
+  Path_HQL
+  FromClassOrOuterQueryPath_HQL.FromClass
+  InClassDeclaration_HQL.InClassDeclaration
+  InCollectionDeclaration_HQL.InCollection
+  InCollectionElementsDeclaration_HQL.InCollectionElements
+  RegexExp.RegexPattern
+  Atom.CharacterClass
+  TemplateDefinition.StringSelectEntity
+  Annotation.InlineAnno
+  Annotation.ValidationAnnoPatternWithFlags
+  Definition.AccessControlPrincipal
+  Definition.Enum
+  Definition.ThemeDefinition
+  Description
+  Description.Description
+  Description.Note
+  NativeFunctionDeclaration.NativeFunction
+  NativeClassDeclaration.NativeClass
+  NativeClassElement.NativeClassFunction
+  NativeClassElement.NativeClassConstructor
+  AccessControlDefinition.AccessControlPrincipal
+  MatchArgs.MatchArgs
+  AccessControlPointcut.AccessControlPointcut
+  AccessControlPointcutElement.AccessControlPointcutElement
+  Selector.Selector
+  MatchDefinition.MatchDefinition
+  ListStarOfFormalArg1
+  SimpleSelector.ElemSimpleAttrSelector
+  SimpleSelector.ElemClassAttrSelector
+  LayoutDefinition.LayoutDefinition
+  LayoutStatement.FloatStatement
+  LayoutDefinition.LayoutDefinition
