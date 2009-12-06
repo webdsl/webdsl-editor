@@ -5,7 +5,7 @@ import org.strategoxt.imp.runtime.services.MetaFileLanguageValidator;
 
 public class WebDSLValidator extends MetaFileLanguageValidator 
 { 
-  public Descriptor getDescriptor()
+  @Override public Descriptor getDescriptor()
   { 
     return WebDSLParseController.getDescriptor();
   }

@@ -1,0 +1,1860 @@
+definition
+module WebDSL-Test
+
+exports
+
+context-free syntax
+
+  "test" Id Block -> Definition {cons("Test")}
+
+module WebDSL-Type
+
+exports
+
+  context-free syntax
+  
+    %%  Construct for creating custom value types, and altering the existing value types.
+    %%
+    %%  example: 
+    %%    type String { validate(this.length() <= 255 , "input too long (max 255 characters)") }
+    %%    type USDate : Date { format = ÒMM/dd/yyyyÓ }
+    %% 
+    %%  Will also need to cope with input/output decode/encode.
+    %%
+
+    "type" Id "{" TypeProperty* "}" -> Definition {cons("TypeDef")}
+    
+    Annotation -> TypeProperty {cons("TypeDefAnno")}
+
+module WebDSL-Exception
+
+exports
+
+  context-free syntax
+  
+    %%
+    %%  Exceptions, for supporting data validation
+    %%
+    %%  example: 
+    %%  entity ValidationException{message:String}
+    %%  throw ValidationException{ message := "error" }
+    %%  try{}catch(ve : ValidationException){}
+    %%  throw ValidationException{ message := "error1" }, ValidationException{ message := "error2" }
+    %%  try{}catch(l : List<ValidationException>)
+
+    "throw" {Exp ","}+ ";" -> Statement {cons("ThrowStatement"), prefer}
+    "throw" {Exp ","}+     -> TemplateCall {cons("ThrowTemplate"), prefer}
+    
+    "try" Block Catch+ -> Statement {cons("TryStatement"), prefer}
+    "try" Block Catch+ -> TemplateCall {cons("TryTemplate"), prefer}
+    
+    "catch" "(" Id ":" Sort ")" Block -> Catch {cons("Catch")}
+
+module WebDSL-Dispatch
+
+exports
+
+  sorts DispatchEntry DispatchBody DispatchArg
+
+  context-free syntax
+
+    "dispatch" "{" DispatchEntry* DispatchEntryDefault "}" -> TemplateElement {cons("Dispatch")}
+
+    "dispatch" "{" TemplateElement* "}" -> TemplateCall {reject}
+
+    
+    
+    Id "(" {FormalArg ","}* ")" "{" TemplateElement* "}" -> DispatchEntry {cons("DispatchEntry")}
+    Id "{" TemplateElement* "}" -> DispatchEntry {cons("DispatchEntryNoArg")}
+    
+    Id ":" Sort "{" TemplateElement* "}" -> DispatchEntry {cons("DispatchEntity")}
+     
+    "default" "{" TemplateElement* "}" -> DispatchEntryDefault {cons("DispatchDefault")}
+    -> DispatchEntryDefault {cons("None")}
+  
+    "default" "(" {FormalArg ","}* ")" "{" TemplateElement* "}" -> DispatchEntry {reject}
+    "default" "{" TemplateElement* "}" -> DispatchEntry {reject}
+    
+    
+    %%dispatch {
+    %%  create            { createJournal() }
+    %%  journal : Journal { thejournal(journal) }
+    %%  default           { "unknown journal" }
+    %%}
+    
+    
+    
+    "navigate" "(" {DispatchNavigateCall "/"}+ ")" "{" TemplateElement* "}" -> DispatchNavigate {cons("DispatchNavigate")}
+    "navigate" "(" Exp "," {DispatchNavigateCall "/"}+ ")" -> DispatchNavigateButton {cons("DispatchNavigateButton")}
+    DispatchNavigate -> TemplateElement
+    DispatchNavigateButton -> TemplateElement    
+    %% should be at least two arguments, otherwise dispatch has no function, reject rules below prevent one argument from being becoming a DispatchNavigate
+    "navigate" "(" Id "(" {Exp ","}* ")" ")" "{" TemplateElement* "}"      -> DispatchNavigate {reject}
+    "navigate" "(" Exp "," Id "(" {Exp ","}* ")" ")" "{" TemplateElement* "}"      -> DispatchNavigateButton {reject}
+    %%can also be parsed as a division of the results of functions calls, needs reject
+    "navigate" "(" Exp "/" Exp ")" TemplateBody -> TemplateCall {reject}
+    "navigate" "(" Exp "," Exp "/" Exp ")" TemplateBody -> TemplateCall {reject}
+    
+    Id "(" {Exp ","}* ")" -> DispatchNavigateCall {cons("DispatchNavigateCall")}
+    Id  -> DispatchNavigateCall {cons("DispatchNavigateCallNoArg")}
+
+module WebDSL-Native
+
+imports
+  WebDSL-Lexical
+
+exports
+
+  sorts Derive DeriveType DeriveProperty
+
+context-free syntax
+
+  "native" "function" Id "(" {FormalArg ","}* ")" ":" Sort ";" -> NativeFunctionDeclaration {cons("NativeFunction")}
+
+context-free syntax
+
+  "native" "class" QId NativeClassAlias NativeClassSuper "{" NativeClassElement* "}" -> NativeClassDeclaration {cons("NativeClass")}
+  
+  "as" Id -> NativeClassAlias{cons("NativeClassAlias"),prefer}
+  -> NativeClassAlias{cons("None")}
+  
+  ":" Id -> NativeClassSuper{cons("NativeClassSuper"),prefer}
+  -> NativeClassSuper{cons("None")}
+  
+  Id ":" NativeType -> NativeClassElement{cons("NativeClassProperty")}
+  
+  NativeClassFunctionStatic Id "(" {NativeType ","}* ")" NativeClassFunctionReturn -> NativeClassElement{cons("NativeClassFunction")}
+  "constructor" "(" {NativeType ","}* ")" NativeClassFunctionReturn -> NativeClassElement{reject}
+
+  ":" NativeType ->  NativeClassFunctionReturn{cons("NativeClassFunctionReturn"),prefer}
+  ->  NativeClassFunctionReturn{cons("None")}
+  
+  "static" ->  NativeClassFunctionStatic{cons("NativeClassFunctionStatic"),prefer}
+  ->  NativeClassFunctionStatic{cons("None")}
+
+  "constructor" "(" {NativeType ","}* ")" -> NativeClassElement{cons("NativeClassConstructor")}
+  
+  Id "<" {NativeType ","}* ">" -> NativeType{cons("NativeGenericType")}
+  Id -> NativeType{cons("NativeSimpleType")}
+
+module WebDSL-ValidationAnnos
+
+exports
+  sorts Annotation PatternFlag
+
+  context-free syntax
+	%%string
+    "length" "(" Int "," Int ")"              -> Annotation {cons("ValidationAnnoLength"),prefer}
+    "minlength" "(" Int ")"                   -> Annotation {cons("ValidationAnnoMinLength"),prefer}   
+    "maxlength" "(" Int ")"                   -> Annotation {cons("ValidationAnnoMaxLength"),prefer}    
+ 	"notempty"                                -> Annotation {cons("ValidationAnnoNotEmpty"),prefer}  
+  	"email"                                   -> Annotation {cons("ValidationAnnoEmail"),prefer} 	 
+  	"creditcardnumber"                        -> Annotation {cons("ValidationAnnoCreditCardNumber"),prefer} 	
+ 	"EAN"                                     -> Annotation {cons("ValidationAnnoEAN"),prefer} 
+  	"pattern" "(" String ")"                  -> Annotation {cons("ValidationAnnoPattern"),prefer}   
+  	"pattern" "(" String "," PatternFlag* ")" -> Annotation {cons("ValidationAnnoPatternWithFlags"),prefer}
+  	
+  	"canonicalequivalence"                    -> PatternFlag {cons("FlagCanonEq")} %% CANON_EQ Enables canonical equivalence.    
+	"caseinsensitive"                         -> PatternFlag {cons("FlagCaseInsensitive")} %% CASE_INSENSITIVE Enables case-insensitive matching.
+ 	"comments"                                -> PatternFlag {cons("FlagComments")} %% COMMENTS Permits whitespace and comments in pattern.
+ 	"dotall"                                  -> PatternFlag {cons("FlagDotAll")} %% DOTALL Enables dotall mode.
+ 	"literal"                                 -> PatternFlag {cons("FlagLiteral")} %% LITERAL Enables literal parsing of the pattern.
+ 	"multiline"                               -> PatternFlag {cons("FlagMultiline")} %% MULTILINE Enables multiline mode.
+ 	"unicodecase"                             -> PatternFlag {cons("FlagUnicodeCase")} %% UNICODE_CASE Enables Unicode-aware case folding.
+ 	"unixlines"                               -> PatternFlag {cons("FlagUnixLines")} %% UNIX_LINES Enables Unix lines mode.
+                 
+	%%numeric or string representation of numeric
+	"max" "(" Int ")"                         -> Annotation {cons("ValidationAnnoMax"),prefer} 
+	"min" "(" Int ")"                         -> Annotation {cons("ValidationAnnoMin"),prefer}
+    "range" "(" Int "," Int ")"               -> Annotation {cons("ValidationAnnoRange"),prefer}
+    "minrange" "(" Int ")"                    -> Annotation {cons("ValidationAnnoMinRange"),prefer}   
+    "maxrange" "(" Int ")"                    -> Annotation {cons("ValidationAnnoMaxRange"),prefer} 
+    "digits" "(" Int "," Int ")"              -> Annotation {cons("ValidationAnnoDigits"),prefer}  
+     
+	%%date/calendar
+	"past"                                    -> Annotation {cons("ValidationAnnoPast"),prefer} 
+	"future"                                  -> Annotation {cons("ValidationAnnoFuture"),prefer} 	
+	
+	%%array, collection, map	
+    "size" "(" Int "," Int ")"                -> Annotation {cons("ValidationAnnoSize"),prefer}
+    "minsize" "(" Int ")"                     -> Annotation {cons("ValidationAnnoMinSize"),prefer}   
+    "maxsize" "(" Int ")"                     -> Annotation {cons("ValidationAnnoMaxSize"),prefer} 
+    
+	%%object
+  	"notnull"                                 -> Annotation {cons("ValidationAnnoNotNull"),prefer }
+  	"asserttrue"                              -> Annotation {cons("ValidationAnnoAssertTrue"),prefer} 
+  	"assertfalse"                             -> Annotation {cons("ValidationAnnoAssertFalse"),prefer} 
+   	"valid"                                   -> Annotation {cons("ValidationAnnoValid"),prefer}
+
+module WebDSL-StringSelectEntity
+
+imports
+  WebDSL-UI
+  WebDSL-Lexical
+
+exports
+  sorts TemplateDefinition
+
+  context-free syntax
+  
+  "string-select-entity" Id "{" {String ","}* "}" -> TemplateDefinition {cons("StringSelectEntity")}
+
+module WebDSL-Procedures
+
+imports
+  WebDSL-AccessControl
+  WebDSL-UI
+  WebDSL-DataModel
+  WebDSL-Action
+  WebDSL-Lexical
+
+exports
+  sorts Section Definition
+
+  context-free syntax
+
+	"procedure" Id "(" FormalArg ")" "{"
+	   ProcedureElement* 
+	"}"                             -> Procedure {cons("Procedure")}
+
+	"auto" "procedure" Id "(" FormalArg ")" "{"
+	   ProcedureElement* 
+	"}"                             -> Procedure {cons("AutoProcedure")}
+
+  "extend" "procedure" Id "(" FormalArg ")" "{"
+	   ProcedureElement* 
+	"}"                             -> Definition {cons("ExtendProcedure")}
+
+  Procedure                       -> Definition
+
+	"who" "{" Exp "}"               -> ProcedureElement {cons("ProcedureWho")}
+	"when" "{" Exp "}"					    -> ProcedureElement {cons("ProcedureWhen")}
+	"do" Block							        -> ProcedureElement {cons("ProcedureDo")}
+	"done" Block							      -> ProcedureElement {cons("ProcedureDone")}
+	"enabled" Block							    -> ProcedureElement {cons("ProcedureEnabled")}
+	"disabled" Block						    -> ProcedureElement {cons("ProcedureDisabled")}
+	"view" "{" TemplateElement* "}" -> ProcedureElement {cons("ProcedureView")}
+	
+	"process" "{" ProcessExp "}"    -> ProcedureElement {cons("ProcedureProcess")}
+	"processed" Block							  -> ProcedureElement {cons("ProcedureProcessed")}
+	
+  sorts ProcessExp
+  
+context-free syntax
+    
+    Id "(" Exp ")"                -> CallProcessExp {cons("ProcCall")} 
+    CallProcessExp                -> ProcessExp                        
+    ProcessExp ";" ProcessExp     -> ProcessExp {cons("ProcSeq"), left}
+    
+    "while" "(" Exp ")" "{" 
+      ProcessExp 
+    "}"                           -> ProcessExp {cons("ProcWhile")}
+    
+    "repeat" "{" 
+      ProcessExp 
+    "}" "until" CallProcessExp    -> ProcessExp {cons("ProcRepeatUntil")}
+
+    "if" "(" Exp ")" "{" 
+      ProcessExp 
+     "}"                          -> ProcessExp {cons("ProcIfNoElse")}
+    
+    "if" "(" Exp ")" "{" 
+      ProcessExp 
+    "}" "else" "{" 
+      ProcessExp 
+    "}"                           -> ProcessExp {cons("ProcIf")}
+    
+    ProcessExp "xor" ProcessExp   -> ProcessExp {cons("ProcXor"), left}
+    ProcessExp "and" ProcessExp   -> ProcessExp {cons("ProcAnd"), left}
+    
+    ProcessExp "+" ProcessExp     -> ProcessExp {cons("ProcPlus"), left}
+    
+    "(" ProcessExp ")"            -> ProcessExp {bracket}
+  
+  context-free priorities  
+      {left:
+        ProcessExp "and" ProcessExp  -> ProcessExp}
+    > {left:
+        ProcessExp "xor" ProcessExp  -> ProcessExp
+        ProcessExp "+"   ProcessExp  -> ProcessExp }
+    > {left:
+        ProcessExp ";"   ProcessExp  -> ProcessExp {cons("ProcSeq"), left}}
+
+module WebDSL-Derive
+
+imports
+  WebDSL-UI
+  WebDSL-Lexical
+
+exports
+
+  sorts Derive DeriveType DeriveProperty
+
+context-free syntax
+
+  "derive" Id "from" Exp "for" "(" 
+    {DeriveProperty ","}* 
+  ")"                               -> TemplateElement {cons("Derive"), prefer}
+  "derive" Id "from" Exp            -> TemplateElement {cons("Derive"), prefer}
+  %%"derive" Id                       -> TemplateElement {cons("Derive"), prefer}
+  %% Disabled this one for now because it is causing ambiguities, have a look at this Ruben!
+  
+  "derive" Id "from" Exp "for" "(" 
+    {DeriveProperty ","}* 
+  ")" DeriveBody                    -> TemplateElement {cons("Derive"), prefer}
+  "derive" Id "from" Exp DeriveBody -> TemplateElement {cons("Derive"), prefer}
+  "derive" Id DeriveBody            -> TemplateElement {cons("Derive"), prefer}
+  
+  Id                                -> DeriveProperty {cons("DeriveDefault")}
+  Id "(" Id ")"                     -> DeriveProperty {cons("DeriveMode")}
+  
+  "{" DeriveBodyElement* "}"        -> DeriveBody {cons("DeriveBody")}
+  
+  Id "{" TemplateElement* "}"       -> DeriveBodyElement {cons("DeriveBodyElement")}
+  
+  "derive"                          -> TemplateCall {reject}
+    
+  "derive" "crud" Id -> Definition {cons("DeriveCrud")}
+
+module WebDSL-PagedFor
+
+imports
+  WebDSL-UI
+
+exports
+  sorts TemplateElement
+
+  context-free syntax
+
+    "for" "(" Id ":" Sort Filter "per" Exp ")"
+       "{" TemplateElement* "}"                             -> TemplateElement {cons("PagedForAll")}
+
+    "for" "(" Id ":" Sort "per" Exp ")"
+       "{" TemplateElement* "}"                             -> TemplateElement {cons("PagedForAllNoFilter")}
+
+    "for" "(" Id ":" Sort "in" Exp Filter "per" Exp ")"
+       "{" TemplateElement* "}"                             -> TemplateElement {cons("PagedFor")}
+
+    "for" "(" Id ":" Sort "in" Exp "per" Exp ")"
+       "{" TemplateElement* "}"                             -> TemplateElement {cons("PagedForNoFilter")}
+
+module WebDSL-Styling
+
+%% syntax for styling of WebDSL applications
+imports
+  WebDSL-UI
+  WebDSL-Lexical
+
+exports
+
+  sorts
+    Name StNum String UnaryOperator
+
+  lexical syntax
+    [a-zA-Z\_][a-zA-Z0-9\_\-]*			-> Identifier
+    [a-zA-Z][a-zA-Z\-\_]+          		-> ValueName
+    [a-z][a-z\-]+           	   		-> Value
+    [a-f0-9][a-f0-9][a-f0-9][a-f0-9]* 		-> Hex
+    [a-z\%]+                       		-> Unit
+%%    [0-9]+                			-> StNum
+%%    [0-9]* "." [0-9]+     			-> StNum
+    "'" ~[\"\n]* "'"               		-> String
+%%    [\-\+] StNum				-> StNumber
+
+  lexical syntax
+    [a-zA-Z][a-zA-Z0-9\_]*		 -> MatchIdent
+%%    [a-zA-Z][a-zA-Z0-9\_]*[\*]? -> MatchIdent
+%%    [\*]                        -> MatchIdent
+%%    [\*]                        -> StWildCardArg 
+
+  lexical restrictions
+    ValueName 	-/- [a-zA-Z\-\_]
+    Value 	-/- [a-z\-]
+    Unit 	-/- [a-z\%]
+    Hex 	-/- [a-f0-9]
+
+exports
+
+  sorts
+     StNumber
+
+  lexical syntax
+    Float		      -> StNum
+    SignedInteger	      -> StNum
+    StNum                     -> StNumber
+    StNum "%"                 -> Percentage {prefer}
+    StNum "em"                -> Ems {prefer}
+    StNum "ex"                -> Exs {prefer}
+    StNum "px"                -> Length {prefer}
+    StNum "cm"                -> Length {prefer}
+    StNum "mm"                -> Length {prefer}
+    StNum "in"                -> Length {prefer}
+    StNum "pt"                -> Length {prefer}
+    StNum "pc"                -> Length {prefer}
+    StNum "deg"               -> Angle {prefer}
+    StNum "rad"               -> Angle {prefer}
+    StNum "grad"              -> Angle {prefer}
+    StNum "ms"                -> Time {prefer}
+    StNum "s"                 -> Time {prefer}
+    StNum "hz"                -> Freq {prefer}
+    StNum "khz"               -> Freq {prefer}
+%%    StNum Id                  -> Dimension {prefer}
+
+context-free syntax
+
+  "theme" Modifier Id "(" ")" "{" StyleDeclaration* "}" -> Definition {cons("ThemeDefinition"), prefer}
+
+context-free syntax %% Styling syntax
+
+  "style" Id StyleDefinition*        -> Section {cons("StyleSection"), prefer}
+
+  Selector "{" StyleStatement* "}"   -> StyleDefinition {cons("StyleDefinition")}
+
+context-free syntax %% selectors
+
+  SimpleSelector
+    (Combinator SimpleSelector SelectorAttribute?)* -> Selector {cons("Selector")}
+
+  Id MatchDefinition 			-> SimpleSelector {cons("SimpleSelector")}
+  "#" Identifier			-> SimpleSelector {cons("IdSimpleSelector")}
+  Id					-> SimpleSelector {cons("ElemSimpleSelector")}
+  Id SelectorAttribute+		-> SimpleSelector {cons("ElemSimpleAttrSelector"), prefer}
+  Id "." Identifier	SelectorAttribute+		-> SimpleSelector {cons("ElemClassAttrSelector"), prefer}
+  "." Identifier 			-> SimpleSelector {cons("ClassSimpleSelector")}  
+  MatchDefinition       		-> SimpleSelector {cons("SimpleSelector")}
+  "*"			        	-> SimpleSelector {cons("UniversalSimpleSelector")}
+  
+  ":" ValueName				-> SelectorAttribute {cons("SelectorAttribute")}
+  
+  ">"                   		-> Combinator {cons("ChildCombinator")}
+  ">>"                   		-> Combinator {cons("DescendantCombinator"), prefer}
+
+  MatchIdent "(" MatchDefinitionArgs ")"		-> MatchDefinition {cons("MatchDefinition")}
+  {FormalArg ","}*                                      -> MatchDefinitionArgs
+
+  "const" Id ":" StyleSort ";" 				-> StyleVarDecl {cons("StyleVarDecl")}
+  "const" Id ":" StyleSort ":=" StyleExpression ";" 	-> StyleVarDecl {cons("StyleVarDeclInit")}
+  
+  StyleVarDecl						-> StyleDefinition
+  
+  StyleProperty ":=" StyleExpression ";"      	        -> StyleStatement {cons("StyleDeclaration")}
+%%  StylePropertyLocal ":=" StyleProperty ";"    	-> StyleStatement {cons("StyleDeclaration")}
+
+  ValueName						-> StyleProperty {cons("StyleProperty")}
+
+  MatchDefinition "." StyleProperty			-> StyleExpression {cons("StylePropertyValue")}
+
+  Id 							-> StyleExpression {cons("StyleVar")}
+
+  StyleValue 						-> StyleExpression
+%%  StyleValues -> StyleExpression
+
+  "(" Selector ")" "." StyleProperty 			-> StyleExpression {cons("StyleValueExpression")}
+
+  StyleExpression "+" StyleExpression 			-> StyleExpression {cons("StyleAdd"),assoc}
+  StyleExpression "-" StyleExpression 			-> StyleExpression {cons("StyleSub"),assoc}
+  StyleExpression "*" StyleExpression 			-> StyleExpression {cons("StyleMul"),assoc}
+  StyleExpression "/" StyleExpression 			-> StyleExpression {cons("StyleDiv"),assoc}
+
+  StNumber Unit 					-> StyleValue {cons("StyleValue")}
+  StNumber 						-> StyleValue {cons("StyleValue")}
+  StyleSort StyleValueExtension+			-> StyleValue {cons("StyleValue")}
+  Uri 							-> StyleValue {cons("StyleValue")}
+  Hash 							-> StyleValue {cons("StyleValue")}
+  Value		 					-> StyleValue {cons("StyleValue"), prefer}
+  String	 					-> StyleValue {cons("StyleValue")}
+  
+  "." ValueName						-> StyleValueExtension {cons("StyleValueExtension") }
+
+%%  {StyleValue "|"}* -> StyleValue {cons("StyleValueOptions") }
+
+  Id Unit 						-> StyleSort {cons("StyleSort")}
+  Id							-> StyleSort {cons("StyleSort")}
+
+  "url" "(" String ")"    				-> Uri {cons("Uri")}
+  "#" Hex                 				-> Hash {cons("Hash")}
+
+  "const" 	-> Id {reject}  
+%%  "layout" 	-> Id {reject}
+%%  "style" 	-> Id {reject}
+%%  "theme" 	-> Id {reject}
+
+context-free priorities
+  
+  {left:
+       StyleExpression "*" StyleExpression -> StyleExpression
+       StyleExpression "/" StyleExpression -> StyleExpression }
+  > {left:
+       StyleExpression "+" StyleExpression -> StyleExpression
+       StyleExpression "-" StyleExpression -> StyleExpression}
+
+context-free syntax %% Layout syntax
+
+  "layout" LayoutDefinition* 				-> Section {cons("LayoutSection"), prefer}
+
+  Id MatchDefinition "{" LayoutStatement* "}"   	-> LayoutDefinition {cons("LayoutDefinition")}
+  MatchDefinition "{" LayoutStatement* "}"   		-> LayoutDefinition {cons("LayoutDefinition")}
+  
+  StyleDefinition					-> LayoutDefinition
+%%  StyleStatement					-> LayoutStatement
+  
+  "float" "{" MatchDefinition* "}" ";"			-> LayoutStatement {cons("FloatStatement")}
+  
+  LayoutExpression ";"                                  -> LayoutStatement {cons("LayoutStatement")}
+  Id ":" "[" LayoutExpressions "]"     		        -> LayoutExpression {cons("NamedLayoutExpression")}
+  {LayoutExpression "|"}+				-> LayoutExpressions
+  Id			 				-> LayoutExpression {cons("LayoutExpression")}
+  MatchDefinition 					-> LayoutExpression {cons("LayoutExpression")}
+
+module WebDSL-Enums
+
+imports
+  WebDSL-DataModel
+  WebDSL-Lexical
+
+exports
+  sorts Defintion EnumValue
+
+  context-free syntax
+
+  "enum" Id "{" {EnumValue ","}* "}"                    -> Definition {cons("Enum")}
+
+  Id "(" String ")"                               -> EnumValue {cons("EnumValue")}
+
+module WebDSL-Regex
+
+
+exports
+%%d  context-free start-symbols
+%%d    PatternDecl Pattern
+  sorts Pattern PatternDecl Exp
+  context-free syntax
+    RegexExp "." Id "(" {Exp ","}* ")"  -> Exp {cons("Call")} %% always used with a call, regex directly as exp results in ambiguity with xml embedding
+
+    "/" Pattern "/"            -> RegexExp { cons("RegexPattern") }
+    Branche                    -> Pattern {cons("SingleBranch")}
+    Pattern "|" Pattern        -> Pattern {cons("TupleBranch"), right, prefer}
+
+
+  sorts Branche
+  context-free syntax
+    Piece+                     -> Branche {cons("Pieces")}
+
+  sorts Piece
+  context-free syntax
+    Atom                       -> Piece {cons("SingleAtom")}
+    Atom Quantifier            -> Piece {cons("QuantifiedAtom")}
+
+  sorts Quantifier
+  context-free syntax
+   "{" Integer "}"              -> Quantifier {cons("GreedyExactBound")}
+   "{" Integer "," "}"          -> Quantifier {cons("GreedyLowerBound")}
+   "{" Integer "," Integer "}"  -> Quantifier {cons("GreedyLowerUpperBound")}
+   "?"                          -> Quantifier {cons("GreedyOnceOrNot")}
+   "*"                          -> Quantifier {cons("GreedyZeroOrMore")}
+   "+"                          -> Quantifier {cons("GreedyOneOrMore")}
+   "{" Integer "}?"             -> Quantifier {cons("ReluctantExactBound")}
+   "{" Integer "," "}?"         -> Quantifier {cons("ReluctantLowerBound")}
+   "{" Integer "," Integer "}?" -> Quantifier {cons("ReluctantLowerUpperBound")}
+   "??"                         -> Quantifier {cons("ReluctantOnceOrNot")}
+   "*?"                         -> Quantifier {cons("ReluctantZeroOrMore")}
+   "+?"                         -> Quantifier {cons("ReluctantOneOrMore")}  
+   "{" Integer "}+"             -> Quantifier {cons("PossessiveExactBound")}
+   "{" Integer "," "}+"         -> Quantifier {cons("PossessiveLowerBound")}
+   "{" Integer "," Integer "}+" -> Quantifier {cons("PossessiveLowerUpperBound")}
+   "?+"                         -> Quantifier {cons("PossessiveOnceOrNot")}
+   "*+"                         -> Quantifier {cons("PossessiveZeroOrMore")}
+   "++"                         -> Quantifier {cons("PossessiveOneOrMore")}   
+
+  sorts Atom
+  context-free syntax
+    "("   Pattern ")"          -> Atom {cons("Capture")}
+    "(?:" Pattern ")"          -> Atom {cons("NonCapture")}
+    "(?=" Pattern ")"          -> Atom {cons("PositiveLookahead")}
+    "(?!" Pattern ")"          -> Atom {cons("NegativeLookahead")}
+    "(?<=" Pattern ")"         -> Atom {cons("PositiveLookbehind")}
+    "(?<!" Pattern ")"         -> Atom {cons("NegativeLookbehind")}
+    "(?P<" RegexId ">" Pattern ")"  -> Atom {cons("PythonCapture")}
+    "(" Pattern ")@{" RegexId "}"   -> Atom {cons("RegexCapture")}
+    "()"                       -> Atom {cons("Empty")}
+    "."                        -> Atom {cons("SingleCharacter")}
+    "^"                        -> Atom {cons("LineStart")}
+    "$"                        -> Atom {cons("LineEnd")}
+    CharacterClass             -> Atom {cons("CharacterClass")}
+    AtomLiteral                -> Atom {cons("AtomLiteral")}
+    AtomCharacter              -> Atom {cons("AtomCharacter")}
+    "\\Q" AllChars "\\E"       -> Atom {cons("QuotedAtom")}    
+    
+  sorts CharacterClass BracketItem
+  context-free syntax
+    "[" BracketItem+ "]"       -> CharacterClass {cons("BracketList")}
+    "[^" BracketItem+ "]"      -> CharacterClass {cons("NegatedBracketList")}
+%%d "\\p\{" ClassKeyword "\}"   -> CharacterClass {cons("PredefineClass")}
+%%d "\\P\{" ClassKeyword "\}"   -> CharacterClass {cons("NegatedPredefineClass")}
+   
+
+    (BracketLiteral | BracketCharacter)
+     "-" 
+    (BracketLiteral | BracketCharacter)   -> BracketItem {cons("Range")}
+    CharacterClass                        -> BracketItem {cons("Union")}
+%%d "\&\&" CharacterClass                 -> BracketItem {cons("Intersection")}
+    BracketLiteral                        -> BracketItem {cons("BracketLiteral")}
+    BracketCharacter                      -> BracketItem {cons("BracketCharacter")}
+   
+
+%%
+ %%   Defining characterclasses
+  %% 
+sorts ClassKeyword
+  context-free syntax    
+    "Lower"                    -> ClassKeyword {cons("LowerClass")}
+    "Upper"                    -> ClassKeyword {cons("UpperClass")}
+    "ASCII"                    -> ClassKeyword {cons("ASCIIClass")}
+    "Alpha"                    -> ClassKeyword {cons("AlphaClass")}
+    "Digit"                    -> ClassKeyword {cons("DigitClass")}
+    "Alnum"                    -> ClassKeyword {cons("AlnumClass")}
+    "Punct"                    -> ClassKeyword {cons("PunctClass")}
+    "Graph"                    -> ClassKeyword {cons("GraphClass")}
+    "Print"                    -> ClassKeyword {cons("PrintClass")}
+    "Blank"                    -> ClassKeyword {cons("BlankClass")}
+    "Cntrl"                    -> ClassKeyword {cons("CntrlClass")}
+    "XDigit"                   -> ClassKeyword {cons("XDigitClass")}
+    "Space"                    -> ClassKeyword {cons("WhiteSpace")}
+    "javaLowerCase"            -> ClassKeyword {cons("JavaIsLowerCase")}
+    "javaUpperCase"            -> ClassKeyword {cons("JavaIsLowerCase")}
+    "javaWhitespace"           -> ClassKeyword {cons("JavaIsWhitespace")}
+    "javaMirrored"             -> ClassKeyword {cons("JavaIsMirrored")}
+    "InGreek"                  -> ClassKeyword {cons("GreekBlock")}
+    "Lu"                       -> ClassKeyword {cons("UppercaseLetter")}
+    "Sc"                       -> ClassKeyword {cons("CurrencySymbol")}
+
+%%
+ %%   Defining the Character -> Characters that appear as Atom and in Brackets  
+  %%   
+
+%%  ASCII characters:  
+%%  $*+?.{}()                             %% OnlyBranchSpecial
+%%  &]-                                   %% OnlyClassSpecial
+%%  [^\                                   %% AlwaysSpecial
+%%  !"#%',/:;<=>@_`~                      %% NeverSpecialCharacter
+%%  ABCDEFGHIJKLMNOPQRSTUVWXYZ            %% Character
+%%  abcdefghijklmnopqrstuvwxyz            %% Charater
+%%  0123456789                            %% Charater
+%%  <tab> <newline> <return> <form-feed>  %% SpecialEscapeCharacter
+
+
+  sorts BracketLiteral AtomLiteral AllChars
+  lexical syntax
+    [a-zA-Z0-9\!\#\%\'\,\:\;\<\=\>\@\_\`\~\$\*\+\?\.\}\|]
+                                                  -> BracketLiteral
+    "/"                                           -> BracketLiteral 
+    [\&\]\-]                                      -> BracketLiteral {reject}
+    [a-zA-Z0-9\!\#\%\'\,\:\;\<\=\>\@\_\`\~\&\]\-]
+                                                  -> AtomLiteral
+    "/"                                           -> AtomLiteral 
+    [\}\)\|\[]                                    -> AtomLiteral {reject}
+    
+    [\\\|\$\*\+\?\.\{\}\(\)\&\]\-\[\^\!\#\%\'\,\:\;\<\=\>\@\_\`\~a-zA-Z0-9\t\n\r]*              
+          -> AllChars
+    "/"   -> AllChars
+    "\""  -> AllChars {cons("DoubleQuote") } 
+      
+  sorts BracketCharacter AtomCharacter
+  context-free syntax
+%%d    "\{"                -> BracketCharacter {cons("CurlyBraceOpen") }
+%%d    "\{"                -> AtomCharacter    {cons("CurlyBraceOpen"), avoid}
+    "\""                -> BracketCharacter {cons("DoubleQuote") }
+    "\""                -> AtomCharacter    {cons("DoubleQuote") }
+%%d    "\)"                -> BracketCharacter {cons("BraceClose"), avoid }
+%%d    "\)"                -> AtomCharacter    {cons("BraceClose") }
+
+
+%%
+ %%   Escaping with a '\' to express a special character
+  %%
+  context-free syntax
+    "\\0" OctalValue       -> BracketCharacter {cons("OctalChar")}
+    "\\x" TwoHexValue      -> BracketCharacter {cons("HexHexChar")}
+    "\\u" FourHexValue     -> BracketCharacter {cons("DecHexChar")}
+    "\\t"                  -> BracketCharacter {cons("Tab")}
+    "\\n"                  -> BracketCharacter {cons("Newline")}
+    "\\r"                  -> BracketCharacter {cons("Return")}
+    "\\f"                  -> BracketCharacter {cons("Formfeed")}
+    "\\a"                  -> BracketCharacter {cons("Alarm")}
+    "\\e"                  -> BracketCharacter {cons("Escape")}
+    "\\w"                  -> BracketCharacter {cons("WordChar")}
+    "\\W"                  -> BracketCharacter {cons("NonWordChar")}
+    "\\s"                  -> BracketCharacter {cons("WhiteSpaceChar")}
+    "\\S"                  -> BracketCharacter {cons("NonWhiteSpaceChar")}
+    "\\d"                  -> BracketCharacter {cons("DigitChar")}
+    "\\D"                  -> BracketCharacter {cons("NonDigitChar")}
+    "\\c" ControlValue     -> BracketCharacter {cons("ControlCharacter")}
+    "\\b"                  -> BracketCharacter {cons("WordBoundry")}
+    "\\B"                  -> BracketCharacter {cons("NonWordBoundry")}
+    "\\A"                  -> BracketCharacter {cons("InputBeginBoundry")}
+    "\\G"                  -> BracketCharacter {cons("PrevMatchEndBoundry")}
+    "\\Z"                  -> BracketCharacter {cons("EndInputBoundry")}
+    "\\z"                  -> BracketCharacter {cons("EndInputFinalBoundry")}
+    "\\" BackReference     -> BracketCharacter {cons("BackReference")}
+    "\\ "                  -> BracketCharacter {cons("Space")}
+    "\\\t"                 -> BracketCharacter {cons("Tab")}
+%%d    "\\\r"                 -> BracketCharacter {cons("Return")}
+    "\\\n"                 -> BracketCharacter {cons("Newline")}
+    
+    "\\0" OctalValue       -> AtomCharacter {cons("OctalChar")}
+    "\\x" TwoHexValue      -> AtomCharacter {cons("HexHexChar")}
+    "\\u" FourHexValue     -> AtomCharacter {cons("DecHexChar")}
+    "\\t"                  -> AtomCharacter {cons("Tab")}
+    "\\n"                  -> AtomCharacter {cons("Newline")}
+    "\\r"                  -> AtomCharacter {cons("Return")}
+    "\\f"                  -> AtomCharacter {cons("Formfeed")}
+    "\\a"                  -> AtomCharacter {cons("Alarm")}
+    "\\e"                  -> AtomCharacter {cons("Escape")}
+    "\\w"                  -> AtomCharacter {cons("WordChar")}
+    "\\W"                  -> AtomCharacter {cons("NonWordChar")}
+    "\\s"                  -> AtomCharacter {cons("WhiteSpaceChar")}
+    "\\S"                  -> AtomCharacter {cons("NonWhiteSpaceChar")}
+    "\\d"                  -> AtomCharacter {cons("DigitChar")}
+    "\\D"                  -> AtomCharacter {cons("NonDigitChar")}
+    "\\c" ControlValue     -> AtomCharacter {cons("ControlCharacter")}
+    "\\b"                  -> AtomCharacter {cons("WordBoundry")}
+    "\\B"                  -> AtomCharacter {cons("NonWordBoundry")}
+    "\\A"                  -> AtomCharacter {cons("InputBeginBoundry")}
+    "\\G"                  -> AtomCharacter {cons("PrevMatchEndBoundry")}
+    "\\Z"                  -> AtomCharacter {cons("EndInputBoundry")}
+    "\\z"                  -> AtomCharacter {cons("EndInputFinalBoundry")}
+    "\\" BackReference     -> AtomCharacter {cons("BackReference")}
+    "\\ "                  -> AtomCharacter {cons("Space")}
+    "\\\t"                 -> AtomCharacter {cons("Tab")}
+%%d    "\\\r"                 -> AtomCharacter {cons("Return")}
+    "\\\n"                 -> AtomCharacter {cons("Newline")}
+    
+%%
+ %%   Quoting of symbols is always allowed to express that symbol
+  %%
+  sorts QuotablePatternSymbol
+  context-free syntax
+    "\\" QuotablePatternSymbol            -> AtomCharacter {cons("Quoted")}
+    "\\" QuotablePatternSymbol            -> BracketCharacter {cons("Quoted")}    
+  lexical syntax
+    [\|\$\*\+\?\.\{\}\(\)\&\]\[\-\^\\\!\#\%\'\,\:\;\<\=\>\@\_\`\~\/]
+                                   -> QuotablePatternSymbol
+  context-free syntax
+    "\""                -> QuotablePatternSymbol {cons("DoubleQuote") }
+    "\""                -> QuotablePatternSymbol {cons("DoubleQuote") }    
+%%
+ %%   Defining integers and number values
+  %% 
+  sorts Integer OctalValue TwoHexValue FourHexValue BackReference ControlValue
+  lexical syntax      
+    [0-9]+                                       -> Integer
+    [1-9] [0-9]*                                 -> BackReference
+    [0-7]                                        -> OctalValue
+    [0-7][0-7]                                   -> OctalValue
+    [0-3][0-7][0-7]                              -> OctalValue
+    [0-9A-Fa-f][0-9A-Fa-f]                       -> TwoHexValue
+    [0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f] -> FourHexValue
+    [0-9]                                        -> ControlValue
+    [0-9][0-9]                                   -> ControlValue
+
+%%d  lexical restrictions
+%%d    "/"  -/- [\]]
+%%d    "\\" -/- [\ \t\12\n\r]   
+    
+    
+exports
+  sorts
+    RegexId
+    RegexID
+
+  context-free syntax
+    RegexID -> RegexId {cons("RegexId")}
+
+  lexical syntax
+    [A-Za-z\_\$][A-Za-z0-9\_\$]* -> RegexID
+    
+    "true"  -> RegexID {reject}
+    "false" -> RegexID {reject}
+    "null"  -> RegexID {reject}
+
+  lexical restrictions
+    RegexID -/- [a-zA-Z0-9\_\$]
+
+module WebDSL-JavaScript
+  
+exports 
+  sorts TemplateElement
+  context-free syntax
+    "<" "script" Attribute* ">" 
+    %%todo: should be javascript embedding
+    JSPart*
+    "</" "script" ">"
+    -> TemplateElement { cons("JSElement"), prefer}
+  
+  JSString -> JSPart{cons("JSString")}
+  "~" Exp -> JSPart{cons("JSExp"), prefer}
+  "\\~" -> JSPart{cons("JSTilde"), prefer}
+
+  sorts JSChar JSString
+  lexical syntax
+  JSChar* -> JSString
+  ~[\<\~]                        -> JSChar
+  SmallerThan                  -> JSChar
+  [\<]                         -> SmallerThan
+  "" -> JSString{reject}
+
+  lexical restrictions
+    SmallerThan   -/- [\/]
+    JSString -/- [\ \t\n\r]
+    JSString -/- ~[\<\~]
+
+module WebDSL-XML
+  
+exports
+  context-free syntax
+  
+    "<" QualName Attribute* "/>" -> TemplateElement {cons("XMLEmptyElement")}
+    
+    "<" QualName Attribute* ">"
+      TemplateElement*
+      "</" QualName ">" -> TemplateElement {cons("XMLElement")}
+
+exports
+  context-free syntax
+
+    QualName "=" Exp -> Attribute {cons("Attribute")}
+    
+exports
+
+  lexical syntax
+    Qualifier? NCName -> QualName    
+    NCName ":"        -> Qualifier
+
+  
+    [A-Za-z\_] [A-Za-z0-9\.\-\_]* -> NCName
+
+  lexical restrictions
+    NCName -/- [A-Za-z0-9\.\-\_]
+
+module WebDSL-AccessControl
+
+imports
+  WebDSL-UI
+  WebDSL-Action
+  WebDSL-DataModel
+  WebDSL-Lexical
+
+%% syntax for access control  
+exports
+
+  sorts MatchId
+
+  lexical syntax
+    [a-zA-Z][a-zA-Z0-9\_]*[\*]? -> MatchId
+    [\*]                        -> MatchId
+    [\*]                        -> WildCardArg 
+
+context-free syntax
+
+  "access" "control" "rules" Id? AccessControlDefinition*  -> Section {cons("AccessControlDefinition")}
+  %%deprecated: 
+  "access" "control" "rules" "{" Id? AccessControlDefinition* "}"  -> Section {cons("AccessControlDefinition")}
+  
+  "principal" "is" Id "with" "credentials" {Id ","}+            -> Definition {cons("AccessControlPrincipal")} 
+  "principal" "is" Id "with" "credentials" {Id ","}+            -> AccessControlDefinition {cons("AccessControlPrincipal")} 
+  
+  AccessControlRule                                             -> AccessControlDefinition
+ 
+  "rule" Id MatchId "(" MatchArgs ")"
+  "{" AccessControlCheck AccessControlRule* "}"                 -> AccessControlRule {cons("AccessControlRule")}
+  %%deprecated:
+  "rules" Id MatchId "(" MatchArgs ")"
+  "{" AccessControlCheck AccessControlRule* "}"                 -> AccessControlRule {cons("AccessControlRule")}
+
+  {FormalArg ","}* WildCardArg?                                 -> MatchArgs {cons("MatchArgs"),prefer}
+  {Exp ","}* WildCardArg?                                       -> MatchArgs {cons("MatchArgs")}
+
+  %% to prevent an AccessControlRule becoming an AccessControlCheck
+  "rules"                                                       -> Exp {reject}
+
+  Exp                                                           -> AccessControlCheck
+  
+  %% pagecheck
+  %%"pagecheck" "<" Id "," Exp ">"  -> TemplateElement {cons("PageCheck"),prefer}
+  %%"pagecheck" "(" Id "," Exp ")"  -> TemplateCall {reject}
+  %%"pagecheck" "(" {Exp ","}* ")"                          -> TemplateCall {reject}
+  
+  "predicate" Id "(" {FormalArg ","}* ")" "{" Exp "}"           -> Definition {cons("Predicate")}
+  "predicate" Id "(" {FormalArg ","}* ")" "{" Exp "}"           -> AccessControlDefinition {cons("Predicate")}
+  
+  Id MatchId "(" {Id ","}* WildCardArg? ")"                     -> AccessControlPointcutElement {cons("AccessControlPointcutElement")}
+  
+  "pointcut" Id "(" {FormalArg ","}* ")"
+    "{" {AccessControlPointcutElement ","}* "}"                 -> AccessControlPointcut {cons("AccessControlPointcut")}
+  
+  AccessControlPointcut                                         -> AccessControlDefinition
+  
+  "access" "control" "policy" PolicyExp                         -> Section {cons("ACPolicy")}
+  
+  Id                                 -> PolicyExp {cons("Name")}
+  "(" PolicyExp ")"                  -> PolicyExp {bracket}
+  PolicyExp "AND" PolicyExp          -> PolicyExp {cons("PolicyAnd"), assoc}
+  PolicyExp "OR" PolicyExp           -> PolicyExp {cons("PolicyOr"), assoc}
+  
+  
+  %% hack for allowing multiple function checks to be added in different stages to a function call
+  %%"acfunctioncheck" "(" Id "," Exp ")" Exp -> Exp {cons("ACFunctionCheck"), prefer}
+  
+context-free priorities
+  {left:
+       PolicyExp "AND" PolicyExp -> PolicyExp}
+  > {left:
+       PolicyExp "OR" PolicyExp -> PolicyExp}
+
+context-free priorities
+    Exp "in" Exp  -> Exp
+  > Exp -> AccessControlCheck
+
+context-free syntax
+  
+  "ignore-access-control" -> Modifier {cons("IgnoreAccessControl")}
+
+module WebDSL-DataValidation
+
+exports
+
+  context-free syntax
+
+    "validatecreate" "(" Exp "," Exp ")" -> Annotation {cons("ValidateCreateAnno"),prefer}
+    "validateupdate" "(" Exp "," Exp ")" -> Annotation {cons("ValidateUpdateAnno"),prefer}
+    "validatedelete" "(" Exp "," Exp ")" -> Annotation {cons("ValidateDeleteAnno"),prefer}
+    "validate" "(" Exp "," Exp ")" -> Annotation {cons("ValidateAnno"),prefer}
+    Id ":" "validate" "(" Exp "," Exp ")" -> Annotation {cons("NamedValidateAnno"),prefer}
+    
+    "validate" "(" Exp "," Exp ")" ";" -> Statement {cons("ValidateStatement"),prefer}
+    Id ":" "validate" "(" Exp "," Exp ")" ";" -> Statement {cons("NamedValidateStatement"),prefer}
+    
+    "validationErrors" "(" Id ")" -> TemplateCall {cons("ValidationErrors"),prefer}
+    "validationErrors" "(" ")" -> TemplateCall {cons("ValidationErrors"),prefer}
+    
+    
+    "validationContext" "{" TemplateElement* "}" -> TemplateCall {cons("ValidationContext"),prefer}
+    "validationContext" "{" TemplateElement* "}" -> TemplateCall {reject}
+
+module WebDSL-DataModel
+
+imports
+  WebDSL-Action
+  WebDSL-Lexical
+
+exports
+
+  context-free syntax
+
+    "globals" "{" GlobalsDef* "}"                        -> Definition {prefer,cons("GlobalsDefinition")}
+
+    "entity" Id ":" Id "{" Property* Function* "}"       -> Entity {cons("Entity")}
+    "entity" Id "{" Property* Function* "}"              -> Entity {cons("EntityNoSuper")}
+    "session" Id "{" Property* Function* "}"             -> Entity {cons("SessionEntity")}
+
+    Entity                                   		     -> Definition
+
+    "extend" "entity" Id "{" Property* Function* "}"	 -> Definition {cons("ExtendEntity")}
+    "extend" "session" Id "{" Property* Function* "}"   -> Definition {cons("ExtendSessionEntity")}
+
+exports
+
+  sorts Entity Property Sort Annotation
+
+  context-free syntax
+
+    "request" VarDecl -> Definition {cons("RequestScope")}
+    VarDecl                                              -> GlobalsDef
+    %% still allow ";" behind global var for backwards comp., remove VarDeclStat-> GlobalsDef to disallow
+    VarDeclStat                                          -> GlobalsDef
+    Function                                             -> GlobalsDef
+    GlobalsDef                                           -> Definition
+    InitAction                                           -> Definition
+
+exports
+
+  sorts Property Annotation
+
+  context-free syntax
+
+    Id PropKind Sort "(" {Annotation ","}* ")" -> Property {cons("Property")}
+    Id PropKind Sort                           -> Property {cons("PropertyNoAnno")}
+
+    Id PropKind Sort "(" {Annotation ","}* ")" ":=" Exp -> Property {cons("DerivedProperty")}
+    Id PropKind Sort ":=" Exp                           -> Property {cons("DerivedPropertyNoAnno")}
+
+
+    "::" -> PropKind {cons("Simple")}
+    "->" -> PropKind {cons("Ref")}
+    "<>" -> PropKind {cons("Comp")}
+
+  sorts Sort
+
+  context-free syntax
+
+    Id                           -> Annotation {cons("SimpleAnno")}
+    "inverse" "=" Id "." Id      -> Annotation {cons("InverseAnno")}
+    "inverseSlave" "=" Id "." Id -> Annotation {cons("InverseSlaveAnno")}
+    "inline" "(" {Id ","}* ")"   -> Annotation {cons("InlineAnno")}
+    "select" "=" Id              -> Annotation {cons("SelectAnno")}
+    "not null"                   -> Annotation {cons("NotNullAnno")}
+    "allowed" "=" Exp            -> Annotation {cons("AllowedAnno")}
+    "index" "(" ")"              -> Annotation {cons("IndexAnno")}
+    "index" "(" Int ")"          -> Annotation {cons("IndexAnno")}
+    "collation" "(" Id ")"       -> Annotation {cons("CollationAnno")}
+    
+    Id "=" AnnoValue         -> Annotation {cons("SingleParamAnno"), avoid}
+    Id -> AnnoValue
+    Int -> AnnoValue
+    Float -> AnnoValue
+    String -> AnnoValue
+
+
+module HQL
+
+hiddens
+  context-free start-symbols QueryRule Statement
+  
+exports
+  lexical syntax
+    [a-zA-Z\_][a-zA-Z0-9\_]* -> Identifier
+  lexical restrictions
+    Identifier -/- [a-zA-Z0-9\_]
+    
+  context-free syntax
+   
+    "from" | "select" | "by" | "order" -> Identifier {reject}
+
+exports
+
+  sorts Statement UpdateStatement DeleteStatement SelectStatement InsertStatement
+  
+  context-free syntax
+
+    "delete" FromClause WhereClause? -> DeleteStatement {cons("DeleteStatement")}
+    
+    SelectStatement -> Statement
+
+    QueryRule -> SelectStatement
+
+    QueryRule "union" QueryRule -> Union {cons("QueryUnion")}
+
+    SelectFrom WhereClause? GroupByClause? OrderByClause? -> QueryRule {cons("QueryRule")}
+    
+    SelectClause? FromClause -> SelectFrom {cons("SelectFrom")}
+    
+    "select" Distinct? Selection -> SelectClause {cons("Select")}
+
+    "distinct"                   -> Distinct {cons("Distinct")}
+    
+    SelectedPropertiesList -> Selection
+    NewExpression          -> Selection
+    SelectObject           -> Selection
+
+    QueryRule              -> Expression {avoid}
+    
+  "new" Path "(" SelectedPropertiesList ")" -> NewExpression {cons("NewExpression")}
+  
+  "object" "(" Identifier ")" -> SelectObject {cons("SelectObject")}
+  
+    "from" {FromRangeJoin ","}+ -> FromClause {cons("FromClause")}
+    
+    FromRange FromJoin? -> FromRangeJoin {cons("FromRangeJoin")}
+    
+    "left"          -> JoinType {cons("LeftJoin")}
+    "right"         -> JoinType {cons("RightJoin")}
+    "left"  "outer" -> JoinType {cons("LeftOuterJoin")}
+    "right" "outer" -> JoinType {cons("RightOuterJoin")}
+    "full"          -> JoinType {cons("FullJoin")}
+    "inner"         -> JoinType {cons("InnerJoin")}
+    
+    JoinType? "join" Fetch? Path AsAlias? PropertyFetch? WithClause? -> FromJoin {cons("FromJoin")}
+    
+    "fetch" -> Fetch {cons("Fetch")}
+        
+  "with" Expression -> WithClause {cons("WithClause")}
+  
+    FromClassOrOuterQueryPath       -> FromRange
+    InClassDeclaration              -> FromRange
+    InCollectionDeclaration         -> FromRange
+    InCollectionElementsDeclaration -> FromRange
+    
+    Path AsAlias? PropertyFetch? -> FromClassOrOuterQueryPath {cons("FromClass")}
+    
+    Alias "in" "class" Path -> InClassDeclaration {cons("InClassDeclaration")}
+    
+    "in" "(" Path ")" Alias -> InCollectionDeclaration {cons("InCollection")}
+    
+    Alias "in" "elements" "(" Path ")" -> InCollectionElementsDeclaration {cons("InCollectionElements")}
+
+    "as" Alias -> AsAlias {cons("AsAlias")}
+  
+    Identifier -> Alias {cons("Alias")}
+  
+  
+    "fetch" "all" "properties" -> PropertyFetch {cons("PropertyFetch")}
+    
+    "group" "by" {Expression ","}+ HavingClause? -> GroupByClause {cons("GroupBy")}
+    
+    "order" "by" {OrderElement ","}+ -> OrderByClause {cons("OrderByClause")}
+    
+    Expression AscendingOrDescending? -> OrderElement {cons("OrderElement")}
+    
+   "asc"       -> AscendingOrDescending {cons("Ascending")}
+   "ascending" -> AscendingOrDescending {cons("Ascending")}
+   
+   "desc"      -> AscendingOrDescending {cons("Descending")}
+   "descending" -> AscendingOrDescending {cons("Descending")}
+   
+    "having" Expression -> HavingClause {cons("HavingClause")}
+    
+    "where" Expression -> WhereClause {cons("WhereClause")}
+    
+    {AliasedExpression ","}+ -> SelectedPropertiesList
+    
+    Expression AsAlias? -> AliasedExpression {cons("AliasedExpression")}
+    
+   Expression "or" Expression -> Expression {cons("QueryOr")}
+   
+    Expression "and" Expression -> Expression {cons("QueryAnd")}
+    
+    "not" Expression -> Expression {cons("QueryNot")}
+    
+    Expression "=" Expression -> Expression {cons("EQ")}
+    Expression "is" Expression -> Expression {cons("IS")}
+    Expression "!=" Expression -> Expression {cons("NE")}
+    Expression "<>" Expression -> Expression {cons("SQLNE")}
+    Expression "like" Expression -> Expression {cons("LIKE")}
+    Expression "not" "like" Expression -> Expression {cons("NOTLIKE")}
+
+    Expression "<" Expression -> Expression {cons("LT")}
+    Expression ">" Expression -> Expression {cons("GT")}
+    
+    Expression "in" Expression -> Expression {cons("In")}
+    Expression "not" "in" Expression -> Expression {cons("NotIn")}
+    
+    Expression "member" "of" Expression -> Expression {cons("MemberOf")}
+    Expression "not" "member" "of" Expression -> Expression {cons("NotMemberOf")}
+  
+    Expression "||" Expression -> Expression {cons("Concat")}
+    
+    Expression "+" Expression -> Expression {cons("Plus")}
+    Expression "-" Expression -> Expression {cons("Minus")}
+
+    Expression "*" Expression -> Expression {cons("Multiply")}
+    Expression "/" Expression -> Expression {cons("Divide")}
+    
+    "-" Expression -> Expression {cons("UMinus")}
+    
+   lexical syntax 
+     ":" Identifier -> IdParameter 
+     "?" NumInt     -> NumParameter
+   context-free syntax
+     IdParameter -> Expression {cons("IdParam")}
+     NumParameter -> Expression {cons("NumParam")}
+   
+    "avg" "(" Expression ")" -> Expression {cons("Avg")}
+    "sum" "(" Expression ")" -> Expression {cons("Sum")}
+    "min" "(" Expression ")" -> Expression {cons("Min")}
+    "max" "(" Expression ")" -> Expression {cons("Max")}
+    "count" "(" "*" ")" -> Expression {cons("CountStar")}
+    "count" "(" Expression ")" -> Expression {cons("Count")}
+    
+     "elements" "(" Path ")" -> Expression {cons("Elements")}
+     "indices" "(" Path ")" -> Expression {cons("Indices")}
+                     
+     Path                      -> Expression
+     "(" {Expression ","}+ ")" -> Expression {cons("Paren")}
+     
+    Constant -> Expression
+    
+    "true" -> Constant {cons("True")}
+    "false" -> Constant {cons("False")}
+    "empty" -> Constant {cons("Empty")}
+    "null" -> Constant {cons("Null")}
+
+    "true" -> Identifier {reject}
+    "false" -> Identifier {reject}
+    "empty" -> Identifier {reject}
+    "null"  -> Identifier {reject}
+    
+    {Identifier "."}+ -> Path {cons("Path")} 
+    
+  context-free syntax
+    QuotedString -> Constant {cons("String")}
+    
+  lexical syntax
+    "'" (~[\'] | "\\'")* "'" -> QuotedString
+     
+  lexical syntax
+    [0-9]+ -> NumInt
+  context-free syntax
+    NumInt -> Constant
+  
+context-free priorities
+  {left:
+    Expression "*" Expression -> Expression
+    Expression "/" Expression -> Expression
+  }
+  > {left:
+    Expression "+" Expression -> Expression
+    Expression "-" Expression -> Expression
+  }
+  > {left:
+    Expression "<" Expression -> Expression
+    Expression ">" Expression -> Expression
+    Expression "=" Expression -> Expression
+    Expression "is" Expression -> Expression
+    Expression "!=" Expression -> Expression
+    Expression "<>" Expression -> Expression
+    Expression "like" Expression -> Expression 
+    Expression "not" "like" Expression -> Expression
+    }
+  > {left: Expression "or" Expression -> Expression }
+  > {left: Expression "and" Expression -> Expression}
+
+module MixHQL[Ctx0]
+imports 
+        HQL
+          [ Path                            => Path[[Ctx0]]
+            Constant                        => Constant[[Ctx0]]
+            AliasedExpression               => AliasedExpression[[Ctx0]]
+            SelectedPropertiesList          => SelectedPropertiesList[[Ctx0]]
+            WhereClause                     => WhereClause[[Ctx0]]
+            HavingClause                    => HavingClause[[Ctx0]]
+            AscendingOrDescending           => AscendingOrDescending[[Ctx0]]
+            OrderElement                    => OrderElement[[Ctx0]]
+            OrderByClause                   => OrderByClause[[Ctx0]]
+            GroupByClause                   => GroupByClause[[Ctx0]]
+            PropertyFetch                   => PropertyFetch[[Ctx0]]
+            Alias                           => Alias[[Ctx0]]
+            AsAlias                         => AsAlias[[Ctx0]]
+            InCollectionElementsDeclaration => InCollectionElementsDeclaration[[Ctx0]]
+            InCollectionDeclaration         => InCollectionDeclaration[[Ctx0]]
+            InClassDeclaration              => InClassDeclaration[[Ctx0]]
+            FromClassOrOuterQueryPath       => FromClassOrOuterQueryPath[[Ctx0]]
+            FromRange                       => FromRange[[Ctx0]]
+            WithClause                      => WithClause[[Ctx0]]
+            Fetch                           => Fetch[[Ctx0]]
+            FromJoin                        => FromJoin[[Ctx0]]
+            JoinType                        => JoinType[[Ctx0]]
+            FromRangeJoin                   => FromRangeJoin[[Ctx0]]
+            FromClause                      => FromClause[[Ctx0]]
+            SelectObject                    => SelectObject[[Ctx0]]
+            NewExpression                   => NewExpression[[Ctx0]]
+            Selection                       => Selection[[Ctx0]]
+            Distinct                        => Distinct[[Ctx0]]
+            SelectClause                    => SelectClause[[Ctx0]]
+            SelectFrom                      => SelectFrom[[Ctx0]]
+            QueryRule                       => QueryRule[[Ctx0]]
+            Union                           => Union[[Ctx0]]
+            SelectStatement                 => SelectStatement[[Ctx0]]
+            Statement                       => Statement[[Ctx0]]
+            DeleteStatement                 => DeleteStatement[[Ctx0]]
+            NumInt                          => NumInt[[Ctx0]]
+            QuotedString                    => QuotedString[[Ctx0]]
+            NumParameter                    => NumParameter[[Ctx0]]
+            IdParameter                     => IdParameter[[Ctx0]]
+            Identifier                      => Identifier[[Ctx0]]
+            Expression                      => Expression[[Ctx0]] ]
+
+
+module WebDSL-Action
+
+imports
+  WebDSL-Lexical
+  MixHQL[HQL]
+
+exports
+
+  context-free syntax
+  
+    "function" -> Keyword
+    "return"   -> Keyword
+
+  context-free syntax %% Functions
+
+    "function" Id "(" {FormalArg ","}* ")" ":" Sort
+        Block                                            -> Function {cons("Function")}
+
+    "function" Id "(" {FormalArg ","}* ")" 
+        Block                                            -> FunctionNoReturn {cons("FunctionNoReturn")}
+
+    FunctionNoReturn                                     -> Function
+
+    "extend" FunctionNoReturn                            -> Function {cons("ExtendFunction")}
+
+  context-free syntax
+    "{" Statements "}" 		-> Block {cons("Block")}
+    Block              		-> Statement
+    %%Assignment ";"	   	-> Statement {cons("Assign")}
+    Exp ";"		       	-> Statement {cons("Stat")}
+
+    "return" Exp ";"     	-> Statement {cons("Return")}
+    
+    "return" ";"         	-> Statement {cons("ReturnEmpty")}
+    
+    "cancel" Exp ";"     	-> Statement {cons("Cancel")}
+
+    "goto" Exp ";"       	-> Statement {cons("GoTo"),prefer}
+
+    "schedule" Exp "for" Exp ";" -> Statement {cons("Schedule")}
+    "schedule" Exp ";"           -> Statement {cons("ScheduleNoFor")}
+
+  context-free syntax
+
+    "var" Id ":" Sort ";" 	-> VarDeclStat {cons("VarDecl")}
+    "var" Id ":" Sort 		-> VarDecl {cons("VarDecl")}
+
+    "var" Id ":" Sort ":=" Exp ";" -> VarDeclStat {cons("VarDeclInit")}
+    "var" Id ":=" Exp ";"          -> VarDeclStat {cons("VarDeclInitInferred")}
+    "var" Id ":" Sort ":=" Exp     -> VarDecl {cons("VarDeclInit")}
+    "var" Id ":=" Exp              -> VarDecl {cons("VarDeclInitInferred")}
+
+    VarDeclStat -> Statement
+
+  context-free syntax
+
+    "if" "(" Exp ")" Block "else" Block -> Statement {cons("If")}
+
+    "if" "(" Exp ")" Block 		-> Statement {cons("IfNoElse")}
+
+    "case" "(" Exp ")" "{" Case* "}" 	-> Statement {cons("Case")}
+    ConstValue Block                 	-> Case {cons("CaseAlt")}
+    "default"  Block                 	-> Case {cons("CaseDefault")}
+
+
+  context-free syntax
+
+    "for" "(" Id ":" Sort "in" Exp Filter ")"
+      Block 				-> Statement {cons("ForStmt")}
+
+    "for" "(" Id ":" Sort "in" Exp ")"
+      Block 				-> Statement {cons("ForStmtNoFilter")}
+
+    "for" "(" Id ":" Sort Filter ")"
+      Block 				-> Statement {cons("ForAllStmt")}
+
+    "for" "(" Id ":" Sort ")"
+      Block 				-> Statement {cons("ForAllStmtNoFilter")}
+
+    "for" "(" Id ":" "Int" "from" Exp "to" Exp ")" Block -> Statement {cons("ForCountStmt")}
+
+    "while" "(" Exp ")" Block -> Statement {cons("WhileStmt")}
+
+exports %% Expression language
+
+  sorts ConstValue Exp
+
+  context-free syntax
+    Int                    -> ConstValue {cons("Int")}
+    Long                   -> ConstValue {cons("Long")}
+    Float                  -> ConstValue {cons("Float")}
+    String                 -> ConstValue {cons("String")}
+
+    ConstValue                  -> Exp
+
+    Id			   -> Exp {cons("Var")}
+    "in"                   -> Exp {reject}
+        
+    %% to be able to refer to page or template farg/var from actions when names clashing with farg/var in action
+    "externalscope" "." Id -> Exp {cons("ExternalScopeVar")}
+
+    Exp "." Id             -> Exp {cons("FieldAccess"),prefer}
+    
+    Exp "[" Exp "]"        -> Exp {cons("CollectionIndex"),prefer}
+
+    Sort "{" ObjectPropertyAssignment* "}"         -> Exp {cons("ObjectCreation")}
+    Sort "{" { ObjectPropertyAssignment "," }* "}" -> Exp {cons("ObjectCreation"), prefer}
+
+    Id ":=" Exp           -> ObjectPropertyAssignment {cons("ObjectPropertyAssignment")}
+
+    QId ":=" Exp             -> Assignment {cons("Assignment")}
+    Exp "[" Exp "]" ":=" Exp -> Assignment {cons("CollectionIndexAssignment")}
+    Assignment				-> Exp
+
+    "[" Mapping* "]"       -> Exp {cons("MapCreation"), avoid} %%avoid to prevent ambiguity between with empty untyped list creation and empty map creation
+    Exp "->" Exp           -> Mapping {cons("Mapping")}
+
+    "[" {Exp ","}* "]"     -> Exp {cons("ListCreation")}
+
+    "{" {Exp ","}* "}"     -> Exp {cons("SetCreation")}
+
+    "List" "<" Sort ">" "(" {Exp ","}* ")" -> Exp {cons("TypedListCreation"), prefer}
+    "Set" "<" Sort ">" "(" {Exp ","}* ")" -> Exp {cons("TypedSetCreation"), prefer}
+
+    Id "(" {Exp ","}* ")"  -> Exp {cons("ThisCall")}
+    "!" "(" {Exp ","}* ")"  -> Exp {reject}
+
+    Exp "." Id "(" {Exp ","}* ")"  -> Exp {cons("Call")}
+
+    Exp "is" "a" Sort      -> Exp {cons("IsA")}
+    Exp "as" Sort          -> Exp {cons("Cast"), avoid} %% avoid, to give hql query AsAlias more priority, 'from Page as p' should make the 'as p' part of the query
+    "as"   -> Keyword
+  
+  context-free restrictions
+    "as" -/- [a-zA-Z0-9\_] %% prevent ambiguity between as and asc (used in for-filters)
+ 
+  context-free syntax
+    Exp "in" Exp           -> Exp {non-assoc, cons("InColl")}
+
+    Exp "==" Exp           -> Exp {cons("Eq")}
+    Exp "!=" Exp           -> Exp {cons("NotEq")}
+    Exp ">" Exp           -> Exp {cons("LargerThan")}
+    Exp ">=" Exp           -> Exp {cons("LargerThanOrEqual")}
+    Exp "<" Exp           -> Exp {cons("SmallerThan")}
+    Exp "<=" Exp           -> Exp {cons("SmallerThanOrEqual")}
+
+    "true"                 -> Exp {prefer,cons("True")}
+    "false"                -> Exp {prefer,cons("False")}
+
+    "null"                 -> Exp {prefer,cons("Null")}
+
+    Exp "&&" Exp          -> Exp {cons("And"), assoc}
+    Exp "||" Exp           -> Exp {cons("Or"), assoc}
+    "!" Exp              -> Exp {cons("Not")}
+
+    "(" Exp ")"            -> Exp {bracket}
+
+
+    "[" Exp "for" "(" Id ":" Sort "in" Exp Filter ")" "]" -> ForExp {cons("ForExp")}
+    "[" Exp "for" "(" Id ":" Sort "in" Exp ")" "]"        -> ForExp {cons("ForExpNoFilter")}
+    "[" Exp "|" Id ":" Sort "in" Exp Filter "]"           -> ForExp {cons("ForExp")}
+    "[" Exp "|" Id ":" Sort "in" Exp "]"                  -> ForExp {cons("ForExpNoFilter")}
+    ForExp                                                -> Exp
+
+    "And" ForExp                                          -> Exp {cons("AndForExp")}
+    "Or"  ForExp                                          -> Exp {cons("OrForExp")}
+
+
+    Exp "*" Exp  -> Exp {cons("Mul"),assoc}
+    Exp "/" Exp  -> Exp {cons("Div"),assoc}
+    Exp "%" Exp  -> Exp {cons("Mod"),assoc}
+    Exp "+" Exp  -> Exp {cons("Add"),assoc}
+    Exp "-" Exp  -> Exp {cons("Sub"),assoc}
+
+context-free priorities
+  {left:
+    Exp "." Id "(" {Exp ","}* ")"  -> Exp
+    Exp "." Id  -> Exp
+    Exp "[" Exp "]"  -> Exp }
+  > {non-assoc: 
+       Exp "is" "a" Sort -> Exp 
+       Exp "as" Sort     -> Exp
+    }
+  > "!" Exp -> Exp
+  > {left:
+       Exp "*" Exp -> Exp
+       Exp "%" Exp -> Exp
+       Exp "/" Exp -> Exp }
+  > {left:
+       Exp "+" Exp -> Exp
+       Exp "-" Exp -> Exp }
+  > Exp "in" Exp -> Exp
+  > {left:
+       Exp "==" Exp -> Exp
+       Exp "!=" Exp -> Exp
+       Exp ">" Exp -> Exp
+       Exp ">=" Exp -> Exp
+       Exp "<" Exp -> Exp
+       Exp "<=" Exp -> Exp }
+  > {left:
+       Exp "&&" Exp -> Exp }
+  > {left:
+       Exp "||" Exp -> Exp }
+  > Assignment -> Exp
+  > HqlExp -> Exp
+
+
+exports
+
+  context-free syntax
+
+    QueryRule[[HQL]]                     -> HqlExp {cons("HqlQuery")}
+    QueryRule[[HQL]] "limit" Exp         -> HqlExp {cons("HqlQueryLimit")}
+    QueryRule[[HQL]] "limit" Exp "," Exp -> HqlExp {cons("HqlQueryLimitOffset")}
+
+    HqlExp -> Exp
+
+    "~" Exp -> Expression[[HQL]] {cons("DslExp")}
+
+    DeleteStatement[[HQL]] ";" -> Statement {cons("HqlStatement")}
+
+  context-free syntax
+
+    QueryRule[[HQL]] "." Id -> Exp {reject}
+
+module WebDSL-Ajax
+
+exports
+
+  sorts Statement Exp InlineTemplate AjaxStatement
+  context-free syntax
+
+    "event" "(" Id "," "[" { EventArg "," }* "]" ")" -> Exp {cons("EventCall")}
+    "event" "(" Id "," "[" { EventArg "," }* "]" ")" -> TemplateElement {cons("EventCallElement")}
+
+    Id ":=" Exp -> EventArg {cons("EventArg")}
+    "event" -> Id {reject}
+
+    %%AJAX desugarings/ inline
+    "action" Block -> Exp {cons("InlineAction"), prefer}
+    %% reject ambiguous ObjectCreation(SimpleSort("action"), [])
+    "action" -> Sort {reject}
+    
+    "template" "{" TemplateElement* "}" -> InlineTemplate {cons("InlineTemplateCall")}    
+%%    "template"               -> Id {reject}
+   
+    %% Template call without braces must be disambiguated in some cases
+    "action" -> TemplateCall {reject}  %%this is an action definiton, not a templatecall without params
+    "action" -> Exp {reject}		   %%this is an inline action, not a variable
+    "action" -> PropertyValue {reject} %%this is an inline action, not an id
+  
+  
+%%  	replace <element_id> << <templatecall>(<argumenten>);
+%%	append  <element_id> << <templatecall>(<argumenten>);
+%%	visibility <element_id> << < "show" | "hide" | "toggle">;
+%%	relocate this << <pagecall>(<argumenten>);
+%%	restyle <element_id> << "<css classname>";
+%%	clear <element_id> << "<niet terzake doende string>"
+
+  AjaxStatement ";" -> Statement {cons("AjaxStatement"), prefer}   
+    "replace" "(" Id "," TemplateCall ")" -> AjaxStatement {cons("AjaxReplace")}
+    "replace" "(" Id "," InlineTemplate ")" -> AjaxStatement {cons("AjaxReplace"), prefer}  	
+
+    "append" "(" Id "," TemplateCall ")" -> AjaxStatement {cons("AjaxAppend")}
+    "append" "(" Id "," InlineTemplate ")" -> AjaxStatement {cons("AjaxAppend"), prefer}  	
+
+    "visibility" "(" Id "," AjaxVisibility ")" -> AjaxStatement {cons("AjaxVisibility")}
+    "show" -> AjaxVisibility{cons("Show")}
+    "toggle" -> AjaxVisibility{cons("Toggle")}
+    "hide" -> AjaxVisibility{cons("Hide")}        
+    
+    "relocate" "(" Exp ")" -> AjaxStatement { cons("AjaxRelocate") }
+    "restyle" "(" Id "," Exp ")" -> AjaxStatement { cons("AjaxRestyle") }
+    
+    "clear" "(" Id ")" -> AjaxStatement{cons("AjaxClear")}
+    "refresh" "(" ")" -> AjaxStatement{cons("AjaxRefresh")}
+    
+    "runscript" "(" Exp ")" -> AjaxStatement { cons("AjaxRunScript"), prefer }
+    
+%%    Id Id "<<" Id  ";" 	 -> Statement {cons("AjaxActionIdParam"),prefer}
+%%    Id Id "<<" ";"		-> Statement {cons("AjaxActionNoParam")}
+%%    Id "<<" Exp ";"	 	-> Statement {cons("AjaxActionNoTarget")}
+%%    Id Id "<<" Exp ";"   	-> Statement {cons("AjaxAction")}
+  
+    "placeholder" Id "{" TemplateElement* "}" -> TemplateElement{cons("Placeholder")}
+    "placeholder" -> Keyword
+
+
+module WebDSL-UI
+
+imports
+  WebDSL-Action
+  WebDSL-Lexical
+
+exports
+
+  sorts TemplateDefinition Modifier Exp
+
+  context-free syntax
+    
+    "define" -> Keyword
+  %%"action" -> Keyword
+    "for"    -> Keyword
+
+  context-free syntax
+
+    TemplateDefinition -> Definition
+
+    "define" Modifier*
+       Id "(" {FormalArg ","}* ")"
+%%       ( "requires" {TemplateArg "," }* )?
+       TemplateArgs
+       "{" TemplateElement* "}"             -> TemplateDefinition {cons("Define")}
+
+    "requires" {TemplateArg "," }*			-> TemplateArgs{cons("TemplateArgs"), prefer}
+    Id "(" {Sort ","}* ")"                  -> TemplateArg {cons("TemplateArg")}
+    
+      -> TemplateArgs{cons("None")}
+
+    %%"define" Modifier*
+    %%   Id UNDEFINED*
+    %%   "{" TemplateElement* "}"             -> TemplateDefinition {cons("Define")}
+
+    "page"                                  -> Modifier {cons("Page")}
+    "email"                                 -> Modifier {cons("Email")}
+    "template"                              -> Modifier {cons("Template")}
+    "feed"                                  -> Modifier {cons("Feed")}
+    "local"                                 -> Modifier {cons("Local")}
+    "no-span" 								-> Modifier {cons("NoSpan")}    
+    "inputtemplate"									-> Modifier {cons("InputTemplate"), prefer} 
+    %%defines input template, in which case the first argument is an input variable
+
+    InitAction                              -> TemplateElement
+    Action                                  -> TemplateElement
+    VarDecl                                 -> TemplateElement
+    %% still allow ";" behind page var for backwards comp., remove VarDeclStat-> TemplateElement to disallow
+    VarDeclStat                             -> TemplateElement
+    TemplateDefinition                      -> TemplateElement
+    TemplateCall                            -> TemplateElement {avoid}
+    String                                  -> TemplateElement {cons("Text")}
+
+
+    "where" Exp                              -> Filter {cons("FilterNoOrderByNoLimit")}
+    "order" "by" OrderExp                    -> Filter {cons("FilterNoWhereNoLimit")}
+    "where" Exp "order" "by" OrderExp        -> Filter {cons("FilterNoLimit")}
+    "where" Exp Limit                        -> Filter {cons("FilterNoOrderBy")}
+    "order" "by" OrderExp Limit              -> Filter {cons("FilterNoWhere")}
+    Limit                                    -> Filter {cons("FilterNoWhereNoOrderBy")}
+    "where" Exp "order" "by" OrderExp Limit  -> Filter {cons("Filter")}
+    Exp                                      -> OrderExp {cons("OrderNonSpecific")}
+    Exp "asc"                                -> OrderExp {cons("OrderAscending")}
+    Exp "desc"                               -> OrderExp {cons("OrderDescending")}
+    "limit" Exp "offset" Exp                 -> Limit {cons("Limit")}
+    "limit" Exp                              -> Limit {cons("LimitNoOffset")}
+    "offset" Exp                             -> Limit {cons("LimitNoLimit")}
+
+
+    "for" "(" Id ":" Sort "in" Exp Filter ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("For")}
+    
+    %% Reject
+   %%"for" "(" Id ":" Sort "in" HqlExp Filter ")" "{" TemplateElement* "}" -> TemplateElement {reject}
+    
+    "for" "(" Id ":" Sort "in" Exp ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("ForNoFilter"), prefer}
+
+    "for" "(" Id ":" Sort Filter ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("ForAll")}
+
+    "for" "(" Id ":" Sort ")"
+       "{" TemplateElement* "}" ForSeparator       -> TemplateElement {cons("ForAllNoFilter")}
+    
+    "for" "(" Id ":" "Int" "from" Exp "to" Exp ")" 
+      "{" TemplateElement* "}" ForSeparator        -> TemplateElement {cons("ForCount")}
+    
+    "separated-by" "{" TemplateElement* "}" -> ForSeparator{cons("ForSeparator")}
+    -> ForSeparator{cons("None")}
+
+    %%
+
+    "select" "(" Id ":" Sort "," String "," Exp ")" -> TemplateElement {cons("SelectNoPropsNoElems")}
+    "select" "(" Id ":" Sort "," String "," Exp ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("SelectNoElems")}
+    "select" "(" Id ":" Sort "," String "," Exp ")" "[" {PropertyAssignment ","}* "]" "{" TemplateElement* "}" -> TemplateElement {cons("Select")}
+    "select" "(" Id ":" Sort "," String "," Exp ")" "{" TemplateElement* "}" -> TemplateElement {cons("SelectNoProps")}
+    
+    "select" "(" Exp "from" Exp ")" -> TemplateElement {cons("SelectFromListNoPropsNoElems")}
+    "select" "(" Exp "from" Exp ")" "[" {PropertyAssignment ","}* "]" -> TemplateElement {cons("SelectFromListNoElems")}
+    "select" "(" Exp "from" Exp ")" "[" {PropertyAssignment ","}* "]" "{" TemplateElement* "}" -> TemplateElement {cons("SelectFromList")}
+    "select" "(" Exp "from" Exp ")" "{" TemplateElement* "}" -> TemplateElement {cons("SelectFromListNoProps")}
+
+    "if" "(" Exp ")" "{" TemplateElement* "}" "else" "{" TemplateElement* "}" -> TemplateElement {cons("IfTempl"),prefer}
+    "if" "(" Exp ")" "{" TemplateElement* "}"                                 -> TemplateElement {cons("IfNoElseTempl")}
+
+
+    "if" "(" Exp ")" "{" TemplateElement* "}" ElseIfTempl+ ElseTempl? -> TemplateElement {cons("IfElseIfTempl"),prefer}
+    "else" "if" "(" Exp ")" "{" TemplateElement* "}"                  -> ElseIfTempl {cons("ElseIfTempl"),prefer}
+    "else" "{" TemplateElement* "}"                                   -> ElseTempl  {cons("ElseTempl"),prefer}
+
+
+    "case" "(" {Exp ","}* ")" "{" TemplateCaseAlt* "}" 	-> TemplateElement {cons("TemplateCase")}
+    {ConstValue ","}* "{" TemplateElement* "}"          -> TemplateCaseAlt {cons("TemplateCaseAlt")}
+    "default"  "{" TemplateElement* "}"                 -> TemplateCaseAlt {cons("TemplateCaseAltDefault")}
+
+  %%
+
+    Id                                             -> TemplateCall {cons("TemplateCallNoArgs")}
+    Id "(" {Exp ","}* ")"                          -> TemplateCall {cons("TemplateCallNoBody")}
+    Id "(" {Exp ","}* ")" TemplateBody -> TemplateCall {cons("TemplateCallNoAssigns")}
+  
+    Id "(" {Exp ","}* ")" "[" {PropertyAssignment ","}*"]" -> TemplateCall {cons("TemplateCallPropsNoBody")}
+    Id "[" {PropertyAssignment ","}*"]" -> TemplateCall {cons("TemplateCallProps")}
+    Id "[" {PropertyAssignment ","}*"]" TemplateBody -> TemplateCall {cons("TemplateCallPropsNoArgs")}
+
+    Id  TemplateBody -> TemplateCall {cons("TemplateCallBody")}
+    Id "(" {Exp ","}* ")" "[" {PropertyAssignment ","}*"]" TemplateBody -> TemplateCall {cons("TemplateCall")}
+    
+    "{" TemplateElement* "}" -> TemplateBody {cons("TemplateBody")}
+    "with" "{" ArgDefine* "}" -> TemplateBody {cons("TemplateWith")}
+    Id "(" {FormalArg ","}* ")"
+      "{" TemplateElement* "}" -> ArgDefine {cons("ArgDefine")}
+
+  "with" "{" TemplateElement* "}"                -> TemplateCall {reject}
+  %%
+    
+    Id ":=" PropertyValue				           -> PropertyAssignment {cons("PropertyAssignment")}
+    Id											   -> PropertyValue {prefer}
+    String										   -> PropertyValue {cons("String"),prefer}  %% needed to deconfuse StyleValue and Exp
+    Exp								        	   -> PropertyValue 
+    "[" {PropertyValue "," }* "]"				   -> PropertyValue{cons("PropertyValueList"), prefer}
+    StyleValue									   -> PropertyValue
+  %%
+    
+    "if" "(" Exp ")" "{" TemplateElement* "}"      -> TemplateCall {reject}
+    "else" "{" TemplateElement* "}"                -> TemplateCall {reject}
+    "separated-by" "{" TemplateElement* "}"        -> TemplateCall {reject}
+
+    "init" Block  		-> InitAction {cons("InitAction"),prefer}
+    "action" 
+      Id "(" {FormalArg ","}* ")" 
+      Block  			-> Action {cons("Action")}
+
+  context-free syntax
+
+
+
+module WebDSL-Lexical
+
+exports
+
+  lexical syntax
+    [a-zA-Z][a-zA-Z0-9\_]* -> Id
+    [a-zA-Z0-9\-\_]+       -> FileName
+    {FileName "/"}+        -> ModuleName
+    ~[\n\r]*               -> SectionName
+
+  lexical restrictions
+    Id         -/- [a-zA-Z0-9\_]
+    ModuleName -/- [a-zA-Z0-9\/]
+
+  lexical syntax
+    "-"? [0-9]+            -> Int
+    "-"? [0-9]+ "L"        -> Long
+
+  lexical syntax
+    "-"? FloatDigits
+     ExponentPart? [fFdD]? -> Float
+    [0-9]* "." [0-9]*      -> FloatDigits
+    [0-9]+                 -> FloatDigits
+    [eE] SignedInteger     -> ExponentPart
+    [\+\-]? [0-9]+         -> SignedInteger
+
+    "-"? [0-9]+            -> Float {reject}
+    "."                    -> FloatDigits  {reject}
+
+  lexical syntax
+    "\"" StringChar* "\""        -> String
+    ~[\"\n]                      -> StringChar
+    "\\\""                       -> StringChar
+
+  lexical syntax
+    [\ \t\n\r]                   -> LAYOUT
+    "//" ~[\n\r]* ([\n\r] | Eof) -> LAYOUT
+    "/*" CommentChar* "*/"       -> LAYOUT
+                                 -> Eof
+    ~[\*]                        -> CommentChar
+    Asterisk                     -> CommentChar
+    [\*]                         -> Asterisk
+
+  lexical restrictions
+    Asterisk   -/- [\/]
+    Eof        -/- ~[]
+
+  context-free restrictions
+    LAYOUT?     -/- [\ \t\n\r]
+    LAYOUT?     -/- [\/].[\/]
+    LAYOUT?     -/- [\/].[\*]
+    SectionName -/- ~[\n\r]
+
+  lexical syntax
+    ~[\ \t\n\r\}]+ -> Word
+  lexical restrictions
+     Word -/- ~[\ \t\n\r\}]
+
+  context-free restrictions
+    "page" "local" "email" "feed" "template" "schedule" "inputtemplate" -/- [a-zA-Z0-9]
+
+module WebDSL
+
+imports
+  WebDSL-Lexical
+  WebDSL-UI
+  WebDSL-Ajax
+  WebDSL-Action
+  WebDSL-DataModel
+  WebDSL-DataValidation
+  WebDSL-AccessControl
+  WebDSL-XML
+  WebDSL-JavaScript
+  WebDSL-Regex
+  WebDSL-Enums
+  WebDSL-Styling
+  WebDSL-PagedFor
+  WebDSL-Derive
+  WebDSL-Procedures
+  WebDSL-StringSelectEntity
+  WebDSL-ValidationAnnos
+  WebDSL-Native
+  WebDSL-Dispatch
+  WebDSL-Exception
+  WebDSL-Type
+  WebDSL-Test
+
+hiddens
+  context-free start-symbols
+    Unit
+
+exports
+
+  sorts
+    Id QId Int ModuleName SectionHeader Float FloatDigits ExponentPart
+    SignedInteger String UNDEFINED Eof
+
+
+  context-free syntax
+    Id         -> QId
+    QId "." Id -> QId {cons("Qualified")}
+    Keyword    -> Id {reject} %% (not rejected as HQL or styling keyword)
+
+  context-free syntax %% Types
+    Id                     -> Sort {cons("SimpleSort")}
+    Id "<" {Sort ","}+ ">" -> Sort {cons("GenericSort")}
+
+    Id ":" Sort            -> FormalArg {cons("Arg")}
+
+
+exports
+
+  sorts Application Module Unit
+  
+  syntax
+
+    "section" <SectionName-CF> <LAYOUT?-CF> <Definition*-CF> -> <Section-CF> {cons("Section")}
+
+  context-free syntax
+
+    "application" QId Definition+ Section* -> Application {cons("ApplicationDefs")}
+    "application" QId Section*      -> Application {cons("Application")}
+
+    "description" "{" Word* "}"     -> Description {cons("Description")}
+
+    "note" "{" Word* "}"            -> Description {cons("Note")}
+
+    Description                   -> Definition
+    %%Description                   -> Definition {prefer}
+
+    "module" ModuleName Section*  -> Module {cons("Module")}
+    "module" ModuleName Definition+ Section*  -> Module {cons("ModuleDefs")}
+
+    "imports" ModuleName          -> Definition {cons("Imports")}
+    
+    Application                   -> Unit
+    Module                        -> Unit
+
+exports
+
+  sorts Action Statements Statement Exp
+
+  context-free syntax
+
+    Action		       	        -> Definition
+    Statement*		   	        -> Statements
+    NativeFunctionDeclaration   -> Definition
+    NativeClassDeclaration      -> Definition
+
