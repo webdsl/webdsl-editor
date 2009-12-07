@@ -306,14 +306,14 @@
 	         </apply>
 	     </target>
 	     
-	     <target name="clean" description="clean up">
-	       <delete>
-	     	   <fileset dir=".">
-	    			<include name="editor/*.generated.esv"/>
-	    			<include name="${build}/**/*"/>
-	    			<include name="utils/**/*"/>
-	    			<include name="editor/java/**/*"/>
-	    		</fileset>
-	    	</delete>
-	    </target>
-	 </project>
+		<target name="clean" description="clean up">
+			<delete dir="utils"/>
+			<delete dir="${build}"/>
+			<delete>
+				<fileset dir=".">
+					<include name="editor/*.generated.esv"/>
+					<include name="editor/java/**/*"/>
+				</fileset>
+			</delete>
+		</target>
+</project>
