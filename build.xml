@@ -307,7 +307,15 @@
 	     </target>
 	     
 	     <target name="clean" description="clean up">
-	         <delete dir="${build}"/>
-	         <delete file="${src-gen}/trans/Main.java"/>
+	        <echoproperties/>
+	     	<delete>
+	     		<fileset dir="${user.dir}">
+	     			<include name="**/*.generated.esv"/>
+	     			<include name="${build}/*"/>
+	     			<include name="utils/*"/>
+	     			<include name="editor/java/*"/>
+	     			<include name="${src-gen}/trans/Main.java"/>
+	     		</fileset>
+	     	</delete>
 	     </target>
 	 </project>
