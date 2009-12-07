@@ -4,13 +4,11 @@ imports
   libstratego-lib
   libstratego-gpp
   libstratego-aterm
-  optimizeWebDSL
-
+  deriveTransformation
+  
 rules
   
-  optimize-webdsl-transformation :
-    (selected, position, ast, path, project-path) -> ("optimization.bla", optimized)
+  editor-detect-transformation :
+    (selected, position, ast, path, project-path) -> ("optimization.bla", <length> trafo)
    	with
-      cleanModel := <cleanupDeadCode> selected;
-      indexOptimizations := <findIndexOptimization> cleanModel;
-      optimized := <applyOptimizations(|indexOptimizations)> cleanModel
+      trafo := <deriveTransformation> (ast,ast)

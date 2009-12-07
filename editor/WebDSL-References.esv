@@ -2,4 +2,4 @@ module WebDSL-References
   
 references
   
-  reference _ : reference-resolve reference-info                             
+  //reference _ : reference-resolve reference-info                             
