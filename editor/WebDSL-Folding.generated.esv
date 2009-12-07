@@ -86,7 +86,7 @@ folding Default folding definitions
   StyleDefinition.StyleDefinition
   Selector.Selector
   MatchDefinition.MatchDefinition
-  ListStarOfFormalArg0
+  ListStarOfFormalArg1
   SimpleSelector.ElemSimpleAttrSelector
   SimpleSelector.ElemClassAttrSelector
   Section.LayoutSection
