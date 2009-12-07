@@ -15,8 +15,9 @@ language Files and parsing
   start symbols : UnitCollection
 
 builders External service provider resources
-  provider : include/acoda/optimizeWebdsl.ctree                                                           
-  builder  : "Optimize"                         = optimize-webdsl-transformation (openeditor) (realtime)  
+  provider : lib/acoda.jar                                                                            
+  provider : trans/editor-transformations.str                                                         
+  builder  : "Derive Transformation"          = editor-detect-transformation (openeditor) (realtime)  
 
 colorer
   Section              : _ bold italic   
@@ -135,7 +136,7 @@ folding Default folding definitions
   StyleDefinition.StyleDefinition
   Selector.Selector
   MatchDefinition.MatchDefinition
-  ListStarOfFormalArg0
+  ListStarOfFormalArg3
   SimpleSelector.ElemSimpleAttrSelector
   SimpleSelector.ElemClassAttrSelector
   Section.LayoutSection
@@ -155,9 +156,6 @@ outliner Hand-tailored WebDSL outliner
   _.FunctionNoReturn
   _.Function
   _.Define
-
-references
-  reference _ : reference-resolve reference-info
 
 language Syntax properties (static defaults)
   line comment  : "//"
