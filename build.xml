@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<project name="WebDSL" default="all">
+<project name="WebDSL Editor" default="all">
     
         <!-- Key input modules -->
         <property name="sdfmodule" value="WebDSL"/>
