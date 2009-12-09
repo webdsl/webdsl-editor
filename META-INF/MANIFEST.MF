@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: WebDSL Plug-in
-Bundle-SymbolicName: org.webdsl.editor; singleton:=true
+Bundle-SymbolicName: org.webdsl.editor__acoda_branch_;singleton:=true
 Bundle-Version: 1.0.0
 Bundle-Activator: org.webdsl.editor.Activator
 Import-Package: org.osgi.framework;version="1.3.0"
