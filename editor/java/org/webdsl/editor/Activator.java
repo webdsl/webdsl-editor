@@ -35,7 +35,7 @@ public class Activator extends PluginBase
     return kPluginID;
   }
 
-  public String getLanguageID()
+  @Override public String getLanguageID()
   { 
     return kLanguageName;
   }
