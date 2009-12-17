@@ -61,7 +61,7 @@
    <mkdir dir="${include}"/>
    <mkdir dir="${lib}"/>
 
-   <target name="all" depends="stratego.ctree,sdf2table,sdf2imp"/>
+   <target name="all" depends="sdf2rtg,stratego.ctree,sdf2table,sdf2imp"/>
 
    <target name="sdf2imp" depends="sdf2table,sdf2imp.eclipse,sdf2imp.standalone"/>
    
@@ -175,7 +175,7 @@
        </java>
    </target>
    
-   <target name="sdf2rtg" if="build.stratego.enabled" depends="pack-sdf,copy-sdf">
+   <target name="sdf2rtg" depends="pack-sdf,copy-sdf">
        <dependset>
            <srcfileset file="${include}/${sdfmodule}.def"/>
            <targetfileset file="${include}/${sdfmodule}.rtg"/>
