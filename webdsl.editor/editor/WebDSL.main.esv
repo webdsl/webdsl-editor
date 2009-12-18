@@ -1,0 +1,16 @@
+module WebDSL.main
+
+imports WebDSL-Builders WebDSL-Colorer WebDSL-Folding WebDSL-Outliner WebDSL-References WebDSL-Syntax
+
+language General properties
+                  
+  name          : WebDSL
+  id            : webdsl
+  extends       : Root
+                  
+  description   : "Spoofax/IMP-generated editor for the WebDSL language"
+  url           : http://strategoxt.org
+                  
+  extensions    : app
+  table         : include/WebDSL.tbl
+  start symbols : Unit

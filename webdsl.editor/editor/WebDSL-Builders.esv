@@ -1,0 +1,18 @@
+
+module WebDSL-Builders
+
+imports WebDSL-Builders.generated
+
+builders
+                                                                                                                                          
+  // This file can be used for custom analysis and builder rules.                                                                         
+  // See the imported file for a brief introduction and examples.                                                                         
+  /*                                                                                                                                        
+  provider                                                        : include/webdsl.ctree                                                  
+  observer                                                        : editor-analyze                                                        
+  builder                                                         : "Generate Java code" = generate-java (openeditor) (realtime)          
+  builder                                                         : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)  
+  */
+  observer : editor-analyze
+  provider : include/webdsl.ctree
+  provider : include/webdsl.jar

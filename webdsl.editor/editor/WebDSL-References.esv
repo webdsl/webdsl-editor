@@ -1,0 +1,13 @@
+
+module WebDSL-References
+
+imports WebDSL-References.generated
+
+references
+                                                                    
+  // This file can be used for custom reference resolving,          
+  // hover help, occurrence highlighting rules.                     
+  // See the imported file for a brief introduction and examples.   
+                                                                    
+  reference _                                                     : editor-resolve
+  hover _                                                         : editor-hover
