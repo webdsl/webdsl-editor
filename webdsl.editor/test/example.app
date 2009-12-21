@@ -1,9 +1,16 @@
 application foo
 
   entity Bla{
-    jsdkjf :: Bool
-    sdfsdf :: String
+    prop :: Bool
+    sdfsdf :: String := this.prop.toString()
+    fdfs -> Bla
+
+    
+  }
+
+  define page root(){
+  
 
   }
 
-  define page root(){}
+  define fsdsdf(){}
