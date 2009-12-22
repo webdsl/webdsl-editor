@@ -16,31 +16,35 @@ strategies // editor service interface
  
   editor-analyze:
     (ast, path, projectpath) -> results
-    with
-      try(dr-scope-all-end);
-      dr-scope-all-start
-    with
+    where 
       <set-verbosity> 3;
       set-default-config;
       <chdir> projectpath;
       <chdir> <dirname> path;
       //<try(mkdir)> ".ignoreme";
-      
       debug(!"START");
-      
       //rules ( DirName := <getcwd> ); //:= evaluated here!!!!
       <file-exists <+ mkdir> ".ignoreme";
       ignoremedir := <concat-strings> [<getcwd>, "/.ignoreme"];
       //getcwd;debug(!"CURRENTDIR");
-      <debug(!"MAIN FILE: ")> <get-main-file-name <+ !"?">;
-      mainfile := FILE(<conc-strings> ("../",<get-main-file-name>));
-      <set-appname> FILE(<conc-strings> ("../",<get-main-file-name>));
+      main-file-name := <conc-strings> ("../",<get-main-file-name>);
+      debug(!"MAIN FILE: ");
+      mainfile := FILE(main-file-name);
       <chdir> ignoremedir;
       getcwd;debug(!"CURRENTDIR");
+      not(<eq> (<modification-time;debug(!"modification time file")> main-file-name, <OldModificationTime;debug(!"modification time DR  ")>))
+    ; rules(OldModificationTime := <modification-time> main-file-name)
+    ; OldModificationTime;debug(!"new value of modification time DR") 
+    with
+      try(dr-scope-all-end);
+      dr-scope-all-start
+    with
+      getcwd;debug(!"CURRENTDIR");  
+      <set-appname> mainfile;
+      !main-file-name;
       results := <//try(avoid-modules); 
         debug(!"before parse"); xtc-parse-webdsl;debug(!"after parse"); //parse initial file 
         webdsl-collect-all-errors; debug(!"collected errors: ")> mainfile;
-
       <analyze-definitions> ast
   /*
   avoid-modules:
