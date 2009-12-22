@@ -32,20 +32,24 @@ strategies // editor service interface
       mainfile := FILE(main-file-name);
       <chdir> ignoremedir;
       getcwd;debug(!"CURRENTDIR");
-      not(<eq> (<modification-time;debug(!"modification time file")> main-file-name, <OldModificationTime;debug(!"modification time DR  ")>))
-    ; rules(OldModificationTime := <modification-time> main-file-name)
-    ; OldModificationTime;debug(!"new value of modification time DR") 
-    with
-      try(dr-scope-all-end);
-      dr-scope-all-start
-    with
-      getcwd;debug(!"CURRENTDIR");  
-      <set-appname> mainfile;
-      !main-file-name;
-      results := <//try(avoid-modules); 
-        debug(!"before parse"); xtc-parse-webdsl;debug(!"after parse"); //parse initial file 
-        webdsl-collect-all-errors; debug(!"collected errors: ")> mainfile;
-      <analyze-definitions> ast
+      if not(<eq> (<modification-time;debug(!"modification time file")> main-file-name, <OldModificationTime;debug(!"modification time DR  ")>))
+      then 
+        with(
+          try(dr-scope-all-end)
+        ; rules(OldModificationTime := <modification-time> main-file-name)
+        ; OldModificationTime;debug(!"new value of modification time DR") 
+        ; dr-scope-all-start
+       
+        ; getcwd;debug(!"CURRENTDIR");  
+          <set-appname> mainfile;
+          !main-file-name;
+          results := <//try(avoid-modules); 
+            debug(!"before parse"); xtc-parse-webdsl;debug(!"after parse"); //parse initial file 
+            webdsl-collect-all-errors; debug(!"collected errors: ")> mainfile;
+          <analyze-definitions> ast
+        )
+      else results := ([],[],[])
+      end
   /*
   avoid-modules:
     Module(x, y) -> Application(x, y)
