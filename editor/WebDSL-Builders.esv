@@ -13,7 +13,6 @@ builders External service provider resources
 
 	provider	: lib/acoda.jar
 
-	builder		: "Set detection input"		= editor-set-transformation-input
 	builder		: "Derive Transformation"	= editor-detect-transformation (openeditor) (realtime)
 	builder		: "Derive M3"				= editor-wdldm2m3 (openeditor) (realtime)
 	builder		: "Derive Schema"			= editor-wdl2schema (openeditor) (realtime)
