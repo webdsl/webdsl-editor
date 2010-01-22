@@ -93,7 +93,7 @@ strategies // helpers
       <read-text-file> filename;
       get-lines;
       debug(!"lines: ");
-      getfirst(string-starts-with(|"export APPNAME="));
+      (getfirst(string-starts-with(|"export APPNAME=")) <+ getfirst(string-starts-with(|"appname=")));
       debug(!"appname: ");
       <split-after> (<id>, "=");
       ?(_, appname)

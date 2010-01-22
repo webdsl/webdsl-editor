@@ -1,0 +1,12 @@
+module invoke-webdsl-script
+
+imports
+  libstratego-lib
+
+strategies
+
+  main = build-webdsl
+
+  build-webdsl = debug(!"**** overwrite the build-webdsl strategy ****");fail
+
+      

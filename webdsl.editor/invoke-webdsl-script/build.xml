@@ -1,0 +1,72 @@
+<project name="invoke-webdsl-script" basedir="." default="include">
+ 
+  
+  <!-- set global properties for this build -->
+  <property name="version" value=""/>
+  <property name="src" location="src"/>
+  <property name="build" location="bin"/>
+  <property name="dist" location="bin/dist"/>
+  <property name="jarfile" location="invoke-webdsl-script.jar"/>
+  <property name="stratego-bin-loc" value="${user.home}/.nix-profile/bin"/>
+  <property name="stratego-share-loc" value="${user.home}/.nix-profile/share"/>
+  <property name="strj" value="${stratego-bin-loc}/strj"/>
+  <property name="strj-include-location" location="${stratego-share-loc}/strc-java"/>
+  
+  
+  <target name="jar" depends="strc-java">
+    <jar destfile="${jarfile}">
+      <fileset dir="${dist}">
+        <include name="**/*.class"/>
+      </fileset>
+    </jar>
+  </target>	
+  
+  
+  <target name="make-dirs">
+    <mkdir dir="${build}"/>
+    <mkdir dir="${dist}"/>
+  </target>
+  
+  
+  <target name="strc-java" depends="clean, make-dirs">
+    <property name="strj-args" value="-i ${src}/invoke-webdsl-script.str -la stratego-lib -p invokescript -o ${build} -I ${stratego-share-loc}"/>
+    <echo>strj: ${strj}
+args: ${strj-args}</echo>
+    <exec executable="${strj}" failonerror="true">
+      <arg line="${strj-args}"/>
+    </exec>    
+    <!-- Replace custom java classes -->
+    <copy todir="${build}" overwrite="true">
+      <fileset dir="${src}" includes="**/*.java"/>
+    </copy>
+    <javac destdir="${dist}" 
+        debug="on" 
+        classpath="${strj-include-location}/strategoxt.jar"
+        fork="true"
+        memoryinitialsize="512m"
+        memorymaximumsize="512m">	
+      <src path="${build}"/>
+    </javac>
+  </target>
+  
+  
+  <target name="clean">
+    <delete file="bin.dep"/>
+    <delete file="${jarfile}"/>
+    <delete dir="${build}"/>
+  </target>
+  
+  
+  <target name="include" depends="jar">
+    <copy file="${jarfile}" todir="../include"/>
+  </target>
+  
+
+  <target name="test">
+    <exec executable="java" failonerror="true">
+      <arg line="-ss4m -cp /usr/local/bin/strategoxt.jar:invoke-webdsl-script.jar invokescript.Main"/>
+    </exec>
+  </target>
+
+  
+</project>
