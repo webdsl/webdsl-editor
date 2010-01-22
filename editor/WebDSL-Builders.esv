@@ -12,6 +12,7 @@ builders External service provider resources
 */
 
 	provider	: lib/acoda.jar
+	provider	: lib/webdsl.jar
 
 	builder		: "Derive Transformation"	= editor-detect-transformation (openeditor) (realtime) (persistent)
 	builder		: "Create Database Schema"	= editor-createdatabase
