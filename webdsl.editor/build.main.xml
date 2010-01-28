@@ -18,18 +18,18 @@
         
         <!-- Imports -->
         <property name="build.sdf.imports" value=""/>
-	    <!--customized-->
-	    <property name="editor" location="editor"/>
-	    <loadproperties srcFile="import.webdsl.properties"/>	
-	    <property name="build.stratego.args" value="--library
-	 	            -I &quot;${trans}&quot;
-	                 -I &quot;${basedir}&quot;
-	                 -la stratego-lib -la stratego-sglr
-	 	            -la stratego-gpp -la stratego-xtc
-	 	            -la stratego-aterm
-	 	            -I ${webdsl.home}
-	 	"/>
-	    <!--end customized-->    
+      <!--customized-->
+      <property name="editor" location="editor"/>
+      <loadproperties srcFile="import.webdsl.properties"/>	
+      <property name="build.stratego.args" value="--library
+                 -I &quot;${trans}&quot;
+                   -I &quot;${basedir}&quot;
+                   -la stratego-lib -la stratego-sglr
+                 -la stratego-gpp -la stratego-xtc
+                 -la stratego-aterm
+                 -I ${webdsl.home}
+     "/>
+      <!--end customized-->    
         
         <!-- External .def and .jar locations
         <property name="externaldef" location="syntax/${sdfmodule}.def"/>
@@ -46,5 +46,14 @@
         <import file="build.common.xml"/>
     
         <!-- Main target -->
-        <target name="all" depends="spoofaximp"/>
+        <target name="all" depends="spoofaximp, import-webdsl-template"/>
+  
+        <target name="import-webdsl-template">
+            <copy overwrite="true" todir="webdsl-template">
+              <fileset dir="${webdsl.projectdir}">
+                <include name="**/*.*"/>
+              </fileset>
+            </copy>
+        </target>
+  
     </project>

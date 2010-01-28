@@ -8,5 +8,26 @@
        <extension id="webdsl.parser" name="WebDSL Parser" point="org.eclipse.imp.runtime.parser">
           <parser class="webdsl.WebDSLParseController" language="WebDSL">
           </parser>
-       </extension>    
+       </extension>
+      <extension
+         point="org.eclipse.ui.newWizards">
+      <primaryWizard
+            id="webdsl.NewEditorWizard">
+      </primaryWizard>
+      <wizard
+            class="webdsl.WebDSLEditorWizard"
+            icon="icons/sample.gif"
+            id="webdsl.NewEditorWizard"
+            name="WebDSL project"
+            project="true">
+      </wizard>
+   </extension>
+   
+      <extension
+         point="org.eclipse.ant.core.antProperties">
+      <antProperty
+            class="webdsl.WebDSLTemplatePropertyProvider"
+            name="webdsl.templatedir">
+      </antProperty>
+   </extension>    
     </plugin>
