@@ -2,7 +2,9 @@ package webdsl;
 
 import static org.eclipse.core.resources.IResource.*;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
@@ -68,15 +70,15 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 	 */
 	@Override
 	public boolean performFinish() {
-	/*	final String languageName = input.getInputLanguageName();
+		final String languageName = input.getInputLanguageName();
 		final String projectName = input.getInputProjectName();
-		final String packageName = input.getInputPackageName();
-		final String extensions = input.getInputExtensions();
+		final String DBHost = input.getInputDBHost();
+		System.out.println(languageName+projectName);
 		
 		IRunnableWithProgress op = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) throws InvocationTargetException {
 				try {
-					doFinish(languageName, projectName, packageName, extensions, monitor);
+					doFinish(languageName, projectName, DBHost, monitor);
 				} catch (Exception e) {
 					throw new InvocationTargetException(e);
 				} finally {
@@ -96,7 +98,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 			MessageDialog.openError(getShell(), "Error: " + realException.getClass().getName(), realException.getMessage());
 			rollback();
 			return false;
-		}*/
+		}
 		return true;
 	}
 	
@@ -109,56 +111,56 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		}
 	}
 	
- 	private void doFinish(String languageName, String projectName, String packageName, String extensions, IProgressMonitor monitor) throws IOException, CoreException {
-	/*	final int TASK_COUNT = 20;
+ 	private void doFinish(String languageName, String projectName, String DBHost, IProgressMonitor monitor) throws IOException, CoreException {
+ 		final int TASK_COUNT = 2;
 		lastProject = null;
-		monitor.beginTask("Creating " + languageName + " project", TASK_COUNT);
+		monitor.beginTask("Creating " + languageName + " application", TASK_COUNT);
 		
 		monitor.setTaskName("Preparing project builder");
-		EditorIOAgent agent = new EditorIOAgent();
-		agent.setAlwaysActivateConsole(true);
-		Context context = new Context(Environment.getTermFactory(), agent);
-		context.registerClassLoader(make_permissive.class.getClassLoader());
-		sdf2imp.init(context);
+		//EditorIOAgent agent = new EditorIOAgent();
+		//agent.setAlwaysActivateConsole(true);
+		//Context context = new Context(Environment.getTermFactory(), agent);
+		//context.registerClassLoader(make_permissive.class.getClassLoader());
+		//sdf2imp.init(context);
 		monitor.worked(1);
 
-		monitor.setTaskName("Creating project");
+		monitor.setTaskName("Creating Eclipse project");
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IProject project = lastProject = workspace.getRoot().getProject(projectName);
 		project.create(null);
 		project.open(null);
 		monitor.worked(1);
 
-		agent.setWorkingDir(project.getLocation().toOSString());
-		try {
-			String jar1 = org.strategoxt.stratego_lib.Main.class.getProtectionDomain().getCodeSource().getLocation().getFile();
-			String jar2 = make_permissive.class.getProtectionDomain().getCodeSource().getLocation().getFile();
-			String jar3 = sdf2imp.class.getProtectionDomain().getCodeSource().getLocation().getFile();
-			if (Platform.getOS().equals(Platform.OS_WIN32)) { // FIXME: proper paths on Windows
-				jar1 = jar1.substring(1);
-				jar2 = jar2.substring(1);
-				jar3 = jar3.substring(1);
-			}
-			if (!jar1.endsWith(".jar")) { // ensure correct jar at development time
-				String jar1a = jar1 + "/../strategoxt.jar";
-				if (new File(jar1a).exists()) jar1 = jar1a;
-				jar1a = jar1 + "/java/strategoxt.jar";
-				if (new File(jar1a).exists()) jar1 = jar1a;
-			}
-			assert jar1.endsWith(".jar") && jar2.endsWith(".jar") && jar3.endsWith(".jar") : "Library files are not in JAR"; // please refresh the strj projectin Eclipse
-			sdf2imp.mainNoExit(context, "-m", languageName, "-pn", projectName, "-n", packageName, "-e", extensions, "--verbose", "2", "-jar", jar1, jar2, jar3);
-		} catch (StrategoErrorExit e) {
-			Environment.logException(e);
-			throw new StrategoException("Project builder failed: " + e.getMessage() + "\nLog follows:\n\n"
-					+ agent.getLog(), e);
-		} catch (StrategoExit e) {
-			if (e.getValue() != 0) {
-				throw new StrategoException("Project builder failed.\nLog follows:\n\n"
-						+ agent.getLog(), e);
-			}
+		//agent.setWorkingDir(project.getLocation().toOSString());
+     	String jar1 = webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+		if (Platform.getOS().equals(Platform.OS_WIN32)) { // FIXME: proper paths on Windows
+			jar1 = jar1.substring(1);
+			//jar2 = jar2.substring(1);
+			//jar3 = jar3.substring(1);
 		}
-		monitor.worked(3);
-
+		if (!jar1.endsWith(".jar")) { // ensure correct jar at development time
+			String jar1a = jar1 + "/../strategoxt.jar";
+			if (new File(jar1a).exists()) jar1 = jar1a;
+			jar1a = jar1 + "/java/strategoxt.jar";
+			if (new File(jar1a).exists()) jar1 = jar1a;
+		}
+		System.out.println("path: "+jar1);
+		
+		try { 
+			String appinifilename = project.getLocation()+"/application.ini";
+			System.out.println(appinifilename);
+			BufferedWriter out = new BufferedWriter(new FileWriter(appinifilename)); 
+			out.write("appname="+languageName+"\n"); 
+			out.write("dbserver="+DBHost+"\n"); 
+			out.close(); 
+		} 
+		catch (IOException e) { 
+			Environment.logException(e);
+			throw e;
+		} 
+/*
+		monitor.worked(3);*/
+/*
 		monitor.setTaskName("Acquiring workspace lock"); // need root lock for builder
 		IWorkspaceRoot root = project.getWorkspace().getRoot();
 		Job.getJobManager().beginRule(root, monitor); // avoid ant builder launching
@@ -196,9 +198,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		monitor.worked(1);
 		EditorState.asyncOpenEditor(display, project.getFile("/syntax/" + languageName +  ".sdf"), true);
 		monitor.worked(1);
-		EditorState.asyncOpenEditor(display, project.getFile("/test/example." + extensions.split(",")[0]), false);
+		EditorState.asyncOpenEditor(display, project.getFile("/test/example." + extensions.split(",")[0]), false);*/
 		refreshProject(project);
-		monitor.done();*/
 	}
 
 	private void refreshProject(final IProject project) {

@@ -22,18 +22,23 @@ import org.eclipse.swt.widgets.Text;
 public class WebDSLEditorWizardPage extends WizardPage {
 	
 	private Text inputProjectName;
-	
+	public String getInputProjectName() { return inputProjectName.getText().trim(); }
 	private Text inputLanguageName;
-	
-	private Text inputPackageName;
-	
-	private Text inputExtensions;
+	public String getInputLanguageName() { return inputLanguageName.getText().trim(); }
 	
 	private boolean isInputProjectNameChanged;
+
+	private Text inputDBHost;
+	public String getInputDBHost() { return inputDBHost.getText().trim(); }
+	private Text inputDBUser;
+	public String getInputDBUser() { return inputDBUser.getText().trim(); }
+	private Text inputDBPass;
+	public String getInputDBPass() { return inputDBPass.getText().trim(); }
+	private Text inputDBName;
+	public String getInputDBName() { return inputDBName.getText().trim(); }
+	private Text inputDBMode;
+	public String getInputDBMode() { return inputDBMode.getText().trim(); }
 	
-	private boolean isInputPackageNameChanged;
-	
-	private boolean isInputExtensionsChanged;
 	
 	private boolean ignoreEvents;
 
@@ -42,8 +47,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	 */
 	public WebDSLEditorWizardPage() {
 		super("wizardPage");
-		setTitle("Spoofax/IMP Editor Project");
-		setDescription("This wizard creates a new Spoofax/IMP editor project.");
+		setTitle("WebDSL Project");
+		setDescription("This wizard creates a WebDSL project.");
 	}
 
 	/**
@@ -55,27 +60,6 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		container.setLayout(layout);
 		layout.numColumns = 2;
 		layout.verticalSpacing = 9;
-		
-		/*
-		Label label = new Label(container, SWT.NULL);
-		label.setText("&Container:");
-		containerText = new Text(container, SWT.BORDER | SWT.SINGLE);
-		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-		containerText.setLayoutData(gd);
-		containerText.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				dialogChanged();
-			}
-		});
-		Button button = new Button(container, SWT.PUSH);
-		button.setText("Browse...");
-		button.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				handleBrowse();
-			}
-		});
-		*/
 				
 		new Label(container, SWT.NULL).setText("&Project name:");
 		inputProjectName = new Text(container, SWT.BORDER | SWT.SINGLE);
@@ -89,38 +73,67 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			}
 		});
 				
-		new Label(container, SWT.NULL).setText("&Language name:");
+		new Label(container, SWT.NULL).setText("&Application name:");
 		inputLanguageName = new Text(container, SWT.BORDER | SWT.SINGLE);
 		inputLanguageName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputLanguageName.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (!ignoreEvents) {
-					distributeLanguageName();
-					isInputProjectNameChanged = true;
 					onChange();
 				}
 			}
 		});
 		
-		new Label(container, SWT.NULL).setText("&Plugin ID and package name:");
-		inputPackageName = new Text(container, SWT.BORDER | SWT.SINGLE);
-		inputPackageName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputPackageName.addModifyListener(new ModifyListener() {
+		new Label(container, SWT.NULL).setText("&MySQL hostname:");
+		inputDBHost = new Text(container, SWT.BORDER | SWT.SINGLE);
+		inputDBHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBHost.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (!ignoreEvents) {
-					isInputPackageNameChanged = true;
 					onChange();
 				}
 			}
 		});
-				
-		new Label(container, SWT.NULL).setText("&File extensions:");
-		inputExtensions = new Text(container, SWT.BORDER | SWT.SINGLE);
-		inputExtensions.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputExtensions.addModifyListener(new ModifyListener() {
+		
+		new Label(container, SWT.NULL).setText("&MySQL user:");
+		inputDBUser = new Text(container, SWT.BORDER | SWT.SINGLE);
+		inputDBUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBUser.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (!ignoreEvents) {
-					isInputExtensionsChanged = true;
+					onChange();
+				}
+			}
+		});
+		
+		new Label(container, SWT.NULL).setText("&MySQL password:");
+		inputDBPass = new Text(container, SWT.BORDER | SWT.SINGLE);
+		inputDBPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBPass.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		new Label(container, SWT.NULL).setText("&MySQL database name:");
+		inputDBName = new Text(container, SWT.BORDER | SWT.SINGLE);
+		inputDBName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBName.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		new Label(container, SWT.NULL).setText("&Database mode:");
+		inputDBMode = new Text(container, SWT.BORDER | SWT.SINGLE);
+		inputDBMode.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBMode.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
 					onChange();
 				}
 			}
@@ -137,24 +150,6 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			ignoreEvents = true;
 			inputLanguageName.setText(toLanguageName(getInputProjectName()));
 			isInputProjectNameChanged = false;
-			ignoreEvents = false;
-			distributeLanguageName();
-		}
-		if (!isInputExtensionsChanged || getInputExtensions().length() == 0
-				|| getInputExtensions().equals(toExtension(getInputProjectName()))) {
-			ignoreEvents = true;
-			inputExtensions.setText(toExtension(getInputProjectName()));
-			isInputExtensionsChanged = false;
-			ignoreEvents = false;
-		}
-	}
-
-	private void distributeLanguageName() {
-		if (!isInputPackageNameChanged || getInputPackageName().length() == 0
-				|| getInputPackageName().equals(toPackageName(getInputLanguageName()))) {
-			ignoreEvents = true;
-			inputPackageName.setText(toPackageName(getInputLanguageName()));
-			isInputPackageNameChanged = false;
 			ignoreEvents = false;
 		}
 	}
@@ -183,33 +178,11 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			return;
 		}
 
-		if (getInputPackageName().length() == 0) {
-			setErrorStatus("Package name must be specified");
-			return;
-		}
-		if (!getInputPackageName().equalsIgnoreCase(toPackageName(getInputPackageName()))
-				|| getInputPackageName().indexOf("..") != -1
-				|| getInputPackageName().endsWith(".")) {
-			setErrorStatus("Package name must be valid");
-			return;
-		}
-
-		if (getInputExtensions().length() == 0) {
-			setErrorStatus("File extension must be specified");
-			return;
-		}
-		if (getInputExtensions().indexOf(".") != -1 || getInputExtensions().replace('\\', '/').indexOf("/") != -1
-				|| getInputExtensions().indexOf(":") > -1) {
-			setErrorStatus("File extension must be valid");
-			return;
-		}
-
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		if (workspace.getRoot().getProject(getInputProjectName()).exists()) {
 			setErrorStatus("A project with this name already exists");
 			return;
 		}
-	
 
 		if (getInputProjectName().indexOf(' ') != -1) {
 			setWarningStatus("Project names with spaces may not be supported depending on your configuration");
@@ -291,19 +264,4 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			setErrorMessage(message);
 	}
 	
-	public String getInputProjectName() {
-		return inputProjectName.getText().trim();
-	}
-	
-	public String getInputLanguageName() {
-		return inputLanguageName.getText().trim();
-	}
-	
-	public String getInputPackageName() {
-		return inputPackageName.getText().trim();
-	}
-	
-	public String getInputExtensions() {
-		return inputExtensions.getText().trim();
-	}
 }
