@@ -4,9 +4,15 @@ import static org.eclipse.core.resources.IResource.*;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -116,13 +122,13 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		lastProject = null;
 		monitor.beginTask("Creating " + languageName + " application", TASK_COUNT);
 		
-		monitor.setTaskName("Preparing project builder");
 		//EditorIOAgent agent = new EditorIOAgent();
 		//agent.setAlwaysActivateConsole(true);
 		//Context context = new Context(Environment.getTermFactory(), agent);
 		//context.registerClassLoader(make_permissive.class.getClassLoader());
 		//sdf2imp.init(context);
-		monitor.worked(1);
+		
+		
 
 		monitor.setTaskName("Creating Eclipse project");
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -130,21 +136,25 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		project.create(null);
 		project.open(null);
 		monitor.worked(1);
+		
+		
+		monitor.setTaskName("Copying example application files");
 
 		//agent.setWorkingDir(project.getLocation().toOSString());
-     	String jar1 = webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+     	String plugindir = webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
 		if (Platform.getOS().equals(Platform.OS_WIN32)) { // FIXME: proper paths on Windows
-			jar1 = jar1.substring(1);
+			plugindir = plugindir.substring(1);
 			//jar2 = jar2.substring(1);
 			//jar3 = jar3.substring(1);
 		}
+		/*
 		if (!jar1.endsWith(".jar")) { // ensure correct jar at development time
 			String jar1a = jar1 + "/../strategoxt.jar";
 			if (new File(jar1a).exists()) jar1 = jar1a;
 			jar1a = jar1 + "/java/strategoxt.jar";
 			if (new File(jar1a).exists()) jar1 = jar1a;
-		}
-		System.out.println("path: "+jar1);
+		}*/
+		System.out.println("path: "+plugindir);
 		
 		try { 
 			String appinifilename = project.getLocation()+"/application.ini";
@@ -158,7 +168,35 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 			Environment.logException(e);
 			throw e;
 		} 
+		
+		copyFile(plugindir+"webdsl-template/new_project/templates.app", project.getLocation()+"/templates.app");
+		copyFile(plugindir+"webdsl-template/new_project/APPLICATION_NAME.app", project.getLocation()+"/"+languageName+".app");
+		createDirs(project.getLocation()+"/images");
+		copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
+		createDirs(project.getLocation()+"/stylesheets");
+		copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
+		
+		monitor.worked(1);
+		
+		StringBuffer ant = new StringBuffer();
+		ant.append("<project name=\"webdsl-plugin\" default=\"build\">\n");
+		ant.append("\t<property name=\"plugindir\" value=\""+plugindir+"\" />\n");
+		ant.append("\t<property name=\"projectdir\" value=\""+project.getLocation()+"\" />\n");
+		ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
+		ant.append("\t<property name=\"currentdir\" value=\"${projectdir}\"/>\n");
+		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp ${templatedir}/strategoxt.jar:${plugindir}/include/webdsl.jar org.webdsl.webdslc.Main\"/>\n");
+		ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
+        ant.append("\t<target name=\"plugin-build\">\n");
+       	ant.append("\t\t<property name=\"buildoptions\" value=\"build\" />\n");
+       	ant.append("\t\t<antcall target=\"command\"/>\n");
+     	ant.append("\t</target>\n");
+		ant.append("</project>");
+		
+		writeStringToFile(ant.toString(), project.getLocation()+"/build.xml");
+		
+		
 /*
+ * 
 		monitor.worked(3);*/
 /*
 		monitor.setTaskName("Acquiring workspace lock"); // need root lock for builder
@@ -201,9 +239,54 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		EditorState.asyncOpenEditor(display, project.getFile("/test/example." + extensions.split(",")[0]), false);*/
 		refreshProject(project);
 	}
+ 	
+ 	public static void writeStringToFile(String s, String file) throws IOException{
+ 		FileOutputStream in = null;
+ 		try{
+	 		File buildxml = new File(file);
+	 		in = new FileOutputStream(buildxml);
+			FileChannel fchan = in.getChannel();
+			BufferedWriter bf = new BufferedWriter(Channels.newWriter(fchan,"UTF-8"));
+			bf.write(s);
+			bf.close();
+ 		}
+ 		finally{
+ 			if(in != null){
+ 				in.close();
+ 			}
+ 		}
+ 	}
+ 	
+ 	public static void createDirs(String dirs){
+ 		new File(dirs).mkdirs();
+ 	}
+ 	
+ 	public static void copyFile(String ssource, String sdest) throws IOException {
+ 		System.out.println("Copying "+ssource+" to "+sdest);
+ 		File dest = new File(sdest);
+ 		File source = new File(ssource);
+ 		if(!dest.exists()) {
+ 			dest.createNewFile();
+ 		}
+ 		FileChannel in = null;
+ 		FileChannel out = null;
+ 		try {
+ 			in = new FileInputStream(source).getChannel();
+ 			out = new FileOutputStream(dest).getChannel();
+ 			out.transferFrom(in, 0, in.size());
+ 		}
+ 		finally {
+ 			if(in != null) {
+ 				in.close();
+ 			}
+ 			if(out != null) {
+ 				out.close();
+ 			}
+ 		}
+ 	}
 
 	private void refreshProject(final IProject project) {
-		/*// We schedule a project refresh to make all ".generated" files readable
+		// We schedule a project refresh to make all ".generated" files readable
 		Job job = new Job("Refreshing project") {
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
@@ -217,7 +300,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 			}
 		};
 		job.setSystem(true);
-		job.schedule(5000); */
+		job.schedule(1000); 
 	}
 
 }

@@ -46,7 +46,7 @@
         <import file="build.common.xml"/>
     
         <!-- Main target -->
-        <target name="all" depends="spoofaximp, import-webdsl-template"/>
+        <target name="all" depends="spoofaximp, import-webdsl-template, import-stratego-jar"/>
   
         <target name="import-webdsl-template">
             <copy overwrite="true" todir="webdsl-template">
@@ -55,5 +55,8 @@
               </fileset>
             </copy>
         </target>
-  
+        <target name="import-stratego-jar">
+	        <echo>${webdsl.home}/strategoxt.jar</echo>
+        	<copy file="${webdsl.home}/strategoxt.jar" overwrite="true" todir="webdsl-template"/>
+        </target>  
     </project>

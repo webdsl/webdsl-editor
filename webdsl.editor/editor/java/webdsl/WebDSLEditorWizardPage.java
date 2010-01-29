@@ -2,14 +2,19 @@ package webdsl;
 
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.imp.preferences.fields.RadioGroupFieldEditor;
 import org.eclipse.jface.dialogs.IDialogPage;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
@@ -27,6 +32,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	public String getInputLanguageName() { return inputLanguageName.getText().trim(); }
 	
 	private boolean isInputProjectNameChanged;
+	private boolean isMysqlDatabaseSelected;
+	public boolean getIsMysqlSelected()  { return isMysqlDatabaseSelected; }
+	public boolean getIsSqliteSelected() { return !isMysqlDatabaseSelected; }
 
 	private Text inputDBHost;
 	public String getInputDBHost() { return inputDBHost.getText().trim(); }
@@ -38,6 +46,10 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	public String getInputDBName() { return inputDBName.getText().trim(); }
 	private Text inputDBMode;
 	public String getInputDBMode() { return inputDBMode.getText().trim(); }
+	private Text inputDBFile;
+	public String getInputDBFile() { return inputDBFile.getText().trim(); }
+	private Text inputDBModeSqlite;
+	public String getInputDBModeSqlite() { return inputDBModeSqlite.getText().trim(); }
 	
 	
 	private boolean ignoreEvents;
@@ -83,9 +95,31 @@ public class WebDSLEditorWizardPage extends WizardPage {
 				}
 			}
 		});
+
 		
-		new Label(container, SWT.NULL).setText("&MySQL hostname:");
-		inputDBHost = new Text(container, SWT.BORDER | SWT.SINGLE);
+	    Button bMysql = new Button(container, SWT.RADIO);
+	    bMysql.setText("MySQL database");
+
+	    Button bSqlite = new Button(container, SWT.RADIO);
+	    bSqlite.setText("Sqlite database");
+
+	    
+		final Group mysqlGroup = new Group(container, SWT.NULL);
+		
+		GridData gridData = new GridData();
+		gridData.horizontalAlignment = GridData.FILL;
+		gridData.horizontalSpan = 2;
+		mysqlGroup.setLayoutData(gridData);
+
+		mysqlGroup.setText("MySQL configuration");
+		
+		GridLayout mysqlGroupLayout = new GridLayout();
+		mysqlGroup.setLayout(mysqlGroupLayout);
+		mysqlGroupLayout.numColumns = 2;
+		mysqlGroupLayout.verticalSpacing = 9;
+		
+		new Label(mysqlGroup, SWT.NULL).setText("&MySQL hostname:");
+		inputDBHost = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
 		inputDBHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBHost.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
@@ -95,8 +129,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			}
 		});
 		
-		new Label(container, SWT.NULL).setText("&MySQL user:");
-		inputDBUser = new Text(container, SWT.BORDER | SWT.SINGLE);
+		new Label(mysqlGroup, SWT.NULL).setText("&MySQL user:");
+		inputDBUser = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
 		inputDBUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBUser.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
@@ -106,8 +140,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			}
 		});
 		
-		new Label(container, SWT.NULL).setText("&MySQL password:");
-		inputDBPass = new Text(container, SWT.BORDER | SWT.SINGLE);
+		new Label(mysqlGroup, SWT.NULL).setText("&MySQL password:");
+		inputDBPass = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
 		inputDBPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBPass.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
@@ -117,8 +151,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			}
 		});
 		
-		new Label(container, SWT.NULL).setText("&MySQL database name:");
-		inputDBName = new Text(container, SWT.BORDER | SWT.SINGLE);
+		new Label(mysqlGroup, SWT.NULL).setText("&MySQL database name:");
+		inputDBName = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
 		inputDBName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBName.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
@@ -128,8 +162,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			}
 		});
 		
-		new Label(container, SWT.NULL).setText("&Database mode:");
-		inputDBMode = new Text(container, SWT.BORDER | SWT.SINGLE);
+		new Label(mysqlGroup, SWT.NULL).setText("&Database mode:");
+		inputDBMode = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
 		inputDBMode.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBMode.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
@@ -138,6 +172,71 @@ public class WebDSLEditorWizardPage extends WizardPage {
 				}
 			}
 		});
+		
+		
+		final Group sqliteGroup = new Group(container, SWT.NULL);
+		
+		GridData sqliteGridData = new GridData();
+		sqliteGridData.horizontalAlignment = GridData.FILL;
+		sqliteGridData.horizontalSpan = 2;
+		sqliteGroup.setLayoutData(sqliteGridData);
+
+		sqliteGroup.setText("Sqlite configuration");
+		
+		GridLayout sqliteGroupLayout = new GridLayout();
+		sqliteGroup.setLayout(sqliteGroupLayout);
+		sqliteGroupLayout.numColumns = 2;
+		sqliteGroupLayout.verticalSpacing = 9;
+		
+		new Label(sqliteGroup, SWT.NULL).setText("&Database file:");
+		inputDBFile = new Text(sqliteGroup, SWT.BORDER | SWT.SINGLE);
+		inputDBFile.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBFile.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		new Label(sqliteGroup, SWT.NULL).setText("&Database mode:");
+		inputDBModeSqlite = new Text(sqliteGroup, SWT.BORDER | SWT.SINGLE);
+		inputDBModeSqlite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBModeSqlite.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		
+		//database selection radio button events
+	    bMysql.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				sqliteGroup.setEnabled(false);
+				mysqlGroup.setEnabled(true);
+				mysqlGroup.setFocus();
+				isMysqlDatabaseSelected = true;
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
+	    bSqlite.addSelectionListener(new SelectionListener() {
+	    	@Override
+	    	public void widgetSelected(SelectionEvent e) {
+	    		mysqlGroup.setEnabled(false);
+	    		sqliteGroup.setEnabled(true);
+	    		sqliteGroup.setFocus();
+	    		isMysqlDatabaseSelected = false;
+	    	}
+	    	@Override
+	    	public void widgetDefaultSelected(SelectionEvent e) {
+	    	}
+	    });
+		
 
 		setControl(container);
 		setPageComplete(false);
@@ -201,6 +300,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	}
 
 	private static String toLanguageName(String name) {
+		return name;
+		/*
 		char[] input = name.replace(' ', '-').toCharArray();
 		StringBuilder output = new StringBuilder();
 		int i = 0;
@@ -218,7 +319,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		}
 		if (output.length() > 0)
 			output.setCharAt(0, Character.toUpperCase(output.charAt(0))); // SDF wants a capital here
-		return output.toString();
+		return output.toString();*/
 	}
 	
 	private static String toPackageName(String name) {
