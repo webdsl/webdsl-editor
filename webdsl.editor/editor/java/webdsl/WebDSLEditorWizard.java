@@ -44,9 +44,7 @@ import org.strategoxt.lang.StrategoException;
 import org.strategoxt.lang.StrategoExit;
 
 /**
- * A wizard for creating new Spoofax/IMP projects.
- * 
- * @author Lennart Kats <lennart add lclnet.nl>
+ * A wizard for creating new WebDSL projects.
  */
 public class WebDSLEditorWizard extends Wizard implements INewWizard {
 
@@ -76,7 +74,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 	 */
 	@Override
 	public boolean performFinish() {
-		final String languageName = input.getInputLanguageName();
+		final String languageName = input.getInputAppName();
 		final String projectName = input.getInputProjectName();
 		final boolean isMysqlSelected = input.isMysqlSelected();
 		final String host = input.getInputDBHost();
@@ -85,12 +83,17 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		final String name = input.getInputDBName();
 		final String mode = input.getInputDBMode();
 		final String file = input.getInputDBFile();
+		final String tomcatpath = input.getInputTomcatPath();
+		final String smtphost = input.getInputSmtpHost();
+		final String smtpport = input.getInputSmtpPort();
+		final String smtpuser = input.getInputSmtpUser();
+		final String smtppass = input.getInputSmtpPass();
 		System.out.println(languageName+projectName);
 		
 		IRunnableWithProgress op = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) throws InvocationTargetException {
 				try {
-					doFinish(languageName, projectName, isMysqlSelected, host, user, pass, name, mode, file, monitor);
+					doFinish(languageName, projectName, isMysqlSelected, host, user, pass, name, mode, file, tomcatpath, smtphost, smtpport, smtpuser, smtppass, monitor);
 				} catch (Exception e) {
 					throw new InvocationTargetException(e);
 				} finally {
@@ -123,7 +126,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		}
 	}
 	
- 	private void doFinish(String languageName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, IProgressMonitor monitor) throws IOException, CoreException {
+ 	private void doFinish(String languageName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, IProgressMonitor monitor) throws IOException, CoreException {
  		final int TASK_COUNT = 2;
 		lastProject = null;
 		monitor.beginTask("Creating " + languageName + " application", TASK_COUNT);
@@ -168,6 +171,12 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 			BufferedWriter out = new BufferedWriter(new FileWriter(appinifilename)); 
 			out.write("appname="+languageName+"\n");
 			out.write("backend=servlet\n");
+			out.write("sessiontimeout=120\n");
+			out.write("smtphost="+smtphost+"\n");
+			out.write("smtpport="+smtpport+"\n");
+			out.write("smtpuser="+smtpuser+"\n");
+			out.write("smtppass="+smtppass+"\n");
+			out.write("tomcatpath="+tomcatpath+"\n");
 			if(isMysqlSelected){
 				out.write("dbserver="+host+"\n"); 
 				out.write("dbuser="+user+"\n"); 
@@ -197,17 +206,39 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		monitor.worked(1);
 		
 		StringBuffer ant = new StringBuffer();
-		ant.append("<project name=\"webdsl-plugin\" default=\"build\">\n");
+		ant.append("<project name=\"webdsl-eclipse-plugin\" default=\"plugin-run\">\n");
 		ant.append("\t<property name=\"plugindir\" value=\""+plugindir+"\" />\n");
 		ant.append("\t<property name=\"projectdir\" value=\""+project.getLocation()+"\" />\n");
 		ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
 		ant.append("\t<property name=\"currentdir\" value=\"${projectdir}\"/>\n");
 		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp ${templatedir}/strategoxt.jar:${plugindir}/include/webdsl.jar org.webdsl.webdslc.Main\"/>\n");
 		ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
-        ant.append("\t<target name=\"plugin-build\">\n");
+       
+		ant.append("\t<target name=\"plugin-build\">\n");
        	ant.append("\t\t<property name=\"buildoptions\" value=\"build\" />\n");
        	ant.append("\t\t<antcall target=\"command\"/>\n");
      	ant.append("\t</target>\n");
+     	
+     	ant.append("\t<target name=\"plugin-run\">\n");
+     	ant.append("\t\t<property name=\"buildoptions\" value=\"run\" />\n");
+     	ant.append("\t\t<antcall target=\"command\"/>\n");
+     	ant.append("\t</target>\n");
+     	
+     	ant.append("\t<target name=\"plugin-deploy\">\n");
+     	ant.append("\t\t<property name=\"buildoptions\" value=\"deploy\" />\n");
+     	ant.append("\t\t<antcall target=\"command\"/>\n");
+     	ant.append("\t</target>\n");
+     	
+     	ant.append("\t<target name=\"plugin-tomcatdeploy\">\n");
+     	ant.append("\t\t<property name=\"buildoptions\" value=\"tomcatdeploy\" />\n");
+     	ant.append("\t\t<antcall target=\"command\"/>\n");
+     	ant.append("\t</target>\n");
+     	
+     	ant.append("\t<target name=\"plugin-cleanall\">\n");
+     	ant.append("\t\t<property name=\"buildoptions\" value=\"cleanall\" />\n");
+     	ant.append("\t\t<antcall target=\"command\"/>\n");
+     	ant.append("\t</target>\n");
+     	
 		ant.append("</project>");
 		
 		writeStringToFile(ant.toString(), project.getLocation()+"/build.xml");

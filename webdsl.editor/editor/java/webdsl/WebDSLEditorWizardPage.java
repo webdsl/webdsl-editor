@@ -28,30 +28,50 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	
 	private Text inputProjectName;
 	public String getInputProjectName() { return inputProjectName.getText().trim(); }
-	private Text inputLanguageName;
-	public String getInputLanguageName() { return inputLanguageName.getText().trim(); }
+	private Text inputAppName;
+	public String getInputAppName() { return inputAppName.getText().trim(); }
 	
 	private boolean isInputProjectNameChanged;
 	private boolean isMysqlDatabaseSelected;
 	public boolean isMysqlSelected()  { return isMysqlDatabaseSelected; }
 	public boolean isSqliteSelected() { return !isMysqlDatabaseSelected; }
 
+	private Label labelDBHost;
 	private Text inputDBHost;
 	public String getInputDBHost() { return inputDBHost.getText().trim(); }
+	private Label labelDBUser;
 	private Text inputDBUser;
 	public String getInputDBUser() { return inputDBUser.getText().trim(); }
+	private Label labelDBPass;
 	private Text inputDBPass;
 	public String getInputDBPass() { return inputDBPass.getText().trim(); }
+	private Label labelDBName;
 	private Text inputDBName;
 	public String getInputDBName() { return inputDBName.getText().trim(); }
-	private String inputDBMode;
-	public String getInputDBMode() { return inputDBMode.trim(); }
+	private Label labelDBFile;
 	private Text inputDBFile;
 	public String getInputDBFile() { return inputDBFile.getText().trim(); }
+	
+	private String inputDBMode;
+	public String getInputDBMode() { return inputDBMode.trim(); }
+
+	private Text inputTomcatPath;
+	public String getInputTomcatPath() { return inputTomcatPath.getText().trim(); }
+	
+	private Text inputSmtpHost;
+	public String getInputSmtpHost() { return inputSmtpHost.getText().trim(); }
+	private Text inputSmtpPort;
+	public String getInputSmtpPort() { return inputSmtpPort.getText().trim(); }
+	private Text inputSmtpUser;
+	public String getInputSmtpUser() { return inputSmtpUser.getText().trim(); }
+	private Text inputSmtpPass;
+	public String getInputSmtpPass() { return inputSmtpPass.getText().trim(); }
+	
 	
 	private Group sqliteGroup;
 	private Group mysqlGroup;
 	private Group dbmodeGroup;
+	private Group emailGroup;
 	
 	private boolean ignoreEvents;
 
@@ -87,15 +107,117 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		});
 				
 		new Label(container, SWT.NULL).setText("&Application name:");
-		inputLanguageName = new Text(container, SWT.BORDER | SWT.SINGLE);
-		inputLanguageName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputLanguageName.addModifyListener(new ModifyListener() {
+		inputAppName = new Text(container, SWT.BORDER | SWT.SINGLE);
+		inputAppName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputAppName.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (!ignoreEvents) {
 					onChange();
 				}
 			}
 		});
+		
+		new Label(container, SWT.NULL).setText("&Tomcat root path (optional):");
+		inputTomcatPath = new Text(container, SWT.BORDER | SWT.SINGLE);
+		inputTomcatPath.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputTomcatPath.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		inputTomcatPath.setText("/opt/tomcat");
+		
+	    Button bMysql = new Button(container, SWT.RADIO);
+	    bMysql.setText("MySQL database");
+
+	    Button bSqlite = new Button(container, SWT.RADIO);
+	    bSqlite.setText("Sqlite database");
+
+		mysqlGroup = new Group(container, SWT.NULL);
+		
+		GridData gridData = new GridData();
+		gridData.horizontalAlignment = GridData.FILL;
+		gridData.horizontalSpan = 2;
+		mysqlGroup.setLayoutData(gridData);
+
+		mysqlGroup.setText("MySQL configuration");
+		
+		GridLayout mysqlGroupLayout = new GridLayout();
+		mysqlGroup.setLayout(mysqlGroupLayout);
+		mysqlGroupLayout.numColumns = 2;
+		mysqlGroupLayout.verticalSpacing = 9;
+		
+		(labelDBHost = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL hostname:");
+		inputDBHost = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
+		inputDBHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBHost.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		(labelDBUser = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL user:");
+		inputDBUser = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
+		inputDBUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBUser.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		(labelDBPass = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL password:");
+		inputDBPass = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
+		inputDBPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBPass.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		(labelDBName = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL database name:");
+		inputDBName = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
+		inputDBName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBName.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		
+		sqliteGroup = new Group(container, SWT.NULL);
+		
+		GridData sqliteGridData = new GridData();
+		sqliteGridData.horizontalAlignment = GridData.FILL;
+		sqliteGridData.horizontalSpan = 2;
+		sqliteGroup.setLayoutData(sqliteGridData);
+
+		sqliteGroup.setText("Sqlite configuration");
+		
+		GridLayout sqliteGroupLayout = new GridLayout();
+		sqliteGroup.setLayout(sqliteGroupLayout);
+		sqliteGroupLayout.numColumns = 2;
+		sqliteGroupLayout.verticalSpacing = 9;
+		
+		(labelDBFile = new Label(sqliteGroup, SWT.NULL)).setText("&Database file:");
+		inputDBFile = new Text(sqliteGroup, SWT.BORDER | SWT.SINGLE);
+		inputDBFile.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputDBFile.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});
+		inputDBFile.setText("temp.db");
 		
 		dbmodeGroup = new Group(container, SWT.NULL);
 		GridData dbmodeGridData = new GridData();
@@ -142,98 +264,65 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
-		});
+		});		
 		
-	    Button bMysql = new Button(container, SWT.RADIO);
-	    bMysql.setText("MySQL database");
-
-	    Button bSqlite = new Button(container, SWT.RADIO);
-	    bSqlite.setText("Sqlite database");
-
-		mysqlGroup = new Group(container, SWT.NULL);
+		emailGroup = new Group(container, SWT.NULL);
+		GridData emailGridData = new GridData();
+		emailGridData.horizontalAlignment = GridData.FILL;
+		emailGridData.horizontalSpan = 2;
+		emailGroup.setLayoutData(emailGridData);
+		emailGroup.setText("&Email settings (optional)");
+		GridLayout emailGroupLayout = new GridLayout();
+		emailGroup.setLayout(emailGroupLayout);
+		emailGroupLayout.numColumns = 2;
+		emailGroupLayout.verticalSpacing = 9;
 		
-		GridData gridData = new GridData();
-		gridData.horizontalAlignment = GridData.FILL;
-		gridData.horizontalSpan = 2;
-		mysqlGroup.setLayoutData(gridData);
-
-		mysqlGroup.setText("MySQL configuration");
-		
-		GridLayout mysqlGroupLayout = new GridLayout();
-		mysqlGroup.setLayout(mysqlGroupLayout);
-		mysqlGroupLayout.numColumns = 2;
-		mysqlGroupLayout.verticalSpacing = 9;
-		
-		new Label(mysqlGroup, SWT.NULL).setText("&MySQL hostname:");
-		inputDBHost = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
-		inputDBHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputDBHost.addModifyListener(new ModifyListener() {
+		new Label(emailGroup, SWT.NULL).setText("SMTP Host:");
+		inputSmtpHost = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
+		inputSmtpHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputSmtpHost.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (!ignoreEvents) {
 					onChange();
 				}
 			}
 		});
+		inputSmtpHost.setText("smtp.gmail.com");
 		
-		new Label(mysqlGroup, SWT.NULL).setText("&MySQL user:");
-		inputDBUser = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
-		inputDBUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputDBUser.addModifyListener(new ModifyListener() {
+		new Label(emailGroup, SWT.NULL).setText("SMTP Port:");
+		inputSmtpPort = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
+		inputSmtpPort.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputSmtpPort.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (!ignoreEvents) {
 					onChange();
 				}
 			}
 		});
+		inputSmtpPort.setText("465");
 		
-		new Label(mysqlGroup, SWT.NULL).setText("&MySQL password:");
-		inputDBPass = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
-		inputDBPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputDBPass.addModifyListener(new ModifyListener() {
+		new Label(emailGroup, SWT.NULL).setText("SMTP User:");
+		inputSmtpUser = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
+		inputSmtpUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputSmtpUser.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (!ignoreEvents) {
 					onChange();
 				}
 			}
 		});
-		
-		new Label(mysqlGroup, SWT.NULL).setText("&MySQL database name:");
-		inputDBName = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
-		inputDBName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputDBName.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
-			}
-		});
-		
-		sqliteGroup = new Group(container, SWT.NULL);
-		
-		GridData sqliteGridData = new GridData();
-		sqliteGridData.horizontalAlignment = GridData.FILL;
-		sqliteGridData.horizontalSpan = 2;
-		sqliteGroup.setLayoutData(sqliteGridData);
-
-		sqliteGroup.setText("Sqlite configuration");
-		
-		GridLayout sqliteGroupLayout = new GridLayout();
-		sqliteGroup.setLayout(sqliteGroupLayout);
-		sqliteGroupLayout.numColumns = 2;
-		sqliteGroupLayout.verticalSpacing = 9;
-		
-		new Label(sqliteGroup, SWT.NULL).setText("&Database file:");
-		inputDBFile = new Text(sqliteGroup, SWT.BORDER | SWT.SINGLE);
-		inputDBFile.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputDBFile.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
-			}
-		});
-		inputDBFile.setText("temp.db");
 	    
+		new Label(emailGroup, SWT.NULL).setText("SMTP Password:");
+		inputSmtpPass = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
+		inputSmtpPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		inputSmtpPass.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (!ignoreEvents) {
+					onChange();
+				}
+			}
+		});		
+		
 		//database selection radio button events
 	    bMysql.addSelectionListener(new SelectionListener() {
 			@Override
@@ -295,10 +384,10 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	}
 
 	private void distributeProjectName() {
-		if (!isInputProjectNameChanged || getInputLanguageName().length() == 0
-				|| getInputLanguageName().equals(toLanguageName(getInputProjectName()))) {
+		if (!isInputProjectNameChanged || getInputAppName().length() == 0
+				|| getInputAppName().equals(toLanguageName(getInputProjectName()))) {
 			ignoreEvents = true;
-			inputLanguageName.setText(toLanguageName(getInputProjectName()));
+			inputAppName.setText(toLanguageName(getInputProjectName()));
 			isInputProjectNameChanged = false;
 			ignoreEvents = false;
 		}
@@ -314,7 +403,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			setErrorStatus("Project name must be specified");
 			return;
 		}
-		if (getInputLanguageName().length() == 0) {
+		if (getInputAppName().length() == 0) {
 			setErrorStatus("Application name must be specified");
 			return;
 		}	
@@ -323,7 +412,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			setErrorStatus("Project name must be valid");
 			return;
 		}
-		if (!toLanguageName(getInputLanguageName()).equalsIgnoreCase(getInputLanguageName())) {
+		if (!toLanguageName(getInputAppName()).equalsIgnoreCase(getInputAppName())) {
 			setErrorStatus("Application name must be valid");
 			return;
 		}
