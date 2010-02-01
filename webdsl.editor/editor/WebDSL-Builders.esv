@@ -13,9 +13,10 @@ builders
   builder                                                         : "Generate Java code" = generate-java (openeditor) (realtime)          
   builder                                                         : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)  
   */
-
+/*
   observer : editor-analyze
   provider : include/webdsl.ctree
   provider : include/webdsl.jar
   provider : include/invoke-webdsl-script.jar
   builder  : "Build" = build-webdsl  
+*/
