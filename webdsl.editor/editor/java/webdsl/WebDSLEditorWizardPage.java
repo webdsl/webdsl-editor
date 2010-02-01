@@ -233,11 +233,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		Button bCreateDrop1 = new Button(dbmodeGroup, SWT.RADIO);
 		bCreateDrop1.setText("overwrite database when deployed");
 		bCreateDrop1.addSelectionListener(new SelectionListener() {
-			@Override
 			public void widgetSelected(SelectionEvent e) {
 				inputDBMode = "create-drop";
 			}
-			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
 		});
@@ -245,11 +243,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	    Button bUpdate1 = new Button(dbmodeGroup, SWT.RADIO);
 	    bUpdate1.setText("update database when deployed");
 	    bUpdate1.addSelectionListener(new SelectionListener() {
-			@Override
 			public void widgetSelected(SelectionEvent e) {
 				inputDBMode = "update";
 			}
-			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
 		});
@@ -257,11 +253,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	    Button bFalse1 = new Button(dbmodeGroup, SWT.RADIO);
 	    bFalse1.setText("don't change the database");
 	    bFalse1.addSelectionListener(new SelectionListener() {
-			@Override
 			public void widgetSelected(SelectionEvent e) {
 				inputDBMode = "false";
 			}
-			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
 		});		
@@ -325,20 +319,16 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		
 		//database selection radio button events
 	    bMysql.addSelectionListener(new SelectionListener() {
-			@Override
 			public void widgetSelected(SelectionEvent e) {
 				pickMysql();
 			}
-			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
 		});
 	    bSqlite.addSelectionListener(new SelectionListener() {
-	    	@Override
 	    	public void widgetSelected(SelectionEvent e) {
 	    		pickSqlite();
 	    	}
-	    	@Override
 	    	public void widgetDefaultSelected(SelectionEvent e) {
 	    	}
 	    });
