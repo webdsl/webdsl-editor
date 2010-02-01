@@ -78,13 +78,19 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 	public boolean performFinish() {
 		final String languageName = input.getInputLanguageName();
 		final String projectName = input.getInputProjectName();
-		final String DBHost = input.getInputDBHost();
+		final boolean isMysqlSelected = input.isMysqlSelected();
+		final String host = input.getInputDBHost();
+		final String user = input.getInputDBUser();
+		final String pass = input.getInputDBPass();
+		final String name = input.getInputDBName();
+		final String mode = input.getInputDBMode();
+		final String file = input.getInputDBFile();
 		System.out.println(languageName+projectName);
 		
 		IRunnableWithProgress op = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) throws InvocationTargetException {
 				try {
-					doFinish(languageName, projectName, DBHost, monitor);
+					doFinish(languageName, projectName, isMysqlSelected, host, user, pass, name, mode, file, monitor);
 				} catch (Exception e) {
 					throw new InvocationTargetException(e);
 				} finally {
@@ -117,7 +123,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		}
 	}
 	
- 	private void doFinish(String languageName, String projectName, String DBHost, IProgressMonitor monitor) throws IOException, CoreException {
+ 	private void doFinish(String languageName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, IProgressMonitor monitor) throws IOException, CoreException {
  		final int TASK_COUNT = 2;
 		lastProject = null;
 		monitor.beginTask("Creating " + languageName + " application", TASK_COUNT);
@@ -160,8 +166,20 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 			String appinifilename = project.getLocation()+"/application.ini";
 			System.out.println(appinifilename);
 			BufferedWriter out = new BufferedWriter(new FileWriter(appinifilename)); 
-			out.write("appname="+languageName+"\n"); 
-			out.write("dbserver="+DBHost+"\n"); 
+			out.write("appname="+languageName+"\n");
+			out.write("backend=servlet\n");
+			if(isMysqlSelected){
+				out.write("dbserver="+host+"\n"); 
+				out.write("dbuser="+user+"\n"); 
+				out.write("dbpassword="+pass+"\n");
+				out.write("dbname="+name+"\n");
+				out.write("dbmode="+mode+"\n");
+			}
+			else{
+				out.write("db=sqlite\n");
+				out.write("dbfile="+file+"\n");
+				out.write("dbmode="+mode+"\n");
+			}
 			out.close(); 
 		} 
 		catch (IOException e) { 

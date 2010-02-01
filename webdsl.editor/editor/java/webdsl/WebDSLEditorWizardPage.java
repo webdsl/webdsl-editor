@@ -33,8 +33,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	
 	private boolean isInputProjectNameChanged;
 	private boolean isMysqlDatabaseSelected;
-	public boolean getIsMysqlSelected()  { return isMysqlDatabaseSelected; }
-	public boolean getIsSqliteSelected() { return !isMysqlDatabaseSelected; }
+	public boolean isMysqlSelected()  { return isMysqlDatabaseSelected; }
+	public boolean isSqliteSelected() { return !isMysqlDatabaseSelected; }
 
 	private Text inputDBHost;
 	public String getInputDBHost() { return inputDBHost.getText().trim(); }
@@ -44,13 +44,14 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	public String getInputDBPass() { return inputDBPass.getText().trim(); }
 	private Text inputDBName;
 	public String getInputDBName() { return inputDBName.getText().trim(); }
-	private Text inputDBMode;
-	public String getInputDBMode() { return inputDBMode.getText().trim(); }
+	private String inputDBMode;
+	public String getInputDBMode() { return inputDBMode.trim(); }
 	private Text inputDBFile;
 	public String getInputDBFile() { return inputDBFile.getText().trim(); }
-	private Text inputDBModeSqlite;
-	public String getInputDBModeSqlite() { return inputDBModeSqlite.getText().trim(); }
 	
+	private Group sqliteGroup;
+	private Group mysqlGroup;
+	private Group dbmodeGroup;
 	
 	private boolean ignoreEvents;
 
@@ -95,7 +96,53 @@ public class WebDSLEditorWizardPage extends WizardPage {
 				}
 			}
 		});
-
+		
+		dbmodeGroup = new Group(container, SWT.NULL);
+		GridData dbmodeGridData = new GridData();
+		dbmodeGridData.horizontalAlignment = GridData.FILL;
+		dbmodeGridData.horizontalSpan = 2;
+		dbmodeGroup.setLayoutData(dbmodeGridData);
+		dbmodeGroup.setText("Database mode");
+		GridLayout dbmodeGroupLayout = new GridLayout();
+		dbmodeGroup.setLayout(dbmodeGroupLayout);
+		dbmodeGroupLayout.numColumns = 2;
+		dbmodeGroupLayout.verticalSpacing = 9;
+		
+		Button bCreateDrop1 = new Button(dbmodeGroup, SWT.RADIO);
+		bCreateDrop1.setText("overwrite database when deployed");
+		bCreateDrop1.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				inputDBMode = "create-drop";
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
+		
+	    Button bUpdate1 = new Button(dbmodeGroup, SWT.RADIO);
+	    bUpdate1.setText("update database when deployed");
+	    bUpdate1.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				inputDBMode = "update";
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
+	    
+	    Button bFalse1 = new Button(dbmodeGroup, SWT.RADIO);
+	    bFalse1.setText("don't change the database");
+	    bFalse1.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				inputDBMode = "false";
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
 		
 	    Button bMysql = new Button(container, SWT.RADIO);
 	    bMysql.setText("MySQL database");
@@ -103,8 +150,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	    Button bSqlite = new Button(container, SWT.RADIO);
 	    bSqlite.setText("Sqlite database");
 
-	    
-		final Group mysqlGroup = new Group(container, SWT.NULL);
+		mysqlGroup = new Group(container, SWT.NULL);
 		
 		GridData gridData = new GridData();
 		gridData.horizontalAlignment = GridData.FILL;
@@ -162,19 +208,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			}
 		});
 		
-		new Label(mysqlGroup, SWT.NULL).setText("&Database mode:");
-		inputDBMode = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
-		inputDBMode.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputDBMode.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
-			}
-		});
-		
-		
-		final Group sqliteGroup = new Group(container, SWT.NULL);
+		sqliteGroup = new Group(container, SWT.NULL);
 		
 		GridData sqliteGridData = new GridData();
 		sqliteGridData.horizontalAlignment = GridData.FILL;
@@ -198,27 +232,13 @@ public class WebDSLEditorWizardPage extends WizardPage {
 				}
 			}
 		});
-		
-		new Label(sqliteGroup, SWT.NULL).setText("&Database mode:");
-		inputDBModeSqlite = new Text(sqliteGroup, SWT.BORDER | SWT.SINGLE);
-		inputDBModeSqlite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		inputDBModeSqlite.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
-			}
-		});
-		
-		
+		inputDBFile.setText("temp.db");
+	    
 		//database selection radio button events
 	    bMysql.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				sqliteGroup.setEnabled(false);
-				mysqlGroup.setEnabled(true);
-				mysqlGroup.setFocus();
-				isMysqlDatabaseSelected = true;
+				pickMysql();
 			}
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
@@ -227,20 +247,51 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	    bSqlite.addSelectionListener(new SelectionListener() {
 	    	@Override
 	    	public void widgetSelected(SelectionEvent e) {
-	    		mysqlGroup.setEnabled(false);
-	    		sqliteGroup.setEnabled(true);
-	    		sqliteGroup.setFocus();
-	    		isMysqlDatabaseSelected = false;
+	    		pickSqlite();
 	    	}
 	    	@Override
 	    	public void widgetDefaultSelected(SelectionEvent e) {
 	    	}
 	    });
-		
-
+	    
+	    sqliteGroup.setEnabled(false);
+     	inputDBFile.setEnabled(false);
+		mysqlGroup.setEnabled(false);
+		inputDBHost.setEnabled(false);
+		inputDBName.setEnabled(false);
+		inputDBPass.setEnabled(false);
+		inputDBUser.setEnabled(false);
+	    
 		setControl(container);
 		setPageComplete(false);
+		
 		inputProjectName.setFocus();
+	}
+	
+	private void pickMysql(){
+		sqliteGroup.setEnabled(false);
+		inputDBFile.setEnabled(false);
+		
+		mysqlGroup.setEnabled(true);
+		inputDBHost.setEnabled(true);
+		inputDBName.setEnabled(true);
+		inputDBPass.setEnabled(true);
+		inputDBUser.setEnabled(true);
+		
+		mysqlGroup.setFocus();
+		isMysqlDatabaseSelected = true;
+	}
+	private void pickSqlite(){
+		mysqlGroup.setEnabled(false);
+		inputDBHost.setEnabled(false);
+		inputDBName.setEnabled(false);
+		inputDBPass.setEnabled(false);
+		inputDBUser.setEnabled(false);
+		
+		sqliteGroup.setEnabled(true);
+		inputDBFile.setEnabled(true);
+		sqliteGroup.setFocus();
+		isMysqlDatabaseSelected = false;
 	}
 
 	private void distributeProjectName() {
@@ -264,7 +315,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			return;
 		}
 		if (getInputLanguageName().length() == 0) {
-			setErrorStatus("Language name must be specified");
+			setErrorStatus("Application name must be specified");
 			return;
 		}	
 		
@@ -273,7 +324,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 			return;
 		}
 		if (!toLanguageName(getInputLanguageName()).equalsIgnoreCase(getInputLanguageName())) {
-			setErrorStatus("Language name must be valid");
+			setErrorStatus("Application name must be valid");
 			return;
 		}
 
