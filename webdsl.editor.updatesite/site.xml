@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description name="webdsl" url="http://www.webdsl.org/update">
+      WebDSL editor update site
+   </description>
+   <feature url="features/webdsl.editor.feature_1.0.0.201002021150.jar" id="webdsl.editor.feature" version="1.0.0.201002021150">
+      <category name="webdslplugincat"/>
+   </feature>
+   <category-def name="webdslplugincat" label="webdsl plugin"/>
+</site>
