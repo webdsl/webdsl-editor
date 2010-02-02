@@ -57,6 +57,6 @@
         </target>
         <target name="import-stratego-jar">
 	        <echo>${webdsl.home}/strategoxt.jar</echo>
-        	<copy file="${webdsl.home}/strategoxt.jar" overwrite="true" todir="webdsl-template"/>
+        	<copy file="${webdsl.home}/strategoxt.jar" overwrite="true" todir="include"/>
         </target>  
     </project>

@@ -127,7 +127,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 	}
 	
  	private void doFinish(String languageName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, IProgressMonitor monitor) throws IOException, CoreException {
- 		final int TASK_COUNT = 2;
+ 		final int TASK_COUNT = 3;
 		lastProject = null;
 		monitor.beginTask("Creating " + languageName + " application", TASK_COUNT);
 		
@@ -211,7 +211,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		ant.append("\t<property name=\"projectdir\" value=\""+project.getLocation()+"\" />\n");
 		ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
 		ant.append("\t<property name=\"currentdir\" value=\"${projectdir}\"/>\n");
-		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp ${templatedir}/strategoxt.jar:${plugindir}/include/webdsl.jar org.webdsl.webdslc.Main\"/>\n");
+		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp ${plugindir}/include/webdsl.jar org.webdsl.webdslc.Main\"/>\n");
 		ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
        
 		ant.append("\t<target name=\"plugin-build\">\n");
@@ -287,6 +287,12 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		monitor.worked(1);
 		EditorState.asyncOpenEditor(display, project.getFile("/test/example." + extensions.split(",")[0]), false);*/
 		refreshProject(project);
+		
+		monitor.setTaskName("Opening editor tabs");
+		Display display = getShell().getDisplay();
+		EditorState.asyncOpenEditor(display, project.getFile(languageName+".app"), true);
+		EditorState.asyncOpenEditor(display, project.getFile("templates.app"), true);
+		monitor.worked(1);
 	}
  	
  	public static void writeStringToFile(String s, String file) throws IOException{
@@ -349,7 +355,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 			}
 		};
 		job.setSystem(true);
-		job.schedule(1000); 
+		job.schedule(0);
 	}
 
 }
