@@ -17,4 +17,4 @@ builders External service provider resources
 	builder		: "Derive Transformation"	= editor-detect-transformation (openeditor) (persistent)
 	builder		: "Create Database Schema"	= editor-createdatabase
 	builder		: "Show Database Schema"	= editor-wdl2schema (openeditor) (realtime)
-	builder		: "Derive M3"				= editor-wdldm2m3 (openeditor) (realtime)
+	builder		: "Derive M3"				= editor-wdldm2m3 (openeditor) (realtime) (meta)
