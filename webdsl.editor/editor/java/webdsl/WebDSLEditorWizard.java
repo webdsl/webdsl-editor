@@ -74,7 +74,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 	 */
 	@Override
 	public boolean performFinish() {
-		final String languageName = input.getInputAppName();
+		final String appName = input.getInputAppName();
 		final String projectName = input.getInputProjectName();
 		final boolean isMysqlSelected = input.isMysqlSelected();
 		final String host = input.getInputDBHost();
@@ -88,12 +88,12 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		final String smtpport = input.getInputSmtpPort();
 		final String smtpuser = input.getInputSmtpUser();
 		final String smtppass = input.getInputSmtpPass();
-		System.out.println(languageName+projectName);
+		System.out.println(appName+projectName);
 		
 		IRunnableWithProgress op = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) throws InvocationTargetException {
 				try {
-					doFinish(languageName, projectName, isMysqlSelected, host, user, pass, name, mode, file, tomcatpath, smtphost, smtpport, smtpuser, smtppass, monitor);
+					doFinish(appName, projectName, isMysqlSelected, host, user, pass, name, mode, file, tomcatpath, smtphost, smtpport, smtpuser, smtppass, monitor);
 				} catch (Exception e) {
 					throw new InvocationTargetException(e);
 				} finally {
@@ -126,10 +126,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		}
 	}
 	
- 	private void doFinish(String languageName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, IProgressMonitor monitor) throws IOException, CoreException {
+ 	private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, IProgressMonitor monitor) throws IOException, CoreException {
  		final int TASK_COUNT = 3;
 		lastProject = null;
-		monitor.beginTask("Creating " + languageName + " application", TASK_COUNT);
+		monitor.beginTask("Creating " + appName + " application", TASK_COUNT);
 		
 		//EditorIOAgent agent = new EditorIOAgent();
 		//agent.setAlwaysActivateConsole(true);
@@ -169,7 +169,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 			String appinifilename = project.getLocation()+"/application.ini";
 			System.out.println(appinifilename);
 			BufferedWriter out = new BufferedWriter(new FileWriter(appinifilename)); 
-			out.write("appname="+languageName+"\n");
+			out.write("appname="+appName+"\n");
 			out.write("backend=servlet\n");
 			out.write("sessiontimeout=120\n");
 			out.write("smtphost="+smtphost+"\n");
@@ -197,7 +197,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		} 
 		
 		copyFile(plugindir+"webdsl-template/new_project/templates.app", project.getLocation()+"/templates.app");
-		copyFile(plugindir+"webdsl-template/new_project/APPLICATION_NAME.app", project.getLocation()+"/"+languageName+".app");
+		copyFile(plugindir+"webdsl-template/new_project/APPLICATION_NAME.app", project.getLocation()+"/"+appName+".app");
 		createDirs(project.getLocation()+"/images");
 		copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
 		createDirs(project.getLocation()+"/stylesheets");
@@ -206,14 +206,19 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		monitor.worked(1);
 		
 		StringBuffer ant = new StringBuffer();
-		ant.append("<project name=\"webdsl-eclipse-plugin\" default=\"plugin-run\">\n");
-		ant.append("\t<property name=\"plugindir\" value=\""+plugindir+"\" />\n");
+		ant.append("<project name=\"webdsl-eclipse-plugin\" default=\"plugin-eclipse-build\">\n");
+		//ant.append("\t<property name=\"plugindir\" value=\""+plugindir+"\" />\n");
+		ant.append("\t<fail unless=\"plugindir\" message=\"WebDSL plugin is not correctly installed. The 'plugindir' property is not available.\" />\n");
 		ant.append("\t<property name=\"projectdir\" value=\""+project.getLocation()+"\" />\n");
 		ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
 		ant.append("\t<property name=\"currentdir\" value=\"${projectdir}\"/>\n");
-		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp ${plugindir}/include/webdsl.jar org.webdsl.webdslc.Main\"/>\n");
+		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp '${plugindir}/include/webdsl.jar' org.webdsl.webdslc.Main\"/>\n");
 		ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
        
+		ant.append("\t<target name=\"plugin-eclipse-build\">\n");
+		ant.append("\t\t<antcall target=\"eclipse-build\"/>\n");
+		ant.append("\t</target>\n");
+		
 		ant.append("\t<target name=\"plugin-build\">\n");
        	ant.append("\t\t<property name=\"buildoptions\" value=\"build\" />\n");
        	ant.append("\t\t<antcall target=\"command\"/>\n");
@@ -243,6 +248,95 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		
 		writeStringToFile(ant.toString(), project.getLocation()+"/build.xml");
 		
+		//create build launch file to make sure ant uses same jre instance as eclipse, otherwise the plugindir property provider won't work
+		StringBuffer buildLaunchFile = new StringBuffer();
+		buildLaunchFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+	    buildLaunchFile.append("<launchConfiguration type=\"org.eclipse.ant.AntLaunchConfigurationType\">\n");
+		buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ant.ui.DEFAULT_VM_INSTALL\" value=\"false\"/>\n");
+		buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_PATHS\">\n");
+		buildLaunchFile.append("\t\t<listEntry value=\"/"+appName+"/build.xml\"/>\n");
+		buildLaunchFile.append("\t</listAttribute>\n");
+		buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_TYPES\">\n");
+		buildLaunchFile.append("\t\t<listEntry value=\"1\"/>\n");
+		buildLaunchFile.append("\t</listAttribute>\n");
+		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.CLASSPATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
+		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROJECT_ATTR\" value=\""+appName+"\"/>\n");
+		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
+		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_ANT_TARGETS\" value=\"plugin-run,\"/>\n");
+		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"${workspace_loc:/"+appName+"/build.xml}\"/>\n");
+		buildLaunchFile.append("\t<stringAttribute key=\"process_factory_id\" value=\"org.eclipse.ant.ui.remoteAntProcessFactory\"/>\n");
+		buildLaunchFile.append("</launchConfiguration>\n");
+		writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" build.xml.launch");
+		
+		//overwrite .project file with correct settings
+		StringBuffer projectFile = new StringBuffer();
+		projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+		projectFile.append("<projectDescription>\n");
+		projectFile.append("\t<name>"+projectName+"</name>\n");
+		projectFile.append("\t<buildSpec>\n");
+		projectFile.append("\t\t<buildCommand>\n");
+		projectFile.append("\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n");
+		projectFile.append("\t\t</buildCommand>\n");
+		projectFile.append("\t\t<buildCommand>\n");
+		projectFile.append("\t\t\t<name>org.eclipse.wst.common.project.facet.core.builder</name>\n");
+		projectFile.append("\t\t</buildCommand>\n");
+		//projectFile.append("\t\t<buildCommand>\n");
+		//projectFile.append("\t\t\t<name>org.eclipse.wst.validation.validationbuilder</name>\n");
+		//projectFile.append("\t\t</buildCommand>\n");
+		projectFile.append("\t</buildSpec>\n");
+		projectFile.append("\t<natures>\n");
+		projectFile.append("\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n");
+		projectFile.append("\t\t<nature>org.eclipse.wst.common.project.facet.core.nature</nature>\n");
+		projectFile.append("\t\t<nature>org.eclipse.wst.common.modulecore.ModuleCoreNature</nature>\n");
+		projectFile.append("\t\t<nature>org.eclipse.jem.workbench.JavaEMFNature</nature>\n");
+		projectFile.append("\t</natures>\n");
+		projectFile.append("</projectDescription>\n");
+		writeStringToFile(projectFile.toString(), project.getLocation()+"/.project");
+		
+		//write a .classpath for java nature of project
+		StringBuffer classpathFile = new StringBuffer();
+		classpathFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+		classpathFile.append("<classpath>\n");
+		classpathFile.append("\t<classpathentry kind=\"src\" path=\".servletapp/src\"/>\n");
+		classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6\"/>\n");
+		classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jst.j2ee.internal.web.container\"/>\n");
+		classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jst.j2ee.internal.module.container\"/>\n");
+		classpathFile.append("\t<classpathentry kind=\"output\" path=\"WebContent/WEB-INF/classes\"/>\n");
+		classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/*.jar\"/>\n");
+		classpathFile.append("</classpath>\n");
+		writeStringToFile(classpathFile.toString(), project.getLocation()+"/.classpath");
+		
+		//write .settings/* files
+		createDirs(project.getLocation()+"/.settings");
+		
+		StringBuffer jdtprefsFile = new StringBuffer();
+		jdtprefsFile.append("eclipse.preferences.version=1\n");
+		jdtprefsFile.append("org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6\n");
+		jdtprefsFile.append("org.eclipse.jdt.core.compiler.compliance=1.6\n");
+		jdtprefsFile.append("org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n");
+		jdtprefsFile.append("org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n");
+		jdtprefsFile.append("org.eclipse.jdt.core.compiler.source=1.6\n");
+		writeStringToFile(jdtprefsFile.toString(), project.getLocation()+"/.settings/org.eclipse.jdt.core.prefs");
+		
+		StringBuffer wstcomponentFile = new StringBuffer();
+		wstcomponentFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+		wstcomponentFile.append("<project-modules id=\"moduleCoreId\" project-version=\"1.5.0\">\n");
+		wstcomponentFile.append("\t<wb-module deploy-name=\""+projectName+"\">\n");
+		wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/\" source-path=\"/bin\"/>\n");
+		wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src\"/>\n");
+		wstcomponentFile.append("\t\t<property name=\"context-root\" value=\""+projectName+"\"/>\n");
+		wstcomponentFile.append("\t\t<property name=\"java-output-path\"/>\n");
+		wstcomponentFile.append("\t</wb-module>\n");
+		wstcomponentFile.append("</project-modules>\n");
+		writeStringToFile(wstcomponentFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.component");
+		
+		StringBuffer wstfacetFile = new StringBuffer();
+		wstfacetFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+		wstfacetFile.append("<faceted-project>\n");
+		wstfacetFile.append("\t<installed facet=\"jst.java\" version=\"6.0\"/>\n");
+		wstfacetFile.append("\t<installed facet=\"jst.web\" version=\"2.4\"/>\n");
+		wstfacetFile.append("</faceted-project>\n");
+		writeStringToFile(wstfacetFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.project.facet.core.xml");
 		
 /*
  * 
@@ -289,9 +383,16 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		refreshProject(project);
 		
 		monitor.setTaskName("Opening editor tabs");
+		//wait a second for refresh of project
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		Display display = getShell().getDisplay();
-		EditorState.asyncOpenEditor(display, project.getFile(languageName+".app"), true);
 		EditorState.asyncOpenEditor(display, project.getFile("templates.app"), true);
+		EditorState.asyncOpenEditor(display, project.getFile(appName+".app"), true);
 		monitor.worked(1);
 	}
  	

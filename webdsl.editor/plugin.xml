@@ -9,11 +9,8 @@
           <parser class="webdsl.WebDSLParseController" language="WebDSL">
           </parser>
        </extension>
-      <extension
-         point="org.eclipse.ui.newWizards">
-      <primaryWizard
-            id="webdsl.NewEditorWizard">
-      </primaryWizard>
+    <extension point="org.eclipse.ui.newWizards">
+      <primaryWizard id="webdsl.NewEditorWizard" />
       <wizard
             class="webdsl.WebDSLEditorWizard"
             icon="icons/webdsl.gif"
@@ -21,6 +18,12 @@
             name="WebDSL project"
             project="true">
       </wizard>
-   </extension>
+    </extension>
+    <extension point="org.eclipse.ant.core.antProperties">
+      <antProperty
+            class="webdsl.WebDSLJarAntPropertyProvider"
+            name="plugindir">
+      </antProperty>
+    </extension>
 
-    </plugin>
+</plugin>
