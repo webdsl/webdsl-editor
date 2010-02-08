@@ -27,6 +27,13 @@
          name="spoofaximp"
          search-location="self"/>
 
+   <requires>
+      <import feature="org.eclipse.jst.enterprise_core.feature" version="3.1.1.v200908101600-52FGCAkF77g7NDE8QA7" match="greaterOrEqual"/>
+      <import feature="org.eclipse.jst.enterprise_ui.feature" version="3.1.1.v200908101600-7_7EGrfFQRwRZTMYz07YrGeRz0Tj" match="greaterOrEqual"/>
+      <import feature="org.eclipse.jst.enterprise_userdoc.feature" version="3.1.0.v200809051357-62FIXBgJ99nBPBjIHN_" match="greaterOrEqual"/>
+      <import feature="org.eclipse.jst.server_adapters.ext.feature" version="3.1.1.v20090813-777HFDPCcNBBz0BjJU4BA8" match="greaterOrEqual"/>
+   </requires>
+
    <plugin
          id="webdsl.editor"
          download-size="0"
