@@ -209,9 +209,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		ant.append("<project name=\"webdsl-eclipse-plugin\" default=\"plugin-eclipse-build\">\n");
 		//ant.append("\t<property name=\"plugindir\" value=\""+plugindir+"\" />\n");
 		ant.append("\t<fail unless=\"plugindir\" message=\"WebDSL plugin is not correctly installed. The 'plugindir' property is not available.\" />\n");
-		ant.append("\t<property name=\"projectdir\" value=\""+project.getLocation()+"\" />\n");
 		ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
-		ant.append("\t<property name=\"currentdir\" value=\"${projectdir}\"/>\n");
+		ant.append("\t<property name=\"currentdir\" value=\"${basedir}\"/>\n");
 		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp '${plugindir}/include/webdsl.jar' org.webdsl.webdslc.Main\"/>\n");
 		ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
        
@@ -262,7 +261,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.CLASSPATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
 		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROJECT_ATTR\" value=\""+appName+"\"/>\n");
 		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
-		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_ANT_TARGETS\" value=\"plugin-run,\"/>\n");
+		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_ANT_TARGETS\" value=\"plugin-eclipse-build,\"/>\n");
 		buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"${workspace_loc:/"+appName+"/build.xml}\"/>\n");
 		buildLaunchFile.append("\t<stringAttribute key=\"process_factory_id\" value=\"org.eclipse.ant.ui.remoteAntProcessFactory\"/>\n");
 		buildLaunchFile.append("</launchConfiguration>\n");
@@ -274,6 +273,14 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		projectFile.append("<projectDescription>\n");
 		projectFile.append("\t<name>"+projectName+"</name>\n");
 		projectFile.append("\t<buildSpec>\n");
+		projectFile.append("\t\t<buildCommand>\n");
+		projectFile.append("\t\t\t<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>\n");
+		projectFile.append("\t\t\t<triggers>full,incremental,</triggers>\n");
+		projectFile.append("\t\t\t<arguments><dictionary>\n");
+		projectFile.append("\t\t\t\t<key>LaunchConfigHandle</key>\n");
+		projectFile.append("\t\t\t\t<value>&lt;project&gt;/"+projectName+" build.xml.launch</value>\n");
+		projectFile.append("\t\t\t</dictionary></arguments>\n");
+		projectFile.append("\t\t</buildCommand>\n");
 		projectFile.append("\t\t<buildCommand>\n");
 		projectFile.append("\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n");
 		projectFile.append("\t\t</buildCommand>\n");
@@ -419,13 +426,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		refreshProject(project);
 		
 		monitor.setTaskName("Opening editor tabs");
-		//wait a second for refresh of project
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
 		Display display = getShell().getDisplay();
 		EditorState.asyncOpenEditor(display, project.getFile("templates.app"), true);
 		EditorState.asyncOpenEditor(display, project.getFile(appName+".app"), true);
@@ -478,21 +479,16 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
  	}
 
 	private void refreshProject(final IProject project) {
-		// We schedule a project refresh to make all ".generated" files readable
-		Job job = new Job("Refreshing project") {
-			@Override
-			protected IStatus run(IProgressMonitor monitor) {
-				synchronized (Environment.getSyncRoot()) {}; // wait for update thread
-				try {
-					project.refreshLocal(DEPTH_INFINITE, new NullProgressMonitor());
-				} catch (CoreException e) {
-					// Ignore
-				}
-				return Status.OK_STATUS;
-			}
-		};
-		job.setSystem(true);
-		job.schedule(0);
+	    try {
+			NullProgressMonitor monitor = new NullProgressMonitor();
+			project.refreshLocal(DEPTH_INFINITE, monitor);
+			project.close(monitor);
+			project.open(monitor);
+			
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

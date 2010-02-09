@@ -32,6 +32,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	public String getInputAppName() { return inputAppName.getText().trim(); }
 	
 	private boolean isInputProjectNameChanged;
+	private boolean dbTypeSelected = false;
 	private boolean isMysqlDatabaseSelected;
 	public boolean isMysqlSelected()  { return isMysqlDatabaseSelected; }
 	public boolean isSqliteSelected() { return !isMysqlDatabaseSelected; }
@@ -56,7 +57,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	public String getInputDBMode() { return inputDBMode.trim(); }
 
 	private Text inputTomcatPath;
-	public String getInputTomcatPath() { return inputTomcatPath.getText().trim(); }
+	public String getInputTomcatPath() { return "/opt/tomcat"; } //return inputTomcatPath.getText().trim(); }
 	
 	private Text inputSmtpHost;
 	public String getInputSmtpHost() { return inputSmtpHost.getText().trim(); }
@@ -67,6 +68,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	private Text inputSmtpPass;
 	public String getInputSmtpPass() { return inputSmtpPass.getText().trim(); }
 	
+	private boolean selectedDbMode = false;
 	
 	private Group sqliteGroup;
 	private Group mysqlGroup;
@@ -111,12 +113,10 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputAppName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputAppName.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
-		
+		/*
 		new Label(container, SWT.NULL).setText("&Tomcat root path (optional):");
 		inputTomcatPath = new Text(container, SWT.BORDER | SWT.SINGLE);
 		inputTomcatPath.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -127,7 +127,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 				}
 			}
 		});
-		inputTomcatPath.setText("/opt/tomcat");
+		inputTomcatPath.setText("/opt/tomcat");*/
 		
 	    Button bMysql = new Button(container, SWT.RADIO);
 	    bMysql.setText("MySQL database");
@@ -154,9 +154,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputDBHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBHost.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 		
@@ -165,9 +163,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputDBUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBUser.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 		
@@ -176,9 +172,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputDBPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBPass.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 		
@@ -187,9 +181,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputDBName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBName.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 		
@@ -212,9 +204,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputDBFile.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputDBFile.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 		inputDBFile.setText("temp.db");
@@ -231,10 +221,14 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		dbmodeGroupLayout.verticalSpacing = 9;
 		
 		Button bCreateDrop1 = new Button(dbmodeGroup, SWT.RADIO);
-		bCreateDrop1.setText("overwrite database when deployed");
+		bCreateDrop1.setText("overwrite database when deployed (recommended)");
 		bCreateDrop1.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
 				inputDBMode = "create-drop";
+				selectedDbMode = true;
+				if (!ignoreEvents) {
+					onChange();
+				}
 			}
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
@@ -245,6 +239,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	    bUpdate1.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
 				inputDBMode = "update";
+				selectedDbMode = true;
+				onChange();
 			}
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
@@ -255,6 +251,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	    bFalse1.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
 				inputDBMode = "false";
+				selectedDbMode = true;
+				onChange();
 			}
 			public void widgetDefaultSelected(SelectionEvent e) {
 			}
@@ -276,9 +274,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputSmtpHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputSmtpHost.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 		inputSmtpHost.setText("smtp.gmail.com");
@@ -288,9 +284,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputSmtpPort.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputSmtpPort.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 		inputSmtpPort.setText("465");
@@ -300,9 +294,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputSmtpUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputSmtpUser.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});
 	    
@@ -311,9 +303,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputSmtpPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		inputSmtpPass.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (!ignoreEvents) {
-					onChange();
-				}
+				onChange();
 			}
 		});		
 		
@@ -348,6 +338,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	}
 	
 	private void pickMysql(){
+		dbTypeSelected = true;
+		
 		sqliteGroup.setEnabled(false);
 		inputDBFile.setEnabled(false);
 		
@@ -359,8 +351,12 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		
 		mysqlGroup.setFocus();
 		isMysqlDatabaseSelected = true;
+		
+		onChange();
 	}
 	private void pickSqlite(){
+		dbTypeSelected = true;
+		
 		mysqlGroup.setEnabled(false);
 		inputDBHost.setEnabled(false);
 		inputDBName.setEnabled(false);
@@ -371,6 +367,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
 		inputDBFile.setEnabled(true);
 		sqliteGroup.setFocus();
 		isMysqlDatabaseSelected = false;
+		
+		onChange();
 	}
 
 	private void distributeProjectName() {
@@ -387,36 +385,46 @@ public class WebDSLEditorWizardPage extends WizardPage {
 	 * Ensures that both text fields are set.
 	 */
 	private void onChange() {
-		setErrorMessage(null);
-		
-		if (getInputProjectName().length() == 0) {
-			setErrorStatus("Project name must be specified");
-			return;
-		}
-		if (getInputAppName().length() == 0) {
-			setErrorStatus("Application name must be specified");
-			return;
-		}	
-		
-		if (!isValidProjectName(getInputProjectName())) {
-			setErrorStatus("Project name must be valid");
-			return;
-		}
-		if (!toLanguageName(getInputAppName()).equalsIgnoreCase(getInputAppName())) {
-			setErrorStatus("Application name must be valid");
-			return;
-		}
-
-		IWorkspace workspace = ResourcesPlugin.getWorkspace();
-		if (workspace.getRoot().getProject(getInputProjectName()).exists()) {
-			setErrorStatus("A project with this name already exists");
-			return;
-		}
-
-		if (getInputProjectName().indexOf(' ') != -1) {
-			setWarningStatus("Project names with spaces may not be supported depending on your configuration");
-		} else {
-			setErrorStatus(null);
+		if (!ignoreEvents) {
+			setErrorMessage(null);
+			
+			if (getInputProjectName().length() == 0) {
+				setErrorStatus("Project name must be specified");
+				return;
+			}
+			if (getInputAppName().length() == 0) {
+				setErrorStatus("Application name must be specified");
+				return;
+			}	
+			
+			if (!isValidProjectName(getInputProjectName())) {
+				setErrorStatus("Project name must be valid");
+				return;
+			}
+			if (!toLanguageName(getInputAppName()).equalsIgnoreCase(getInputAppName())) {
+				setErrorStatus("Application name must be valid");
+				return;
+			}
+			if (!dbTypeSelected) {
+				setErrorStatus("Mysql or Sqlite database must be selected");
+				return;
+			}
+			if (!selectedDbMode) {
+				setErrorStatus("Database mode must be selected");
+				return;
+			}
+	
+			IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			if (workspace.getRoot().getProject(getInputProjectName()).exists()) {
+				setErrorStatus("A project with this name already exists");
+				return;
+			}
+	
+			if (getInputProjectName().indexOf(' ') != -1) {
+				setWarningStatus("Project names with spaces may not be supported depending on your configuration");
+			} else {
+				setErrorStatus(null);
+			}
 		}
 	}
 
