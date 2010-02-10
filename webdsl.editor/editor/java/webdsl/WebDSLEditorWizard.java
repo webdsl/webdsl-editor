@@ -211,7 +211,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 		ant.append("\t<fail unless=\"plugindir\" message=\"WebDSL plugin is not correctly installed. The 'plugindir' property is not available.\" />\n");
 		ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
 		ant.append("\t<property name=\"currentdir\" value=\"${basedir}\"/>\n");
-		ant.append("\t<property name=\"webdslexec\" value=\"java -ss4m -cp '${plugindir}/include/webdsl.jar' org.webdsl.webdslc.Main\"/>\n");
+		ant.append("\t<property name=\"webdsl-java-cp\" value=\"${plugindir}/include/webdsl.jar\"/>\n");
+		ant.append("\t<property name=\"webdslexec\" value=\"java\"/>\n");
 		ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
        
 		ant.append("\t<target name=\"plugin-eclipse-build\">\n");
