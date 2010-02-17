@@ -1,0 +1,11 @@
+module enum
+
+imports libwebdsl-front 
+
+rules // declaring entities
+
+  declare-def:
+    e@Enum(x, value*) -> e
+    with rules( EntDecl : x -> e )
+
+    

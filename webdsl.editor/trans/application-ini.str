@@ -1,0 +1,35 @@
+module application-ini
+
+imports
+  libstratego-lib
+
+strategies
+  
+  /**
+   * Get the main file name of a WebDSL project, looking at the
+   * application.ini file in the current directory and those above it.
+   */
+  get-main-file-name =
+    <readdir> ".";
+    getfirst(
+      "application.ini";
+      application-ini-to-app-name;
+      <add-extension> (<id>,"app")
+    )
+  <+
+    cwd := <getcwd>;
+    <chdir> "..";
+    not(getcwd => cwd);
+    (get-main-file-name <+ <chdir> cwd; fail)
+
+  application-ini-to-app-name:
+    filename -> appname
+    where
+      <read-text-file> filename;
+      get-lines;
+      //debug(!"lines: ");
+      (getfirst(string-starts-with(|"export APPNAME=")) <+ getfirst(string-starts-with(|"appname=")));
+      //debug(!"appname: ");
+      <split-after> (<id>, "=");
+      ?(_, appname)
+

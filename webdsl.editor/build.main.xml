@@ -46,10 +46,10 @@
         <import file="build.common.xml"/>
     
         <!-- Main target -->
-        <target name="all" depends="spoofaximp, import-webdsl-template, import-stratego-jar"/>
+        <target name="all" depends="spoofaximp, import-webdsl-template, import-stratego-jar, import-rtrees-for-editor-checks"/>
   
         <target name="import-webdsl-template">
-            <copy overwrite="true" todir="webdsl-template">
+            <copy preservelastmodified="true" todir="webdsl-template">
               <fileset dir="${webdsl.projectdir}">
                 <include name="**/*.*"/>
               </fileset>
@@ -57,6 +57,14 @@
         </target>
         <target name="import-stratego-jar">
 	        <echo>${webdsl.home}/strategoxt.jar</echo>
-        	<copy file="${webdsl.home}/strategoxt.jar" overwrite="true" todir="include"/>
+        	<copy file="${webdsl.home}/strategoxt.jar" preservelastmodified="true" todir="include"/>
+        </target>  
+        <target name="import-rtrees-for-editor-checks">
+        	<copy file="${webdsl.home}/libback-end-transformations.rtree" preservelastmodified="true" todir="include"/>
+        	<copy file="${webdsl.home}/libjava-transformations.rtree" preservelastmodified="true" todir="include"/>
+        	<copy file="${webdsl.home}/libto-java-servlet.rtree" preservelastmodified="true" todir="include"/>
+        	<copy file="${webdsl.home}/libwebdsl-front.rtree" preservelastmodified="true" todir="include"/>
+        	<copy file="${webdsl.home}/libwebdsl-generator.rtree" preservelastmodified="true" todir="include"/>
+        	<copy file="${webdsl.home}/libwrite-files.rtree" preservelastmodified="true" todir="include"/>
         </target>  
     </project>

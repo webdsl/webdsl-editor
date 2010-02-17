@@ -2,10 +2,17 @@ module webdsl
 
 imports
   libstratego-lib
-  libwebdsl-front
+  libstratego-sglr
   libwebdsl-generator
-  //stratego-editor-support
-
+  libwebdsl-front
+  entities
+  types
+  parse
+  properties
+  application-ini
+  template
+  enum
+ 
 signature constructors
   FILE : Term -> Term
 
@@ -13,95 +20,67 @@ strategies // editor service interface
 
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
- 
+
+  collect-markers(s) =
+    collect-all(s,conc);
+    try(flatten-list);
+    map((id,try(concat-strings)))
+  
   editor-analyze:
-    (ast, path, projectpath) -> results
-    where 
-      <set-verbosity> 3;
-      set-default-config;
-      <chdir> projectpath;
-      <chdir> <dirname> path;
-      //<try(mkdir)> ".ignoreme";
-      debug(!"START");
-      //rules ( DirName := <getcwd> ); //:= evaluated here!!!!
-      <file-exists <+ mkdir> ".ignoreme";
-      ignoremedir := <concat-strings> [<getcwd>, "/.ignoreme"];
-      //getcwd;debug(!"CURRENTDIR");
-      main-file-name := <conc-strings> ("../",<get-main-file-name>);
-      debug(!"MAIN FILE: ");
-      mainfile := FILE(main-file-name);
-      <chdir> ignoremedir;
-      getcwd;debug(!"CURRENTDIR");
-      if not(<eq> (<modification-time;debug(!"modification time file")> main-file-name, <OldModificationTime;debug(!"modification time DR  ")>))
-      then 
-        with(
-          try(dr-scope-all-end)
-        ; rules(OldModificationTime := <modification-time> main-file-name)
-        ; OldModificationTime;debug(!"new value of modification time DR") 
-        ; dr-scope-all-start
-       
-        ; getcwd;debug(!"CURRENTDIR");  
-          <set-appname> mainfile;
-          !main-file-name;
-          results := <//try(avoid-modules); 
-            debug(!"before parse"); xtc-parse-webdsl;debug(!"after parse"); //parse initial file 
-            webdsl-collect-all-errors; debug(!"collected errors: ")> mainfile;
-          <analyze-definitions> ast
-        )
-      else results := ([],[],[])
-      end
-  /*
-  avoid-modules:
-    Module(x, y) -> Application(x, y)
-*/
-  reference-resolve:
-    (reference, position, ast, path, fullpath) -> target
-    where
-      <debug(!"reference-resolve invoked ")> reference; 
-      reference' := <desugar-top> reference;
-      target := <find-definition> reference';
-      debug(!"reference-resolve resolved ")
+    (ast, path, fullpath) -> (errors, warnings, notes)
+    with
+      try(dr-scope-all-end); dr-scope-all-start
+    //; debug(!"before imports")
+    ; init-compiler-builtins
+    ; get-all-imports
+    //; debug(!"after imports")
+    ; ast2 := <declare-and-desugar>
+    with
+      errors   := <collect-markers(check)> ast2
+    ; warnings := <collect-markers(constraint-warning)> ast2
+    ; notes    := <collect-markers(constraint-note)> ast2
+      
+  require(s)=not(s)
+  constraint-warning=fail
+  constraint-note=fail
+  check=fail
   
-  reference-info:
-    (target, position, ast, path, fullpath) -> info
-    where
-      <debug(!"reference-info invoked ")> target;
-      info := <pp-webdsl-to-string> target
-
-strategies // helpers
+  declare-and-desugar =
+    desugar-all
+  ; alltd(declare-def) 
   
-  /**
-   * Get the main file name of a WebDSL project, looking at the
-   * application.ini file in the current directory and those above it.
-   */
-  get-main-file-name =
-    <readdir> ".";
-    getfirst(
-      "application.ini";
-      application-ini-to-app-name;
-      <add-extension> (<id>,"app")
-    )
-  <+
-    cwd := <getcwd>;
-    <chdir> "..";
-    not(getcwd => cwd);
-    (get-main-file-name <+ <chdir> cwd; fail)
-
-  application-ini-to-app-name:
-    filename -> appname
-    where
-      <read-text-file> filename;
-      get-lines;
-      debug(!"lines: ");
-      (getfirst(string-starts-with(|"export APPNAME=")) <+ getfirst(string-starts-with(|"appname=")));
-      debug(!"appname: ");
-      <split-after> (<id>, "=");
-      ?(_, appname)
-
-strategies // parsing
-
-  asfix-anno-location = id // not supported
-
-  external parse-xtc-file(on-open-error, on-parse-error | tbl, start-symbol, path)
+  desugar-all = innermost(desugar-def)
   
-  external strsglr-report-parse-error(|)
+  des=fail
+  
+  get-all-imports =
+    where(<set-appname> FILE(<get-main-file-name>)) // need to set DirName DR
+  //; debug(!<DirName>)
+  //; debug(!<AppName>)
+  ; where(appname := <AppName>)
+  ; rules (IsImported : appname)
+  ; topdown(try(get-imports))
+  
+  get-imports : 
+    Imports(x) -> imported
+    where not(<IsImported> x)
+        ; rules (IsImported : x)
+        ; imported := <xtc-parse-webdsl-module-1> FILE(<concat-strings> [x,".app"])//$[[x].app])
+        //; strippedimport := <topdown(try(strip-annos))> imported // strip location info
+        //; <debug(!"imported: ")> x
+
+  get-imports :
+    Imports(x) -> Note([])
+    where <IsImported> x
+        //; <debug(!"was already imported: ")> x
+  
+rules
+
+  init-compiler-builtins =
+    not(built-in-template-rule-setup
+        ; fatal-err-msg(|"error in typechecker.str, failure should not occur here, make sure built-in-template-setup rules end with ';fail'")
+        ) // setup dyn rules for checks
+  ; not(after-tc-declare-hook
+        ; fatal-err-msg(|"error in typechecker.str, failure should not occur here, make sure after-tc-declare-hook rules end with ';fail'")
+        ) // setup dyn rules for checks
+  
