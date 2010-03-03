@@ -11,14 +11,14 @@ signature
     
 rules // types
 
-  declaration-of : SimpleSort(x) -> <EntDecl> x  
+  declaration-of : SimpleSort(x) -> <EntDecl> x
     
 rules
 
   desugar-def : EntityNoSuper(name, body) -> Ent(name,None(),body,None())    
   desugar-def : Entity(name, super, body) -> Ent(name,super,body,None())    
-  desugar-def : SessionEntity(name,body) -> Ent(name,None(),body,"session")    
-      
+  desugar-def : SessionEntity(name,body) -> Ent(name,None(),body,"session")
+    
 rules // declaring entities
 
   declare-def:

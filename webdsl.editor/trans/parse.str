@@ -1,10 +1,33 @@
 module parse
 
-imports libwebdsl-front
+imports 
+  libwebdsl-front 
+  libstratego-sglr
+  template
+  ../lib/editor-common.generated
+  webdsl
+  application-ini
 
 rules
   
-  xtc-parse-webdsl-module-1 = 
+  parse-file-1 =
+    parse-file(|<get-webdsl-parse-table>)
+  
+  editor-parse-webdsl-module = 
+    ?x;debug
+  ; full-path := <debug;file-exists <+ debug(!"FILE DOES NOT EXIST")> $[[<ApplicationIniDir>]/[x]]// $[[projectdir]/[<DirName>]/[y]]
+  //; debug(!1)
+  ; <open-import(!full-path, parse-file-1,read-import) <+ debug(!"import failed")> /*<base-filename>*/ x
+ // ; !<ParseResult>
+  //; debug(!2)
+  
+ // store-result =?x; debug(!3);rules( ParseResult := x)
+  
+  read-import = debug(!1);desugar-declare; alltd(remove-definition-bodies); debug(!2)
+    /*<+
+      rules(IsImportedFailed: x)*/
+
+  /*
     where(id
       ; path := <path-of-xtc-file>
     )
@@ -15,7 +38,7 @@ rules
   xtc-parse-webdsl-unit-1(|path) =
     with(
         tbl := <get-webdsl-parse-table>
-      ; cachepath := <concat-strings> [<DirName>,"/.webdsl-parsecache/",<trim-initial-dots-slashes> path,<get-webdsl-version>,".parsecache"]
+      ; cachepath := <concat-strings> [<DirName>,"/.webdsl-parsecache-editor/",<trim-initial-dots-slashes> path,<get-webdsl-version>,".parsecache"]
       ; dirs := <dirname; string-tokenize(|['/'])> cachepath
       ; <create-dirs> dirs
       )
@@ -41,13 +64,11 @@ rules
      <+ not(is-verbose-2); <exit> 1 
    )
    ; implode-with-location-annos-1(|path)
+   ; alltd(remove-definition-bodies)
    ; where(
        <WriteToBinaryFile> (cachepath,<id>)
      )
      
   implode-with-location-annos-1(|path) =
-   /* asfix-anno-location
-  ;*/ implode-asfix
-  /*; topdown(
-        try(\t {Location(r, c, _, _)} -> t {At(path, r, c)}\)
-      )*/
+    implode-asfix
+*/

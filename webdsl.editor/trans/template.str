@@ -1,6 +1,9 @@
 module template
 
-imports libwebdsl-front
+imports 
+  libwebdsl-front 
+  libwebdsl-generator
+  webdsl
 
 rules // projection
 
@@ -22,6 +25,12 @@ declare-def :
          TemplateDecl :+ name -> d
          TemplateDecl :+ sig -> d
        )
+        
+rules
+
+  remove-definition-bodies : 
+    Define(mod*, name, args, targs, body) 
+  ->Define(mod*, name, args, targs, TemplateBody([]))
         
 rules // checking 
 /*

@@ -15,7 +15,8 @@ strategies
       "application.ini";
       application-ini-to-app-name;
       <add-extension> (<id>,"app")
-    )
+    );
+    rules(ApplicationIniDir := <getcwd>)
   <+
     cwd := <getcwd>;
     <chdir> "..";

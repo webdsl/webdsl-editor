@@ -1,0 +1,11 @@
+module function
+
+imports
+  libwebdsl-front
+ 
+rules
+
+  remove-definition-bodies :
+    Function(name, args, returntype, body)  
+  ->Function(name, args, returntype, [])  
+  

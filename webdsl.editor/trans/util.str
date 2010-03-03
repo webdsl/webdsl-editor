@@ -1,0 +1,18 @@
+module util
+
+imports
+  libstratego-lib
+ 
+rules
+
+  collect-markers(s) =
+    collect-all(s,conc);
+    try(flatten-list);
+    map((id,try(concat-strings)))
+      
+  require(s)=not(s)
+  constraint-warning=fail
+  constraint-note=fail
+  check=fail
+
+  

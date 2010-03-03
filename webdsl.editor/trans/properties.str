@@ -1,6 +1,9 @@
 module properties
 
-imports entities
+imports 
+  libwebdsl-front
+  types
+  util
 
 signature
   constructors

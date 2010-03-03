@@ -1,6 +1,10 @@
 module types
 
-imports libwebdsl-front
+imports 
+  libwebdsl-front
+  libwebdsl-generator
+  entities
+  util
 
 rules // primitive types
   
