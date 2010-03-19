@@ -20,7 +20,12 @@ builders
   provider : include/invoke-webdsl-script.jar
   builder  : "Build" = build-webdsl  
 */
-
+  /*
+  observer : editor-analyze
+  provider : include/webdsl.ctree
+  provider : include/webdsl.jar
+  */
+  /*
 	provider	: lib/acoda.jar
 	provider	: include/webdsl.jar
 
@@ -28,3 +33,4 @@ builders
 	builder		: "Show Database Schema"		= editor-wdl2schema (openeditor) (realtime)
 	builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
 	builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
+  */

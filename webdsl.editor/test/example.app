@@ -1,6 +1,6 @@
 application foo
- 
-imports testimport/util
+
+  imports testimport/util
 
   entity Utilfg{}
  
@@ -31,6 +31,7 @@ imports testimport/util
     var i
     gfhfhg
     output(i)
+    a()
   }
   define page roohgjhgt(){ 
     var i
