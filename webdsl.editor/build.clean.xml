@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="WebDSL" default="clean">
+  <target name="clean">
+    <delete includeemptydirs="true">
+      <fileset dir="./webdsl-template" includes="**/*"/>
+      <fileset dir="./include" includes="**/*"/>
+    </delete>
+    <eclipse.convertPath fileSystemPath="." property="resourcePath"/>
+    <eclipse.refreshLocal resource="${resourcePath}" depth="infinite"/>
+  </target>
+</project>
