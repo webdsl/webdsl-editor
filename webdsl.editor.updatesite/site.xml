@@ -3,7 +3,7 @@
    <description name="webdsl" url="http://www.webdsl.org/update">
       WebDSL editor update site
    </description>
-   <feature url="features/webdsl.editor.feature_1.0.0.201002021549.jar" id="webdsl.editor.feature" version="1.0.0.201002021549">
+   <feature url="features/webdsl.editor.feature_1.0.10.jar" id="webdsl.editor.feature" version="1.0.10">
       <category name="webdslplugin"/>
    </feature>
    <category-def name="webdslplugin" label="webdsl plugin"/>
