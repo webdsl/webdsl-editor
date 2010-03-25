@@ -2,8 +2,8 @@ module webdsl
 
 imports
   libstratego-lib
-  libstratego-sglr
-  libwebdsl-generator
+  //libstratego-sglr
+  //libwebdsl-generator
   libwebdsl-front
   entities
   types
@@ -14,6 +14,8 @@ imports
   enum
   function
   util
+  caching
+  resolve
  
 signature constructors
   FILE : Term -> Term
@@ -26,48 +28,52 @@ strategies // editor service interface
   editor-analyze:
     (ast, path, fullpath) -> (errors, warnings, notes)
     with
-      try(dr-scope-all-end); dr-scope-all-start
-    ; debug(!"before imports")
-    ; init-compiler-builtins
-    ; get-all-imports
-    ; debug(!"after imports")
-    ; ast2 := <desugar-declare>
+      where(!""; debug);
+      // Do not lose the cached definitions
+      where(
+          rulesets := <map(save-rule-set)> ["ModuleDefs", "ModuleCacheTimestamp"]
+        ; try(dr-scope-all-end); dr-scope-all-start
+        ; <map(restore-rule-set)> rulesets
+      )
+    //; init-compiler-builtins
+      // Start with declaring the current file. If there are double definitions,
+      // the imports will override our declarations and the error will be shown in this file.
+    ; ast2 := <dbg-time(desugar-declare | "desugar-declare")> ast
+    ; <dbg-time(get-all-imports | "get imports")> (ast, path)
+   
     with
       errors   := <collect-markers(check)> ast2
     ; warnings := <collect-markers(constraint-warning)> ast2
     ; notes    := <collect-markers(constraint-note)> ast2
-  
+     
   desugar-declare =
     desugar-all
-  ; alltd(declare-def) 
+  ; alltd(declare-def)
   
   desugar-all = innermost(desugar-def)
   
-  des=fail
-  
-  get-all-imports =
-    debug(!"before get-main-file-name");
-    where(<set-appname> FILE(<get-main-file-name>)) // need to set DirName DR
-  ; debug(!"after get-main-file-name")
-  //; debug(!<DirName>)
-  //; debug(!<AppName>)
-  ; where(appname := <AppName>)
-  ; rules (IsImported : appname)
-  ; topdown(try(get-imports))
-  
+  get-all-imports: (ast, path) -> <id>
+    with  <set-appname> FILE(<get-main-file-name>) // need to set DirName DR
+        ; appname := <AppName>
+        ; mainapp := <concat-strings> [<ApplicationIniDir>, "/", appname, ".app"]
+        ; fullpath := <concat-strings> [<prim("SSL_EXT_projectpath")>, "/", path]
+        ; rules(IsImported : fullpath) // do not reload the current file if its transitively imported
+        ; {| ParsingModule:
+              rules(ParsingModule := fullpath)
+              // try to import main file if needed
+            ; where(!appname; debug(!"Main app name: "))
+              // TODO: does this work on windows too ? (/ vs. \)
+            ; if not(fullpath := mainapp); <file-exists> mainapp then
+                  where(!appname; debug(!"Explicitely importing main file: ")) 
+                ; <get-imports> Imports(appname)
+	            end
+	        ; <alltd(get-imports)> ast
+	      |}
+ 
   get-imports : 
-    Imports(x) -> imported
-    where //debug(!1);not(<IsImported> x)
-        //; debug(!2);rules (IsImported : x)
-        debug(!3);imported := <editor-parse-webdsl-module> <concat-strings> [x,".app"] //$[[x].app])
-        //; strippedimport := <topdown(try(strip-annos))> imported // strip location info
-        //; <debug(!"imported: ")> x
-
-  get-imports :
-    Imports(x) -> Note([])
-    where <IsImported> x
-        //; <debug(!"was already imported: ")> x
-  
+    imp@Imports(x) -> imp
+    where <editor-parse-webdsl-module> (<concat-strings> [x,".app"])
+          
 rules
 
   init-compiler-builtins =

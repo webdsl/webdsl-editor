@@ -13,62 +13,15 @@ rules
   parse-file-1 =
     parse-file(|<get-webdsl-parse-table>)
   
-  editor-parse-webdsl-module = 
-    ?x;debug
-  ; full-path := <debug;file-exists <+ debug(!"FILE DOES NOT EXIST")> $[[<ApplicationIniDir>]/[x]]// $[[projectdir]/[<DirName>]/[y]]
-  //; debug(!1)
-  ; <open-import(!full-path, parse-file-1,read-import) <+ debug(!"import failed")> /*<base-filename>*/ x
- // ; !<ParseResult>
-  //; debug(!2)
+  editor-parse-webdsl-module: x -> x
+    where(full-path := <file-exists <+ debug(!"FILE DOES NOT EXIST")> $[[<ApplicationIniDir>]/[x]]) // $[[projectdir]/[<DirName>]/[y]]
+  ; {| CurrentModule:
+        rules(CurrentModule := full-path)
+      ; open-memory-cache(parse-file-1,read-import | full-path) <+ debug(!"import failed")
+    |}
   
- // store-result =?x; debug(!3);rules( ParseResult := x)
-  
-  read-import = debug(!1);desugar-declare; alltd(remove-definition-bodies); debug(!2)
-    /*<+
-      rules(IsImportedFailed: x)*/
-
-  /*
-    where(id
-      ; path := <path-of-xtc-file>
-    )
-    ; xtc-parse-webdsl-unit-1(|path)
-    ; check-for-ambiguities(|path)
-    ; try(simplify-module-constructor)
-  
-  xtc-parse-webdsl-unit-1(|path) =
-    with(
-        tbl := <get-webdsl-parse-table>
-      ; cachepath := <concat-strings> [<DirName>,"/.webdsl-parsecache-editor/",<trim-initial-dots-slashes> path,<get-webdsl-version>,".parsecache"]
-      ; dirs := <dirname; string-tokenize(|['/'])> cachepath
-      ; <create-dirs> dirs
-      )
-    ; if <file-exists> path
-      then
-        if not(<file-exists> cachepath) <+ <gt> (<modification-time> path, <modification-time> cachepath) 
-        then
-          parse-and-write-cache-1(|path,tbl,cachepath) //current term relevant
-        else
-           // if cache read fails for some reason, e.g. it contains an invalid term because 
-           // the write was interrupted with ctrl+c, then it should just parse again and ignore the cache
-           <ReadFromFile> cachepath 
-        <+ parse-and-write-cache-1(|path,tbl,cachepath) //current term relevant
-        end
-      else
-        <debug> "File does not exist: "
-      ; <trim-initial-dots-slashes;debug> path
-      ; <exit> 1
-      end
-      
-  parse-and-write-cache-1(|path,tbl,cachepath) =
-   ( parse-xtc-file-pt(err(|["cannot open file ", <trim-initial-dots-slashes> path]), strsglr-report-parse-error | tbl, "Unit", path) 
-     <+ not(is-verbose-2); <exit> 1 
-   )
-   ; implode-with-location-annos-1(|path)
-   ; alltd(remove-definition-bodies)
-   ; where(
-       <WriteToBinaryFile> (cachepath,<id>)
-     )
+  // Transitive imports
+  read-import = 
+      desugar-all
+    ; alltd(try(remove-definition-bodies); try(get-imports); declare-def)
      
-  implode-with-location-annos-1(|path) =
-    implode-asfix
-*/

@@ -23,7 +23,8 @@ rules // declaring entities
 
   declare-def:
     ent@Ent(x,_,_,_) -> ent
-    with rules( EntDecl : x -> ent )
+    with rules(EntDecl : x -> ent)
+       ; <store-imported-def> ent
 
 //  name-of : EntityNoSuper(x, prop*) -> x
 //  type-of : EntityNoSuper(x, prop*) -> SimpleSort(x)
@@ -37,5 +38,4 @@ rules
   check :
     ent@Ent(x,_,_,_) -> (x, $[Entity '[x]' defined more than once])
     where require(<EntDecl> x; ?ent)
-
-    
+        ; !x; ?z{anno*}

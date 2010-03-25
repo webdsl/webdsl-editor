@@ -1,0 +1,84 @@
+module caching
+
+imports
+    parse
+    ../lib/editor-common.generated
+    libwebdsl-front
+
+strategies  
+  
+  // Already stored
+  store-imported-def = where(ReadingFromMemoryCache)
+  
+  // Store definition in memory
+  store-imported-def: def -> def
+    where mod := <CurrentModule>
+        ; rules(ModuleDefs :+ mod -> def)
+  
+  // For main app, do not remember anything
+  store-imported-def = id
+  
+  // Remember imports of a module
+  declare-def: imp@Imports(x) -> imp
+    with <store-imported-def> imp
+  
+strategies
+  
+  open-memory-cache(resolve-path, parse-file, record-declarations) =
+      where(fullpath := <resolve-path>)
+    ; open-memory-cache(parse-file, record-declarations | fullpath)
+  
+  open-memory-cache(parse-file, record-declarations | fullpath) =
+     where(<IsImported> fullpath)
+  
+  open-memory-cache(parse-file, record-declarations | fullpath): modulename -> modulename
+  where ts := <ModuleCacheTimestamp> fullpath
+      ; modtime := <modification-time> fullpath
+      ; <eq> (ts,modtime)
+   with where(!modulename; debug(!"Using in-mem cache: "))
+      ; ast := <bagof-ModuleDefs> fullpath
+      ; {| ReadingFromMemoryCache:
+            rules(ReadingFromMemoryCache := True())
+          ; <alltd(try(get-imports); declare-def)> ast
+        |}
+      ; rules(IsImported : fullpath)
+      
+  open-memory-cache(parse-file, record-declarations | fullpath): modulename -> modulename
+   with modtime := <modification-time> fullpath
+      ; where(!fullpath; debug(!"No in-memory cache for: "))
+      ; <open-import(!fullpath, parse-file, record-declarations)> modulename // added to IsImported
+      ; rules(ModuleCacheTimestamp :+ fullpath -> modtime)
+      
+strategies // dr utils
+  
+  iset-copy =
+     elems := <iset-elements>
+   ; count := <length> elems
+   ; newset := <new-iset(|count,75)>
+   ; <iset-addlist(|elems)> newset
+  
+  save-rule-set: name -> (name, RuleScope(newset, newtable))
+   with  RuleScope(set, table) := <dr-get-rule-set(|name); Hd>
+       ; newset := <iset-copy> set
+       ; newtable := <hashtable-copy> table
+       
+  dr-set-last-scope-rule-set(|name): ruleset -> ruleset
+   with [firstscope | restscopes] := <dr-get-rule-set(|name)>
+      ; <dr-destroy-scope> firstscope
+      ; ![ruleset | restscopes]
+      ; dr-set-rule-set(|name)
+
+  restore-rule-set: (name,ruleset) -> <id>
+   with <dr-set-last-scope-rule-set(|name)> ruleset
+  
+strategies // bench
+  
+   dbg-time(s|msg) =
+      where(starttime := <times>)
+    ; s
+    ; where(
+          total := <diff-times> (<times>,starttime)
+        ; t1 := <self-children-user-time; ticks-to-seconds; real-to-string(|3)> total
+        ; str := <concat-strings> [msg, ": ", t1, " s"]
+        ; debug
+      )

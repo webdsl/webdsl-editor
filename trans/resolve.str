@@ -1,0 +1,34 @@
+module resolve
+
+imports
+    parse
+    ../lib/editor-common.generated
+    libwebdsl-front
+
+strategies
+  
+  editor-resolve :
+    (node, position, ast, path, project-path) -> target
+    where SimpleSort(x) := node
+        ; target := <EntDecl> x
+        ; debug(!"Resolved:" )
+
+  editor-hover:
+    (Entity(name,super,_),position,ast,path,projec-path) -> text
+    with text := <concat-strings> ["Entity ",name," : ",super]
+ 
+  editor-hover:
+    (SessionEntity(name,_),position,ast,path,project-path) -> text
+    with text := <concat-strings> ["Session entity ",name]
+
+  editor-hover:
+    (EntityNoSuper(name,_),position,ast,path,project-path) -> text
+    with text := <concat-strings> ["Entity ",name]
+
+  editor-hover:
+    (srt@SimpleSort(x),position,ast,path,project-path) -> text
+    where <is-simple-sort> srt
+    with  text := <concat-strings> ["Builtin type ",x]
+
+//TODO: does not work for inter-module references
+  

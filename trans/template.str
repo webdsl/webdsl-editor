@@ -25,6 +25,7 @@ declare-def :
          TemplateDecl :+ name -> d
          TemplateDecl :+ sig -> d
        )
+     ; <store-imported-def> d
         
 rules
 
