@@ -3,7 +3,6 @@ module parse
 imports 
   libwebdsl-front 
   libstratego-sglr
-  template
   ../lib/editor-common.generated
   webdsl
   application-ini
@@ -24,4 +23,3 @@ rules
   read-import = 
       desugar-all
     ; alltd(try(remove-definition-bodies); try(get-imports); declare-def)
-     

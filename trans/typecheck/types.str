@@ -3,8 +3,7 @@ module types
 imports 
   libwebdsl-front
   libwebdsl-generator
-  entities
-  util
+  typecheck/-
 
 rules // primitive types
   

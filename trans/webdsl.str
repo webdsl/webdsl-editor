@@ -5,18 +5,13 @@ imports
   //libstratego-sglr
   //libwebdsl-generator
   libwebdsl-front
-  entities
-  types
   parse
-  properties
   application-ini
-  template
-  enum
-  function
   util
   caching
+  typechecker
   resolve
- 
+  
 signature constructors
   FILE : Term -> Term
 

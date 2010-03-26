@@ -1,0 +1,16 @@
+module resolve/function
+
+imports
+  libwebdsl-front
+  typechecker
+  caching
+
+rules // desugar
+  
+  desugar-def: FunctionNoReturn(name, args, body) -> Function(name,args,None(),body)
+        
+rules // declare
+  
+  declare-def: f@Function(name, args, _, _) -> f
+    with rules(FunctionDecl :+ name -> (args, f))
+       ; <store-imported-def> f 

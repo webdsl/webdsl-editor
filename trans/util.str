@@ -15,4 +15,13 @@ rules
   constraint-note=fail
   check=fail
 
+  // Simplified applications
+  editor-resolve: (node, position, ast, path, project-path) -> x
+    where x := <resolve-simple> node
+    
+  editor-hover: (node, position, ast, path, project-path) -> x
+    where x := <hover-simple> node
   
+  // Documentation Presentation
+  make-list = ?list; <flatten-list; concat-strings> ["<ul>",<map(make-item)> list,"</ul>"]
+  make-item = ?str; <concat-strings> ["<li>",str,"</li>"]

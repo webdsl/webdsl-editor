@@ -1,0 +1,39 @@
+module resolve/function
+
+imports
+  libwebdsl-front
+  typechecker
+
+rules // resolve
+  
+  resolve-func-call: (name, args) -> funcs
+    where allfuncs := <bagof-FunctionDecl> name
+        ; nargs := <length> args
+        ; defs := <filter(where(?(<length>,_) => nargs))> allfuncs
+        ; funcs := <map(Snd)> defs
+  
+  resolve-simple: tc@ThisCall(name, args) -> f
+    where funcs := <resolve-func-call> (name, args)
+        ; 1 := <length> funcs // allow hover-simple to see other possible matches as well
+        ; f := <Hd> funcs
+
+  hover-simple = pp-func
+
+  hover-simple: ThisCall(name, args) -> text
+    where funcs := <resolve-func-call> (name, args)
+    with  if [] := funcs then
+              text := <concat-strings> ["No functions found with signature ",name,"(",<pp-args> args,")"]
+          else
+              intro := "Multiple functions found:"
+            ; text := <map(pp-func); make-list; ![intro, <id>]; concat-strings> funcs
+          end
+          
+rules // utils
+  
+  pp-func: Function(name,args,ret,_) ->
+    <concat-strings>["Function ",name,"(",<pp-args> args,") : ",<pp-webdsl> ret]
+  pp-func: FunctionNoReturn(name, args, _) ->
+    <concat-strings> ["Function ",name,"(",<pp-args> args,")"]
+    
+  pp-args = map(pp-webdsl); separate-by(|", "); concat-strings
+  

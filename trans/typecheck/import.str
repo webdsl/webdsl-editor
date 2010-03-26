@@ -1,0 +1,35 @@
+module import
+
+imports 
+  libwebdsl-front
+  ../lib/editor-common.generated
+  caching
+
+rules
+  
+  // TODO: does not work ?
+  //desugar-def: ModuleDefs(x,_,_) -> Mod(x)
+  //desugar-def: Module(x,_) -> Mod(x)
+  
+  module-name = ?ModuleDefs(<id>,_,_)
+  module-name = ?Module(<id>,_)
+  
+  // TODO: check maximal sharing; otherwise we're storing the entire ast here
+  declare-def: mod -> <fail>    // fail to continue traversal
+    where x := <module-name> mod
+    with  rules(ModuleDecl : x -> mod)
+        ; <store-imported-def> mod
+  
+rules   // resolve
+  
+  editor-resolve:
+  (Imports(x), position, ast, path, project-path) -> target
+    where target := <ModuleDecl> x
+        ; debug(!"Target: ")
+              
+  editor-hover:      
+  (mod,position,ast,path,project-path) -> text
+    where x := <module-name> mod
+    with  fullpath := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/", x]
+        ; debug(!"Got fullpath: ")
+        ; text := <concat-strings> ["Module ", x, "\n", fullpath]

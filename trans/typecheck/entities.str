@@ -38,4 +38,5 @@ rules
   check :
     ent@Ent(x,_,_,_) -> (x, $[Entity '[x]' defined more than once])
     where require(<EntDecl> x; ?ent)
-        ; !x; ?z{anno*}
+        ; !ent; debug(!"Decl 1: ")
+        ; <EntDecl> x; debug(!"Decl 2: ")
