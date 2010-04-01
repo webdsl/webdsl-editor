@@ -4,24 +4,32 @@ imports
     parse
     ../lib/editor-common.generated
     libwebdsl-front
+    util
 
 strategies  
   
   // Already stored
   store-imported-def = where(ReadingFromMemoryCache)
   
-  // Store definition in memory
   store-imported-def: def -> def
     where mod := <CurrentModule>
         ; rules(ModuleDefs :+ mod -> def)
-  
+        
   // For main app, do not remember anything
   store-imported-def = id
-  
-  // Remember imports of a module
-  declare-def: imp@Imports(x) -> imp
-    with <store-imported-def> imp
     
+strategies // storing for compiler typechecker
+  
+  // Already stored
+  store-tc-def = where(ReadingFromMemoryCache)
+ 
+  store-tc-def: def -> def
+    where mod := <CurrentModule>
+        ; rules(ModuleDefsTc :+ mod -> def)
+  
+  // For main app, do not remember anything
+  store-tc-def = id
+
 strategies
   
   open-memory-cache(resolve-path, parse-file, record-declarations) =
@@ -36,21 +44,41 @@ strategies
       ; modtime := <modification-time> fullpath
       ; <eq> (ts,modtime)
    with where(!modulename; debug(!"Using in-mem cache: "))
-      ; ast := <bagof-ModuleDefs> fullpath
       ; {| ReadingFromMemoryCache:
             rules(ReadingFromMemoryCache := True())
-          ; <alltd(try(get-imports); declare-def)> ast
+            // typecheck
+          ; tc-ast := <log-time-helper(bagof-ModuleDefsTc | " get bag1")> fullpath
+          //; debug(!"TC AST: ")
+          ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> tc-ast
+            // resolving
+          ; ast := <log-time-helper(bagof-ModuleDefs | " get bag2")> fullpath
+          //; debug(!"AST: ")
+          ; <alltd(try(get-imports); log-time-helper(declare-def | "declare def"); ensure-ast(|"after declare"))> ast
         |}
       ; rules(IsImported : fullpath)
 
   open-memory-cache(parse-file, record-declarations | fullpath): modulename -> modulename
    with modtime := <modification-time> fullpath
       ; where(!fullpath; debug(!"No in-memory cache for: "))
-      ; file := <parse-file> fullpath
-      ; <record-declarations> file
+      ; file := <log-time-helper(parse-file | "parse file")> fullpath
+      ; ensure-ast(|"after parse")
+      ; <preserve(try(fix-module-name(|fullpath))); check-ast(|"after fix"); record-declarations> file
       ; rules(IsImported: fullpath)
       ; rules(ModuleCacheTimestamp :+ fullpath -> modtime)
-      
+  
+  fix-module-name(|fullpath): Module(name, sections) -> Module(name2, sections)
+    where name2 := <fix-module-name> (fullpath, name)
+  fix-module-name(|fullpath): ModuleDefs(name, defs, sections) -> ModuleDefs(name2, defs, sections)
+    where name2 := <fix-module-name> (fullpath, name)
+    
+  fix-module-name: (fullpath, modname) -> newname
+    with base := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/"]
+    where (l,r) := <split-after> (fullpath, base)
+        ; not(r := "") // base not found
+        ; newname := <split-before; Fst> (r, ".app")
+        ; not(<eq> (newname, modname))
+        ; <concat-strings; debug> ["Renaming module '",modname,"' to '",newname,"'."]
+        
 strategies // dr utils
   
   iset-copy =

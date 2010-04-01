@@ -6,20 +6,53 @@ imports
   ../lib/editor-common.generated
   webdsl
   application-ini
+  caching
 
 rules
   
   parse-file-1 =
     parse-file(|<get-webdsl-parse-table>)
   
+  format-trace(|prefix) =
+  		map(\name -> <concat-strings> [prefix, name]\)
+  	; separate-by(|"\n")
+  	; concat-strings
+  	; try(not(?""); <concat-strings> ["<br/>", <id>])
+  
+  report-no-file: fullpath -> <fail>
+  	with 	trace-entries := <bigbagof-CurrentModule>
+  	    ; trace := <format-trace(|"... imported from: ")> trace-entries
+  			; msg := <concat-strings> ["Imported file not found: ", fullpath, trace]
+  			; import := <TopImport>
+  			; rules(ImportErrors :+= (import, msg))
+  			; print-stacktrace
+  			
   editor-parse-webdsl-module: x -> x
-    where(full-path := <file-exists <+ debug(!"FILE DOES NOT EXIST")> $[[<ApplicationIniDir>]/[x]]) // $[[projectdir]/[<DirName>]/[y]]
+  	where(
+    		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
+    	; <file-exists <+ report-no-file> full-path
+   	)
   ; {| CurrentModule:
-        rules(CurrentModule := full-path)
+       	rules(CurrentModule := full-path)
       ; open-memory-cache(parse-file-1,read-import | full-path) <+ debug(!"import failed")
     |}
   
   // Transitive imports
-  read-import = 
-      desugar-all
-    ; alltd(try(remove-definition-bodies); try(get-imports); declare-def)
+  read-import =
+      // declare for compiler typechecking
+      where(   // keep old ast to preserve ast mapping
+          try(simplify-application-constructor <+ simplify-module-constructor)
+          ; alltd(
+                try(get-imports)
+              ; try(strip-bodies)
+              ; log-time-helper(declare-global | "declare tc"))
+      )
+      // declare for resolving
+    //; check-ast(|"after parse")
+    ; log-time-helper(desugar-all | "desugar import")
+    //; check-ast(|"after desugar")
+    ; log-time-helper(alltd(strip-bodies) | "strip bodies")
+    //; check-ast(|"after strip")
+    ; log-time-helper(alltd(declare-def) | "declare def")
+   
+   

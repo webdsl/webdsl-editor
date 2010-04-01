@@ -29,9 +29,7 @@ declare-def :
         
 rules
 
-  remove-definition-bodies : 
-    Define(mod*, name, args, targs, body) 
-  ->Define(mod*, name, args, targs, TemplateBody([]))
+  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, TemplateBody([]))
         
 rules // checking 
 /*

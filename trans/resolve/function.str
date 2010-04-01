@@ -34,6 +34,8 @@ rules // utils
     <concat-strings>["Function ",name,"(",<pp-args> args,") : ",<pp-webdsl> ret]
   pp-func: FunctionNoReturn(name, args, _) ->
     <concat-strings> ["Function ",name,"(",<pp-args> args,")"]
-    
+  pp-func: Predicate(name,args,_) ->
+    <concat-strings> ["Predicate ",name,"(",<pp-args> args,")"]
+  
   pp-args = map(pp-webdsl); separate-by(|", "); concat-strings
   

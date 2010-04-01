@@ -1,0 +1,17 @@
+module resolve/entity
+
+strategies
+    
+    /*
+  resolve-entity: name -> decl
+    where decl := <EntDecl> decl
+   */
+   
+  declaration-of: EntityNoSuper(name,_) -> <declaration-of> Ent(name,None(),None(),None())
+  declaration-of: Ent(name,_,_,_) -> <debug(!"1"); EntDecl; debug(!"2")> name
+   
+  resolve-simple-decorated: f@FieldAccess(x, prop) -> decl
+    where debug(!"a")
+        ; srt := <type-of> f
+        ; debug(!"b")
+        ; decl := <declaration-of> 

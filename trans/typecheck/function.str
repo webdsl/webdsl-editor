@@ -8,9 +8,14 @@ imports
 rules // desugar
   
   desugar-def: FunctionNoReturn(name, args, body) -> Function(name,args,None(),body)
-        
+  desugar-def: Predicate(name,args,body) -> Function(name,args,SimpleSort("Bool"),body)
+                
 rules // declare
   
+  strip-bodies: Function(name,args,ret,_) -> Function(name,args,ret,None())
+  
+  // TODO: scope for entity functions
   declare-def: f@Function(name, args, _, _) -> f
     with rules(FunctionDecl :+ name -> (args, f))
        ; <store-imported-def> f 
+        

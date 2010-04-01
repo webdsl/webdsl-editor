@@ -12,7 +12,23 @@ strategies
     where SimpleSort(x) := node
         ; target := <EntDecl> x
         ; debug(!"Resolved:" )
-
+          
+  resolve-simple: node -> target
+    where SimpleSort(x) := <type-of> node
+        ; debug(!"Type is: ")
+        ; target := <EntDecl> x
+        
+  hover-simple-decorated: v@Var(name) -> text
+    where srt := <type-of> v
+        ; text := <concat-strings> [name, " : ", <pp-webdsl> srt]
+          
+  hover-simple-decorated: f@FieldAccess(var,prop) -> text
+    where srt := <type-of> f
+        ; debug
+        ; SimpleSort(ent) := <type-of> var
+        ; debug
+        ; text := <concat-strings> [<pp-webdsl> var,".",prop," : ", <pp-webdsl> srt, "<br/>from entity ",ent]
+          
   editor-hover:
     (Entity(name,super,_),position,ast,path,projec-path) -> text
     with text := <concat-strings> ["Entity ",name," : ",super]
@@ -29,3 +45,5 @@ strategies
     (srt@SimpleSort(x),position,ast,path,project-path) -> text
     where <is-simple-sort> srt
     with  text := <concat-strings> ["Builtin type ",x]
+
+  hover-simple: Enum(x,_) -> <concat-strings> ["Enum ", x] 

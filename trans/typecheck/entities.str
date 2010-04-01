@@ -21,11 +21,15 @@ rules
     
 rules // declaring entities
 
+  strip-bodies: Ent(name,super,body,type) -> Ent(name,super,<strip-ent-body> body, type)
+  strip-ent-body = map(try(strip-ent-decl)); remove-all(?ExtendFunction(_))
+  strip-ent-decl = strip-bodies // re-use function stripping
+  
   declare-def:
     ent@Ent(x,_,_,_) -> ent
     with rules(EntDecl : x -> ent)
        ; <store-imported-def> ent
-
+       
 //  name-of : EntityNoSuper(x, prop*) -> x
 //  type-of : EntityNoSuper(x, prop*) -> SimpleSort(x)
 
@@ -34,9 +38,9 @@ rules
   check :
     Ent(x, _,_,_) -> (x, $[Entity names must start with a capital letter])
     where require(<explode-string; Hd; is-upper> x) 
-     
+
+/*     
   check :
     ent@Ent(x,_,_,_) -> (x, $[Entity '[x]' defined more than once])
     where require(<EntDecl> x; ?ent)
-        ; !ent; debug(!"Decl 1: ")
-        ; <EntDecl> x; debug(!"Decl 2: ")
+*/
