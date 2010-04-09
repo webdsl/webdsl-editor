@@ -26,14 +26,3 @@ rules // declaring entities
   strip-bodies: ExtendEntity(name,body) -> ExtendEntity(name,<strip-ent-body> body)
   strip-ent-body = map(try(strip-ent-decl)); remove-all(?ExtendFunction(_))
   strip-ent-decl = strip-bodies // re-use function stripping
- 
-rules // declare
-  
-  declare-def: e@Ent(name,_,body,_) -> e
-    with  <filter(declare-entity-def(|name))> body
-        ; <store-imported-def> Ent(name,None(),<id>,None())
-       
-  declare-def: e@ExtendEntity(name, body) -> e
-    with  <filter(declare-entity-def(|name))> body
-        ; <store-imported-def> Ent(name,None(),<id>,None())
-       

@@ -19,6 +19,11 @@ rules // helpers
   in-entity-resolve(|ent) = fail
   in-entity-hover(|ent) = fail
 
+  // get the name of the entity in which the selected node is located
+  in-entity =
+      ?(node, position, ast, path, project-path)
+    ; <walk-ast(get-entity-def <+ get-extend-entity-def| position)> ast
+
 rules // resolve
     
   // Explicit field access (x.y, this.x)
@@ -51,4 +56,5 @@ rules // hover
     where Prop(propname, type, srt, anno*, _) := <desugar-def> node
     with  ent := <in-entity; Fst> a
         ; text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt, "<br/>from entity ",ent]
+ 
  

@@ -45,7 +45,8 @@ rules
 	          ; alltd(
 	                try(get-imports)
 	              ; try(strip-bodies)
-	              ; log-time-helper(declare-global | "declare tc"))
+	              ; log-time-helper(declare-global | "declare tc")
+	              )
 	      )
 	    ; log-time-helper(desugar-all | "desugar import")
 	    ; log-time-helper(alltd(declare-def) | "declare def")
@@ -66,25 +67,19 @@ rules
     with  <oncetd(?sig; ?node)> ast
         <+ where(!sig; debug(!"Looking for node: ")); fail
   
-  // TODO: spoofax bug: preserve(desugar-all; alltd(strip-bodies)) on bound var "ast" changes the binding
-  // therefore, first match on original ast, then desugar
   get-imported-decl(|mod): sig -> node
     with  ast := <log-time-helper(parse-file-1 <+ debug(!"Parsing failed") | "parse")> mod
         ; if <?Module(_,_)> sig then
-              node := <preserve(\ModuleDefs(a,b,c) -> Module(a,c)\)> ast
-                  ; debug(!"Got: ")
-            /*
               node := <preserve(try(desugar-def)); debug(!"Desugered: ") // only simplify module constructor
                       ; preserve(strip-mod); debug(!"Stripped: ")
                       > ast
-            */
           else
-              /*
-              node := <log-time-helper(find-node(|sig) | "find node org ast")> ast
-           <+
-              */
-              <log-time-helper(preserve(desugar-all; alltd(strip-bodies)) <+ debug(!"desugar/strip failed") | "desugar")> ast
-            ; node := <log-time-helper(find-node(|sig) | "find node desugared ast")>
+              <log-time-helper(
+                     preserve(desugar-all; alltd(strip-bodies))
+                  <+ debug(!"desugar/strip failed")
+                | "desugar")> ast
+            ; node := <log-time-helper(find-node(|sig)
+                | "find node desugared ast")>
           end
         ; print-total-log-time
         ; <ensure-ast(|"after get-imported-decl")> node

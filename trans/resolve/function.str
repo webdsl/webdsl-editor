@@ -4,7 +4,26 @@ imports
   libwebdsl-front
   typechecker
   util
+ 
+rules // actual lookup
   
+  find-entity-func(|ent): (nm, arg*) -> f
+    with  t_arg* := <map(type-of)> arg*
+    where <CheckFunctionSignature> (SimpleSort(ent), nm, t_arg*)  // is there any matching function
+    with  listof-t_arg* := <bagof-CheckFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
+        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
+        ; f := <declaration-of-entity(|ent); find-declaration> Function(nm, resolved_arg*, None(), None())  
+        ; <set-hover-info(|f)> ent
+  
+  // Check super class
+  find-entity-func(|ent) = where(super := <Extends> ent); find-entity-func(|super)
+
+  find-global-func: (nm, arg*) -> f
+    with  t_arg* := <map(type-of)> arg*
+    where listof-t_arg* := <bagof-CheckGlobalFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
+        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
+        ; f := <declaration-of; find-declaration> Function(nm, resolved_arg*, None(), None())
+
 rules // resolve
   
   // Resolve entity function call
@@ -15,22 +34,10 @@ rules // resolve
   resolve-simple: Call(expr, nm, arg*) -> f
     with  SimpleSort(x_class) := <type-of> expr
         ; f := <find-entity-func(|x_class)> (nm, arg*)
- 
-  find-entity-func(|ent): (nm, arg*) -> f
-    with  t_arg* := <map(type-of)> arg*
-    where <CheckFunctionSignature> (SimpleSort(ent), nm, t_arg*)
-    with  f := <declaration-of-entity(|ent); find-declaration> Function(nm, t_arg*, None(), None())
-        ; <set-hover-info(|f)> ent
-  
-  // Check super class
-  find-entity-func(|ent) = where(super := <Extends> ent); find-entity-func(|super)
-    
+
   // Resolve global call
-  editor-resolve: a@(ThisCall(nm, arg*), position, ast, path, project-path) -> f
-    with  t_arg* := <map(type-of)> arg*
-    where listof-t_arg* := <bagof-CheckGlobalFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
-        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
-        ; f := <declaration-of; find-declaration> Function(nm, resolved_arg*, None(), None()) 
+  resolve-simple: ThisCall(nm, arg*) -> f
+    where f := <find-global-func> (nm, arg*)
 
 rules // hover
         
@@ -67,9 +74,3 @@ rules // utils
   
   pp-args = map(pp-webdsl); separate-by(|", "); concat-strings
   
-rules // more utils
-  
-  in-entity =
-      ?(node, position, ast, path, project-path)
-    ; <walk-ast(get-entity-def <+ get-extend-entity-def| position)> ast
-    

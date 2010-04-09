@@ -18,10 +18,5 @@ rules // declare
     Function(name, args, _, _) -> <FunctionDecl> (name, args)
   
   declaration-of-entity(|ent):
-    Function(name, args, _, _) -> <debug(!"Trying: "); EntityFunctionDecl> (ent, name, args)
+    Function(name, args, _, _) -> <EntityFunctionDecl> (ent, name, args)
   
-  declare-entity-def(|ent): f@Function(name, args, _, _) -> f
-    with t_arg* := <map(farg-to-type)> args 
-       ; rules(EntityFunctionDecl :+ (ent, name,t_arg*) -> f)
-       ; !(ent, name, t_arg*); debug(!"Got efd: ")
-         

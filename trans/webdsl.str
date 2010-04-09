@@ -42,16 +42,9 @@ strategies // editor service interface
     ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
     ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
     ; print-total-log-time
-    
-    /*
-    ; testVar := EntityNoSuper(None(), [Property("x", None(), None(), None())])
-    ; where(innermost(test-strategy))
-    ; debug(!"Result: ")
-    ; <debug(!"Result2: ")> testVar
-          
-  test-strategy: Property(a,b,c,d) -> Prop(a,b,c,d,None())
-    */
-    
+  
+  // Strc-java bug: the resulting strategy contains twice the body, resulting in two warnings...
+  // (both ctree and jar version)
   find-extra-errors: mod@Module(name, _) -> <fail>
     with  fullpath := <FullPath>
     where Module(newname, _) := <fix-module-name(|fullpath)> mod
