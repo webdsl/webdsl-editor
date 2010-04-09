@@ -1,0 +1,57 @@
+module typecheck/declare
+
+imports
+    libwebdsl-front
+    libwebdsl-generator
+    caching
+    
+rules // global declares
+  
+  declare-global = 
+      is-global-decl
+    ; where(store-tc-def; store-def-to-mod)
+    ; declare
+      
+  is-global-decl =
+      ?Enum(_,_)
+    <+?Function(_,_,_,_)
+    <+?FunctionNoReturn(_,_,_)
+    <+?AccessControlPrincipal(_,_)    // for securityContext
+    <+?Define(_,_,_,_,_)
+    <+?Predicate(_,_,_)
+  
+rules // global declares with subelements
+
+  declare-global = 
+      where(get-entity-def => (name,body))
+    ; declare
+    ; where(<map(store-def-to-mod)> body)
+    ; store-tc-def
+    ; store-def-to-mod
+    
+  declare-global =
+      ?ExtendEntity(ent, body)
+    ; declare
+    ; where(<map(store-def-to-mod)> body)
+    ; store-tc-def; store-def-to-mod
+      
+rules // only global if defined on top level
+  
+  declare-global =
+      ?GlobalsDefinition(elems)
+    ; <filter(try(declare-global-toplevel))> elems
+  
+  declare-global =
+      (?Section(_,elems) <+ ?AccessControlDefinition(_,elems))
+    ; <filter(try(declare-global-toplevel))> elems
+    ; fail // allow further traversal (like imports)
+  
+  is-global-toplevel =
+  	 ?VarDeclInit(_,_,_)
+   <+?VarDeclInitInferred(_,_)
+  
+  declare-global-toplevel =
+      is-global-toplevel
+    ; where(store-tc-def; store-def-to-mod)   // store VarDecl -> mod
+    ; declare
+    

@@ -5,63 +5,17 @@ imports
   libwebdsl-generator
   webdsl
 
-rules // projection
-
-signature-of   : Define(mod*, name, args, targs, body) -> (name, <param-types> args)
-param-types    = map(\Arg(_,srt) -> srt\)
-is-page-def    = ?Define(<fetch(Page)>, name, args, targs, body)
-declaration-of : Define(mod*, name, args, targs, body) -> <signature-of; TemplateDecl>
-/*
-declaration-of : Navigate(ref, elems) -> <declaration-of> ref
-declaration-of : PageRef(x, e*) -> <Template> x
-call-of        : PageRef(x, e*) -> (x, e*)
-*/
-rules // name resolution 
-
-declare-def :
-  d@Define(mod*, name, args, targs, body) -> d
-  with sig := <signature-of> d;
-       rules(
-         TemplateDecl :+ name -> d
-         TemplateDecl :+ sig -> d
-       )
-     ; <store-imported-def> d
-        
 rules
 
   strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, TemplateBody([]))
-        
-rules // checking 
-/*
-check :
-  PageRef(x, e*) -> (x, $[Navigation to non-existing page])
-  where require(declaration-of)
- 
-check :
-  PageRef(x, e*) -> [(x, $[Navigation to template '[x]' (not a page)])]
-  where def := <declaration-of>
-  where require(<is-page-def> def)
-        
-check :
-  PageRef(x, e*) -> <check-args> 
- */
-  
-check :
-  d@Define(mod*, name, args, targs, body) -> (name, $[Multiple definitions for page '[name]'])
-  where <is-page-def> d
-  where list := <bagof-TemplateDecl> name
-  where require(<length> list => 1)
-  
-check :
-  d@Define(mod*, name, args, targs, body) -> (name, $[Multiple definitions for template with signature '[sigpp]'])
-  where not(is-page-def)
-  with  sig := <signature-of> d
-  where list := <bagof-TemplateDecl> sig
-  where require(<length> list => 1)
-  with  sigpp := <pp-sig> sig
-  
-rules // pretty-print
 
-  pp-sig = pp-func-sig
-  pp = pp-webdsl-to-string
+rules // desugaring
   
+  desugar-def: TemplateCallPropsNoBody(x, args, props) -> TemplateCall(x, args, props, None())
+  desugar-def: TemplateCallProps(x, props) -> TemplateCall(x, [], props, None())
+  desugar-def: TemplateCallPropsNoArgs(x, props, elems) -> TemplateCall(x, [], props, elems)
+  desugar-def: TemplateCallNoBody(x, args) -> TemplateCall(x, args, None(), None())
+  desugar-def: TemplateCallNoArgs(x) -> TemplateCall(x, [], None(), None())
+  desugar-def: TemplateCallNoAssigns(x, args, elems) -> TemplateCall(x, args, None(), elems)
+  desugar-def: TemplateCallBody(x, elems) -> TemplateCall(x, [], None(), elems)
+

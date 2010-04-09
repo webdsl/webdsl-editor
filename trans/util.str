@@ -16,55 +16,36 @@ rules
   constraint-note=fail
   check=fail
 
-  // Simplified applications
-  editor-resolve: (node, position, ast, path, project-path) -> x
-    where x := <resolve-simple> node
-    
-  editor-hover: (node, position, ast, path, project-path) -> x
-    where x := <hover-simple> node
-  
-  desugar-compat = try(simplify-application-constructor <+ simplify-module-constructor)
+  desugar-compat = try(preserve(simplify-application-constructor <+ simplify-module-constructor))
 
-  editor-resolve =
-          ?(node, pos, ast, path, project-path)
-        ; pos2 := <desugar-position(desugar-compat | ast)> pos
-        ; ast2 := <DecoratedAst>
-        ; node2 := <term-at-position(|pos2)> ast2
-        ; <editor-resolve-decorated> (node2, pos2, ast2, path, project-path)
-  
-  editor-hover =
-          ?(node, pos, ast, path, project-path)
-        ; pos2 := <desugar-position(desugar-compat | ast)> pos
-        ; ast2 := <DecoratedAst>
-        ; node2 := <term-at-position(|pos2)> ast2
-        ; <editor-hover-decorated> (node2, pos2, ast2, path, project-path)
-          
-  editor-hover-decorated: (node, position, ast, path, project-path) -> x
-    where x := <hover-simple-decorated> node
-  
-  editor-resolve-decorated: (node, position, ast, path, project-path) -> x
-    where x := <resolve-simple-decorated> node
-  
   // Documentation Presentation
   make-list = ?list; <flatten-list; concat-strings> ["<ul>",<map(make-item)> list,"</ul>"]
   make-item = ?str; <concat-strings> ["<li>",str,"</li>"]
   
   // AST mapping
+  preserve(s) = where(not(has-ast-mapping)); s
   preserve(s) =
       ensure-ast(|"in preserve")
-    ; ![<id>]; all(s); Hd
+   // ; try(where(origin-term; debug(!"Origin is: ")))
+    ; origin-track-forced(s)
+   // ; try(where(origin-term; debug(!"Origin is: ")))
     ; ensure-ast(|"after preserve")
   
   ensure-ast(|msg) = 
     ?[_]  // lists don't always have an ast association
-    <+ where(not(has-ast-mapping))
-         ; debug(<concat-strings> ["No AST mapping while ",msg,": "]); print-stacktrace
+    <+ where(not(has-ast-mapping); debug(<concat-strings> ["No AST mapping while ",msg,": "]); print-stacktrace)
     <+ id
 
-  //has-ast-mapping = prim("SSL_EXT_ast_mapping")
-  has-ast-mapping = id
+  has-ast-mapping = where(origin-term)
+  //has-ast-mapping = id
 
   check-ast(|msg) = 
     alltd((?Module(_,_) <+ ?ModuleDefs(_,_,_)); ensure-ast(|msg))
   
-  
+  // Apply s along the AST, starting at the root and ending at the given position and return first succeeded application
+  walk-ast(s | pos) = s 
+  walk-ast(s | pos) =
+      where([x|xs] := pos)
+    ; subterm-at(|x)
+    ; walk-ast(s | xs)
+      

@@ -189,7 +189,7 @@
         </target>
     
         <!-- Stratego to Java interpreter -->
-        <target name="stratego.ctree" depends="rtg2sig,ppgen">
+        <target name="stratego.ctree" depends="rtg2sig">
             <dependset>
                 <srcfileset dir="${basedir}">
                     <include name="**/*.str"/>
@@ -207,7 +207,7 @@
         </target>
     
         <!-- Stratego to Java compiler -->
-        <target name="stratego.jar" depends="rtg2sig,ppgen">
+        <target name="stratego.jar" depends="rtg2sig">
             <dependset>
                 <srcfileset dir="${basedir}">
                     <include name="**/*.str"/>
@@ -221,16 +221,16 @@
                 <param name="build.stratego.extraargs" value="-la java-front"/>
                 <param name="build.stratego.extension" value="java"/>
             </antcall>
-            <javac classpath="utils/strategoxt.jar${externaljarimport}" srcdir="${src-gen}/trans" destdir="${build}" source="1.5" debug="on"/>
-            <jar basedir="${build}" includes="trans/**" destfile="${include}/${strmodule}.jar"/>
+        	  <javac classpath="utils/strategoxt.jar${externaljarimport}" srcdir="${src-gen}/trans" destdir="${build}" source="1.5" debug="on"/>
+            <jar basedir="${build}" includes="trans/**" destfile="${include}/${strmodule}-editor.jar"/>
         </target>
             
         <target name="stratego.jvm.helper" unless="strc-java.available" if="build.stratego.enabled" depends="utils-files">
-            <java classname="org.strategoxt.strj.Main" failonerror="true">
+        	<java classname="org.strategoxt.strj.Main" failonerror="true">
                 <arg value="-i"/>
                 <arg value="${trans}/${strmodule}.str"/>
                 <arg value="-o"/>
-                <arg value="${build.stratego.outputpath}/${strmodule}.${build.stratego.extension}"/>
+                <arg value="${build.stratego.outputpath}/${strmodule}_editor.${build.stratego.extension}"/>
                 <arg value="-p"/>
                 <arg value="trans"/>
                 <arg value="-clean"/>

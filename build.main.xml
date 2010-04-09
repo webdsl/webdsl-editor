@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8" ?>
 
 <project name="WebDSL" default="all">
         
@@ -36,7 +35,7 @@
         <property name="externaljar" value="../lib.jar"/>
         <property name="externaljarflags" value="-la org.lib"/>
         -->
-    
+        
         <!-- Environment configuration for command-line builds -->
         <condition property="build.strategoxt.sdf" value="${eclipse.spoofaximp.nativeprefix}" else="">
             <isset property="eclipse.spoofaximp.nativeprefix"/>
@@ -46,19 +45,24 @@
         <import file="build.common.xml"/>
     
         <!-- Main target -->
-        <target name="all" depends="spoofaximp, import-webdsl-template, import-stratego-jar, import-rtrees-for-editor-checks"/>
+        <target name="all" depends="spoofaximp, import-webdsl-template, import-rtrees-for-editor-checks"/>
   
         <target name="import-webdsl-template">
-            <copy preservelastmodified="true" todir="webdsl-template">
+            <!-- be sure to delete files from target dir if they're removed from template dir -->
+        	  <sync todir="webdsl-template" includeEmptyDirs="true">
               <fileset dir="${webdsl.projectdir}">
                 <include name="**/*.*"/>
               </fileset>
-            </copy>
+            </sync>
         </target>
+	
+	<!--
         <target name="import-stratego-jar">
 	        <echo>${webdsl.home}/strategoxt.jar</echo>
         	<copy file="${webdsl.home}/strategoxt.jar" preservelastmodified="true" todir="include"/>
-        </target>  
+        </target>
+  -->
+          
         <target name="import-rtrees-for-editor-checks">
         	<copy file="${webdsl.home}/libback-end-transformations.rtree" preservelastmodified="true" todir="include"/>
         	<copy file="${webdsl.home}/libjava-transformations.rtree" preservelastmodified="true" todir="include"/>

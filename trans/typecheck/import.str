@@ -12,6 +12,8 @@ rules
   
 rules
   
+  declaration-of: Imports(x) -> <ModuleDecl> x
+  
   // Using strip-bodies here would strip all definitions and declare nothing.
   strip-mod: Module(x,_) -> Module(x,None())
   

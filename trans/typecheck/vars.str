@@ -1,9 +1,8 @@
-module vars
+module typecheck/vars
 
-imports 
+imports
   libwebdsl-front
-  libwebdsl-generator
-  typecheck/-
 
-rules // desugar
-  
+rules
+
+  declaration-of: Var(x) -> <VarDecl> x

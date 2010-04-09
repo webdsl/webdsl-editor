@@ -3,31 +3,59 @@ module resolve/function
 imports
   libwebdsl-front
   typechecker
-
+  util
+  
 rules // resolve
   
-  resolve-func-call: (name, args) -> funcs
-    where allfuncs := <bagof-FunctionDecl> name
-        ; nargs := <length> args
-        ; defs := <filter(where(?(<length>,_) => nargs))> allfuncs
-        ; funcs := <map(Snd)> defs
-  
-  resolve-simple: tc@ThisCall(name, args) -> f
-    where funcs := <resolve-func-call> (name, args)
-        ; 1 := <length> funcs // allow hover-simple to see other possible matches as well
-        ; f := <Hd> funcs
-
-  hover-simple = pp-func
-
-  hover-simple: ThisCall(name, args) -> text
-    where funcs := <resolve-func-call> (name, args)
-    with  if [] := funcs then
-              text := <concat-strings> ["No functions found with signature ",name,"(",<pp-args> args,")"]
-          else
-              intro := "Multiple functions found:"
-            ; text := <map(pp-func); make-list; ![intro, <id>]; concat-strings> funcs
-          end
+  // Resolve entity function call
+  in-entity-resolve(|ent): tc@ThisCall(nm, arg*) -> f
+    where f := <find-entity-func(|ent)> (nm, arg*)
           
+  // Resolve entity function call
+  resolve-simple: Call(expr, nm, arg*) -> f
+    with  SimpleSort(x_class) := <type-of> expr
+        ; f := <find-entity-func(|x_class)> (nm, arg*)
+ 
+  find-entity-func(|ent): (nm, arg*) -> f
+    with  t_arg* := <map(type-of)> arg*
+    where <CheckFunctionSignature> (SimpleSort(ent), nm, t_arg*)
+    with  f := <declaration-of-entity(|ent); find-declaration> Function(nm, t_arg*, None(), None())
+        ; <set-hover-info(|f)> ent
+  
+  // Check super class
+  find-entity-func(|ent) = where(super := <Extends> ent); find-entity-func(|super)
+    
+  // Resolve global call
+  editor-resolve: a@(ThisCall(nm, arg*), position, ast, path, project-path) -> f
+    with  t_arg* := <map(type-of)> arg*
+    where listof-t_arg* := <bagof-CheckGlobalFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
+        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
+        ; f := <declaration-of; find-declaration> Function(nm, resolved_arg*, None(), None()) 
+
+rules // hover
+        
+  hover-simple = pp-func
+  
+  // Built-in global function
+  hover-simple: ThisCall(nm, arg*) -> txt
+    where targ* := <map(type-of)> arg*
+        ; srt := <check-builtin-signature> (None(), nm, targ*)
+    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ",<pp-type> srt]
+    
+  // Built-in function
+  hover-simple: Call(exp, nm, arg*) -> txt 
+    where targ* := <map(type-of)> arg*
+        ; srt-exp := <type-of> exp
+        ; srt := <check-builtin-signature> (srt-exp, nm, targ*)
+    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ", <pp-type> srt, " of type ",<pp-type> srt-exp]
+        
+  // Built-ins
+  hover-simple: ThisCall("url", [arg]) -> <concat-strings> ["Navigate to url: ", arg]
+  //hover-simple: ThisCall("email", 
+  
+  hover-simple: a@Arg(x, srt) -> text
+    with  text := <concat-strings> ["Argument ", x, " : ",<pp-type> srt] 
+
 rules // utils
   
   pp-func: Function(name,args,ret,_) ->
@@ -39,3 +67,9 @@ rules // utils
   
   pp-args = map(pp-webdsl); separate-by(|", "); concat-strings
   
+rules // more utils
+  
+  in-entity =
+      ?(node, position, ast, path, project-path)
+    ; <walk-ast(get-entity-def <+ get-extend-entity-def| position)> ast
+    

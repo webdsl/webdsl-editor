@@ -1,17 +1,54 @@
 module resolve/entity
 
-strategies
+imports
+   libwebdsl-front
+   typecheck/properties
+   resolve/util
+
+rules // helpers
+  
+  editor-resolve: a@(node, position, ast, path, project-path) -> decl
+    where ent := <in-entity; Fst> a
+        ; decl := <debug(!"In entity resolve: "); in-entity-resolve(|ent)> node
+
+  editor-hover: a@(node, position, ast, path, project-path) -> decl
+    where ent := <in-entity; Fst> a
+        ; decl := <debug(!"In entity hover: "); in-entity-hover(|ent)> node
+
+  // dummy
+  in-entity-resolve(|ent) = fail
+  in-entity-hover(|ent) = fail
+
+rules // resolve
     
-    /*
-  resolve-entity: name -> decl
-    where decl := <EntDecl> decl
-   */
-   
-  declaration-of: EntityNoSuper(name,_) -> <declaration-of> Ent(name,None(),None(),None())
-  declaration-of: Ent(name,_,_,_) -> <debug(!"1"); EntDecl; debug(!"2")> name
-   
-  resolve-simple-decorated: f@FieldAccess(x, prop) -> decl
-    where debug(!"a")
-        ; srt := <type-of> f
-        ; debug(!"b")
-        ; decl := <declaration-of> 
+  // Explicit field access (x.y, this.x)
+  resolve-simple: f@FieldAccess(var, prop) -> decl
+    where SimpleSort(ent) := <type-of> var
+        ; decl := <PropertyDecl; find-declaration> (ent, prop)
+        ; <set-hover-info(|decl)> f
+ 
+  // Implicit field access 
+  in-entity-resolve(|ent): Var(x) -> decl
+    where decl := <PropertyDecl; find-declaration> (ent, <strip-annos> x)
+
+  // "this"
+  in-entity-resolve(|ent): Var("this") -> decl
+    where decl := <EntDecl; find-declaration> ent 
+
+  declaration-of: InverseAnno(ent, prop) -> decl
+    where decl := <PropertyDecl> (ent, prop)
+
+rules // hover
+  
+  // resolved field access
+  hover-simple: Prop(propname,type,srt,anno,_) -> text
+    where FieldAccess(var, prop) := <get-hover-info>
+        ; SimpleSort(ent) := <type-of> var
+        ; text := <concat-strings> [<pp-webdsl> var,".",prop," : ",<pp-type> srt, "<br/>from entity ",ent]
+ 
+  // property declaration
+  editor-hover: a@(node, position, ast, path, project-path) -> text
+    where Prop(propname, type, srt, anno*, _) := <desugar-def> node
+    with  ent := <in-entity; Fst> a
+        ; text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt, "<br/>from entity ",ent]
+ 

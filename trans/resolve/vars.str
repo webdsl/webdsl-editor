@@ -1,0 +1,12 @@
+module resolve/vars
+
+imports
+  libwebdsl-front
+  resolve/util
+
+strategies
+  
+  hover-simple: v@Var(name) -> text
+    where srt := <type-of> v
+        ; text := <concat-strings> [name, " : ", <pp-webdsl> srt]
+  

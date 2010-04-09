@@ -1,4 +1,0 @@
-module typecheck/compat
-
-imports
-  typecheck/compat/-

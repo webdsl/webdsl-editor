@@ -15,55 +15,55 @@ imports
 signature constructors
   FILE : Term -> Term
   
-/*
-
-TODO:
-  - some constraint trigger only on Application(...) and not on Module(...)
-      (like global var must be initialized)
-
-*/
-
 strategies // editor service interface
 
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
   
   editor-analyze:
-    (ast, path, fullpath) -> (errors, warnings, notes)
+    (ast, path, projectpath) -> (ast-renamed, errors, warnings, notes)
     with
       where(!""; debug);
       // Do not lose the cached definitions
       where(
-          rulesets := <map(save-rule-set)> ["ModuleDefs", "ModuleDefsTc", "ModuleCacheTimestamp"]
-        ; try(dr-scope-all-end); dr-scope-all-start
-        ; <map(restore-rule-set)> rulesets
+ //         rulesets := <map(save-rule-set)> ["ModuleDefs", "ModuleDefsTc", "ModuleCacheTimestamp"];
+          try(dr-scope-all-end); dr-scope-all-start
+ //       <map(restore-rule-set)> rulesets
       )
-    //; init-compiler-builtins
-      // Start with declaring the current file. If there are double definitions,
-      // the imports will override our declarations and the error will be shown in this file.
-    //; ast2 := <dbg-time(desugar-declare | "desugar-declare")> ast
-    ; <dbg-time(get-all-imports | "get imports")> (ast, path)
-    ; ast2 := <try(desugar-compat)> ast
-    ; (errors-ast, warnings, ast3) := <dbg-time(typecheck-editor-new | "typecheck")> ast2
-    ; rules(DecoratedAst := ast3)
+    ; fullpath := <concat-strings> [<prim("SSL_EXT_projectpath")>, "/", path]
+    ; rules(FullPath := fullpath)
+    ; <dbg-time(get-all-imports | "get imports")> (ast, fullpath)
+    ; ast-simplified := <desugar-compat> ast
+    ; (errors-ast, warnings-ast, ast-renamed) := 
+         <dbg-time(typecheck-editor | "typecheck")> ast-simplified
+    ; <try(find-extra-errors)> ast-simplified  // collect in dr
     ; <dbg-time(desugar-declare | "resolving")> ast    // declare for resolving
     ; notes := []
     ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
+    ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
     ; print-total-log-time
-        
-  /*
-    with
-      errors   := <collect-markers(check)> ast2
-    ; warnings := <collect-markers(constraint-warning)> ast2
-    ; notes    := <collect-markers(constraint-note)> ast2
-  */
+    
+    /*
+    ; testVar := EntityNoSuper(None(), [Property("x", None(), None(), None())])
+    ; where(innermost(test-strategy))
+    ; debug(!"Result: ")
+    ; <debug(!"Result2: ")> testVar
+          
+  test-strategy: Property(a,b,c,d) -> Prop(a,b,c,d,None())
+    */
+    
+  find-extra-errors: mod@Module(name, _) -> <fail>
+    with  fullpath := <FullPath>
+    where Module(newname, _) := <fix-module-name(|fullpath)> mod
+        ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])
+        ; rules(ExtraWarnings :+= msg)
   
   desugar-declare =
     desugar-all
-  ; preserve(alltd(strip-bodies))
   ; alltd(declare-def)
   
-  desugar-all = preserve(innermost(desugar-def))
+  desugar-all =
+      preserve(innermost(desugar-def); alltd(strip-bodies))
   
   import-main-file: fullpath -> fullpath
     where mainfilename := <get-main-file-name>
@@ -71,7 +71,7 @@ strategies // editor service interface
         ; appname := <AppName>
         ; mainapp := <concat-strings> [<ApplicationIniDir>, "/", appname, ".app"]
           // TODO: does this work on windows too ? (/ vs. \)
-        ; if not(fullpath := mainapp); <file-exists> mainapp then
+        ; if not(<eq> (fullpath, mainapp)); <file-exists> mainapp then
               where(!appname; debug(!"Explicitely importing main file: ")) 
             ; <get-imports> Imports(appname)
           end
@@ -79,9 +79,8 @@ strategies // editor service interface
   add-app-ini-error: ast -> ast
     with rules(ImportErrors :+= (ast, "Cannot find application.ini"))
              
-  get-all-imports: (ast, path) -> <id>
-    with  fullpath := <concat-strings> [<prim("SSL_EXT_projectpath")>, "/", path]
-        ; rules(IsImported : fullpath) // do not reload the current file if its transitively imported
+  get-all-imports: (ast, fullpath) -> <id>
+    with  rules(IsImported : fullpath) // do not reload the current file if its transitively imported
         ; {| ParsingModule:
               rules(ParsingModule := fullpath)
               // try to import main file if needed
@@ -95,14 +94,3 @@ strategies // editor service interface
      		where(try(not(TopImport); rules(TopImport := imp)))
       ; <editor-parse-webdsl-module> (<concat-strings> [x,".app"])
    	|}
-          
-rules
-
-  init-compiler-builtins =
-    not(built-in-template-rule-setup
-        ; fatal-err-msg(|"error in typechecker.str, failure should not occur here, make sure built-in-template-setup rules end with ';fail'")
-        ) // setup dyn rules for checks
-  ; not(after-tc-declare-hook
-        ; fatal-err-msg(|"error in typechecker.str, failure should not occur here, make sure after-tc-declare-hook rules end with ';fail'")
-        ) // setup dyn rules for checks
-  

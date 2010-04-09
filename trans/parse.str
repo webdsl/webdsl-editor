@@ -7,6 +7,7 @@ imports
   webdsl
   application-ini
   caching
+  util
 
 rules
   
@@ -20,7 +21,7 @@ rules
   	; try(not(?""); <concat-strings> ["<br/>", <id>])
   
   report-no-file: fullpath -> <fail>
-  	with 	trace-entries := <bigbagof-CurrentModule>
+  	with 	trace-entries := <bigbagof-CurrentFile>
   	    ; trace := <format-trace(|"... imported from: ")> trace-entries
   			; msg := <concat-strings> ["Imported file not found: ", fullpath, trace]
   			; import := <TopImport>
@@ -32,27 +33,59 @@ rules
     		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
     	; <file-exists <+ report-no-file> full-path
    	)
-  ; {| CurrentModule:
-       	rules(CurrentModule := full-path)
-      ; open-memory-cache(parse-file-1,read-import | full-path) <+ debug(!"import failed")
-    |}
+  ; open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs) <+ debug(!"import failed: ")
   
   // Transitive imports
-  read-import =
-      // declare for compiler typechecking
-      where(   // keep old ast to preserve ast mapping
-          try(simplify-application-constructor <+ simplify-module-constructor)
-          ; alltd(
-                try(get-imports)
-              ; try(strip-bodies)
-              ; log-time-helper(declare-global | "declare tc"))
-      )
-      // declare for resolving
-    //; check-ast(|"after parse")
-    ; log-time-helper(desugar-all | "desugar import")
-    //; check-ast(|"after desugar")
-    ; log-time-helper(alltd(strip-bodies) | "strip bodies")
-    //; check-ast(|"after strip")
-    ; log-time-helper(alltd(declare-def) | "declare def")
-   
-   
+  read-import(|fullpath) =
+    {| ModuleDefsTc, ModuleDefs: 
+	      preserve(try(fix-module-name(|fullpath)))
+	      // declare for compiler typechecking
+	    ; where(   // keep old ast to preserve ast mapping
+	          try(simplify-application-constructor <+ simplify-module-constructor)
+	          ; alltd(
+	                try(get-imports)
+	              ; try(strip-bodies)
+	              ; log-time-helper(declare-global | "declare tc"))
+	      )
+	    ; log-time-helper(desugar-all | "desugar import")
+	    ; log-time-helper(alltd(declare-def) | "declare def")
+	    ; !(<bagof-ModuleDefsTc> fullpath, <bagof-ModuleDefs> fullpath)
+	  |} 
+	  
+  read-import-sigs: p@(tc-ast, ast) -> p
+    with
+    {| ReadingFromCache:
+        fullpath := <CurrentFile>
+	    ; rules(ReadingFromCache : fullpath)
+	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> tc-ast
+	    ; <alltd(try(get-imports); log-time-helper(declare-def | "declare def"))> ast
+    |}
+    
+  // find a node in an ast
+  find-node(|sig): ast -> node
+    with  <oncetd(?sig; ?node)> ast
+        <+ where(!sig; debug(!"Looking for node: ")); fail
+  
+  // TODO: spoofax bug: preserve(desugar-all; alltd(strip-bodies)) on bound var "ast" changes the binding
+  // therefore, first match on original ast, then desugar
+  get-imported-decl(|mod): sig -> node
+    with  ast := <log-time-helper(parse-file-1 <+ debug(!"Parsing failed") | "parse")> mod
+        ; if <?Module(_,_)> sig then
+              node := <preserve(\ModuleDefs(a,b,c) -> Module(a,c)\)> ast
+                  ; debug(!"Got: ")
+            /*
+              node := <preserve(try(desugar-def)); debug(!"Desugered: ") // only simplify module constructor
+                      ; preserve(strip-mod); debug(!"Stripped: ")
+                      > ast
+            */
+          else
+              /*
+              node := <log-time-helper(find-node(|sig) | "find node org ast")> ast
+           <+
+              */
+              <log-time-helper(preserve(desugar-all; alltd(strip-bodies)) <+ debug(!"desugar/strip failed") | "desugar")> ast
+            ; node := <log-time-helper(find-node(|sig) | "find node desugared ast")>
+          end
+        ; print-total-log-time
+        ; <ensure-ast(|"after get-imported-decl")> node
+        

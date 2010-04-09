@@ -17,8 +17,6 @@ rules
   desugar-def : DerivedProperty(x, k, t, a, e) -> Prop(x, k, t, a, e)
   
 rules
-
-  check :
-    p@Prop(x, k, t@GenericSort(_,[type]), a, None()) -> (t, $[Collection property must have entity type])
-    where <is-simple-type> type
-    where require(<is-ent-type> type)
+  
+  strip-bodies: Prop(x, k, t, a, e) -> Prop(x, k, t, a, None())
+  

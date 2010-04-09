@@ -9,11 +9,20 @@ imports
 strategies  
   
   // Already stored
-  store-imported-def = where(ReadingFromMemoryCache)
-  
   store-imported-def: def -> def
-    where mod := <CurrentModule>
+    where mod := <CurrentFile>
+        ; <ReadingFromCache> mod
+        ; <store-def-to-mod> def
+        
+  store-imported-def: def -> def
+    where mod := <CurrentFile>
         ; rules(ModuleDefs :+ mod -> def)
+        ; <store-def-to-mod> def
+        
+  store-def-to-mod: def -> def
+    where mod := <CurrentFile>
+        ; ddef := <desugar-all> def
+        ; rules(DefToModule :+ ddef -> mod)
         
   // For main app, do not remember anything
   store-imported-def = id
@@ -21,17 +30,53 @@ strategies
 strategies // storing for compiler typechecker
   
   // Already stored
-  store-tc-def = where(ReadingFromMemoryCache)
+  store-tc-def: def -> def
+    where mod := <CurrentFile>
+        ; <ReadingFromCache> mod
  
   store-tc-def: def -> def
-    where mod := <CurrentModule>
+    where mod := <CurrentFile>
         ; rules(ModuleDefsTc :+ mod -> def)
   
   // For main app, do not remember anything
   store-tc-def = id
 
 strategies
+
+  /* Custom version of open-import */
+  open-import-sig(resolve-path, parse-file, record-declarations, record-sigs):
+    import -> import
+    where
+      if not(!import => COMPLETION(_)) then
+        path       := <resolve-path> import;
+        cache-path := <import-cache-path> path;
+        {| CurrentFile:
+          rules(CurrentFile := path);
+          if not(<IsImported> path) then
+	          rules(
+	            IsImported: path
+	          ); 
+	          if <is-newer> (cache-path, path) then
+	            file := <log-time-helper(ReadFromFile | "read")> cache-path;
+	            <record-sigs> file 
+	          else
+	            where(!cache-path; debug(!"Is older: "));
+	            //where(!path; debug(!"Than: "));
+	            //where(!(<modification-time> cache-path, <modification-time> path); debug(!"Times: "));
+	            file := <parse-file> path;
+	            sigs := <record-declarations> file;
+	            if <file-exists> path then
+	              // Only cache if on filesystem (e.g., ignore libstratego-lib)
+	              <WriteToBinaryFile> (cache-path, sigs)
+	            end
+	          end
+	        end
+        |}
+      end
+      
+strategies
   
+  /*
   open-memory-cache(resolve-path, parse-file, record-declarations) =
       where(fullpath := <resolve-path>)
     ; open-memory-cache(parse-file, record-declarations | fullpath)
@@ -65,6 +110,7 @@ strategies
       ; <preserve(try(fix-module-name(|fullpath))); check-ast(|"after fix"); record-declarations> file
       ; rules(IsImported: fullpath)
       ; rules(ModuleCacheTimestamp :+ fullpath -> modtime)
+  */
   
   fix-module-name(|fullpath): Module(name, sections) -> Module(name2, sections)
     where name2 := <fix-module-name> (fullpath, name)

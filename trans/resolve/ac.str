@@ -1,0 +1,37 @@
+module resolve/ac
+
+imports
+  libwebdsl-front
+  resolve/-
+  
+rules
+
+  // Security Context access
+  declaration-of: f@FieldAccess(Var("securityContext"),_) -> decl
+    where decl := <AccessControlEnabled>
+ 
+  declaration-of: Var("securityContext") -> decl
+    where decl := <AccessControlEnabled>
+
+  declaration-of: acrule|[ rule page x_pagematchname(margs) { e acrule* } ]| -> decl
+    where decl := <PageDecl> x_pagematchname
+
+  declaration-of: acrule|[ rule template x_templatename(margs) { e acrule* } ]| -> decl
+    where targ* := <marg-to-farg> margs
+        ; decl := <TemplateDecl> (x_templatename, targ*)
+         
+rules // hover
+  
+  hover-simple: AccessControlPrincipal(x_ident, props) -> label
+    with  <map(\prop -> <PropertyDecl> (x_ident, prop)\)> props
+        ; debug
+        ; tprop* := <map(desugar-def; \Prop(_,_,srt,_,_) -> srt\)>
+        ; debug
+        ; label := <concat-strings>
+            ["Access control principal: ", x_ident, ", credentials: ", <separate-by(|", "); concat-strings> props]
+         
+rules
+  
+  // Fail if there are wildcards
+  marg-to-farg = ?MatchArgs(_, None()); get-formarg-from-matcharg; map(farg-to-type)
+  
