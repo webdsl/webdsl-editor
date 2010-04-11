@@ -16,10 +16,12 @@ rules // types
     
 rules
 
-  desugar-def : EntityNoSuper(name, body) -> Ent(name,None(),body,None())    
-  desugar-def : Entity(name, super, body) -> Ent(name,super,body,None())    
-  desugar-def : SessionEntity(name,body) -> Ent(name,None(),body,"session")
-    
+  annotate-ent-body(|ent) = add-anno(|FromEntity(ent))
+
+  desugar-def : EntityNoSuper(name, body) -> Ent(name,None(),<map(annotate-ent-body(|name))> body,None())    
+  desugar-def : Entity(name, super, body) -> Ent(name,super,<map(annotate-ent-body(|name))> body,None())    
+  desugar-def : SessionEntity(name,body) -> Ent(name,None(),<map(annotate-ent-body(|name))> body,"session")
+  
 rules // declaring entities
 
   strip-bodies: Ent(name,super,body,type) -> Ent(name,super,<strip-ent-body> body, type)

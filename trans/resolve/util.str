@@ -30,12 +30,19 @@ strategies
   hover-with-info = fail
   
 rules // lookup definition across modules
+// If the given declaration is in another module, reparse that file and return node with position information
   
-  // If the given declaration is in another module, reparse that file and return node with position information
-  find-declaration: decl1 -> decl
+  // in entity
+  find-declaration: decl1{anno*} -> decl
+    where anno := <fetch-elem(?FromEntity(_))> anno*
+        ; decl := <find-declaration(\x -> <DefToModule> x{anno}\)> decl1
+
+  find-declaration = find-declaration(DefToModule)
+  
+  find-declaration(def-to-mod): decl1 -> decl
     where FullPath => mainmod
         ; decl2 := <desugar-all; alltd(strip-bodies)> decl1
-        ; if mod := <DefToModule; debug(!"Got module source: "); not(?mainmod); debug(!".. loading def from: ")> decl2 then
+        ; if mod := <def-to-mod; debug(!"Got module source: "); not(?mainmod); debug(!".. loading def from: ")> decl2 then
             decl := <get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
           else
               debug(!"... def is from local ast. ")

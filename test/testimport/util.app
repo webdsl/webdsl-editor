@@ -1,10 +1,17 @@
 module testimport/util
  
   // imports example
+ entity EntA {
+    prop :: String
+    
+    function testF() {}
+    
+  }
+  
  
   entity Util : BaseUtil {
     prop :: Bool
-    dfdfgs -> Bla
+    //dfdfgs -> Bla
     stringprop :: String
   }
   

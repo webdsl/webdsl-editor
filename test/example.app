@@ -1,6 +1,7 @@
 application example
 
   imports testimport/util
+  imports testimport/util2
 
   define page root() {}
   
@@ -23,16 +24,8 @@ application example
     
   }
   
-  /*
   entity Utilfg{}
  
-  session Aaa{
-    i :: Int
-    fdfd -> Util
-  }
-  
-  entity Util {}
-  
   entity Foo : Bla {
     i::Int
   }
@@ -43,27 +36,11 @@ application example
     //zzz()
     xxx()
   }
-  */
   
-  /*
-  entity Util {
+  extend entity Util {
     stringprop :: String  
   }
-  */
-  
-  /*
-  define template someTemplate() {
-    
-    navigate("Google", url("http://www.google.nl"))
-    
-    action xyz() {
-      //url("blabla", "sjasja");
-    }
-    
-    
-  }
-  
-  
+
   entity BaseUtil {
     function baseFunc() {
       
@@ -132,9 +109,6 @@ application example
   }
   
   entity Aaa {}
-  
-  define page root(){}
-
    
   define fs45dghjhgjdf(i: Int, b: Bool){  }
   define fs45ddf(i: Int, b: Bool){  }
@@ -181,11 +155,8 @@ application example
     
   }
   
-  */
-  
   principal is User with credentials name, pass
   
-  /*
   function someFunc() {
     
     var x := securityContext.name;
@@ -214,7 +185,6 @@ application example
     var xx2 := globalVar3;
     return null;
   }
-  */
   
   entity BaseUser {
   	s :: String
@@ -261,7 +231,7 @@ application example
   
   // ac test
   access control rules
-  
+ 
       rule page somePage() { true }
       rule page somePage2(i : Int) { true }
       rule template someTemplate() { true }
@@ -288,3 +258,18 @@ section ui
     action action1() { }
   }
   
+
+section double def problems
+
+  
+  function testScope() {
+    
+    var x : EntA;
+    x.prop := "a";
+    x.testF();
+    
+    var y : EntB;
+    y.prop := "a";
+    y.testF();
+    
+  }

@@ -12,7 +12,7 @@ rules // actual lookup
     where <CheckFunctionSignature> (SimpleSort(ent), nm, t_arg*)  // is there any matching function
     with  listof-t_arg* := <bagof-CheckFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
         ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
-        ; f := <declaration-of-entity(|ent)> Function(nm, resolved_arg*, None(), None())  
+        ; f := <declaration-of-entity(|ent); add-anno(|FromEntity(ent))> Function(nm, resolved_arg*, None(), None())  
         ; <set-hover-info> FromEntity(ent)
   
   // Check super class

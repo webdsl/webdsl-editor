@@ -5,6 +5,7 @@ imports
     ../lib/editor-common.generated
     libwebdsl-front
     util
+    webdsl
 
 strategies  
   
@@ -21,6 +22,7 @@ strategies
         ; <store-def-to-mod> def
   
   store-def-to-mod-desugar = desugar-all; store-def-to-mod
+  store-def-to-mod-desugar(|ent) = desugar-all; add-anno(|FromEntity(ent)); debug(!"Key: "); store-def-to-mod
         
   store-def-to-mod: def -> def
     where mod := <CurrentFile>
@@ -122,7 +124,7 @@ strategies
   fix-module-name: (fullpath, modname) -> newname
     with base := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/"]
     where (l,r) := <split-after> (fullpath, base)
-        ; not(r := "") // base not found
+        ; not(<eq> (r, "")) // base not found
         ; newname := <split-before; Fst> (r, ".app")
         ; not(<eq> (newname, modname))
         ; <concat-strings; debug> ["Renaming module '",modname,"' to '",newname,"'."]

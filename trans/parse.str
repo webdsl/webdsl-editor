@@ -16,7 +16,7 @@ rules
   
   format-trace(|prefix) =
   		map(\name -> <concat-strings> [prefix, name]\)
-  	; separate-by(|"\n")
+  	; separate-by(|"<br/>")
   	; concat-strings
   	; try(not(?""); <concat-strings> ["<br/>", <id>])
   

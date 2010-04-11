@@ -23,7 +23,7 @@ rules // helpers
 rules // lookup
     
   find-property: (x_class, propname) -> decl
-    where decl := <PropertyDecl> (x_class, propname)
+    where decl := <PropertyDecl; add-anno(|FromEntity(x_class))> (x_class, propname)
     
   find-property: (x_class, propname) -> <find-property> (<Extends> x_class, propname)
 
