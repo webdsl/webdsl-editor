@@ -1,14 +1,26 @@
 application example
 
   imports testimport/util
+
+  define page root() {}
+  
   
   entity X {
     
-    z -> Y (inverse = Y.z)
+    z -> Y (inverse = Z.z)
+    zz -> Y (inverse = Z.extendedProperty, name)
     
   }
   entity Y {
     z -> X
+  }
+  entity Z : Y {
+    
+  }
+  extend entity Z {
+    
+    extendedProperty -> X
+    
   }
   
   /*
@@ -39,12 +51,13 @@ application example
   }
   */
   
+  /*
   define template someTemplate() {
     
     navigate("Google", url("http://www.google.nl"))
     
     action xyz() {
-      url("blabla", "sjasja");
+      //url("blabla", "sjasja");
     }
     
     
@@ -121,18 +134,7 @@ application example
   entity Aaa {}
   
   define page root(){}
-/*
-  define page root(){ 
-    var i
-    gfhfhg
-    output(i)
-    a()
-  }  define page roohgjhgt(){ 
-    var i
-    gfhfhg
-    output(i)
-  }
-*/
+
    
   define fs45dghjhgjdf(i: Int, b: Bool){  }
   define fs45ddf(i: Int, b: Bool){  }
@@ -179,13 +181,11 @@ application example
     
   }
   
-  entity User {
-    name :: String
-    pass :: String  
-  }
+  */
   
   principal is User with credentials name, pass
   
+  /*
   function someFunc() {
     
     var x := securityContext.name;
@@ -198,5 +198,93 @@ application example
     testSimpleProp :: String := securityContext.name
     
     questionCollapsed :: Bool := securityContext.principal in questionCollapsedFor
+  }
+  
+  function globalFunc1() : Question { return null;}
+  
+  var globalQuestion := globalFunc1();
+  
+  entity LaterEntity {}
+  
+  var globalVar2 := globalVar3;
+  var globalVar3 := User{};
+  
+  function globalFunc2() : LaterEntity {
+    var xx1 := globalVar2;
+    var xx2 := globalVar3;
+    return null;
+  }
+  */
+  
+  entity BaseUser {
+  	s :: String
+  	
+  	function SomeFuncInBase() {}
+  }
+  
+  entity User : BaseUser {
+    
+    function SomeFunc() {}
+    
+    extend function SomeFunc() {}
+    
+    name :: String
+    pass :: String
+    
+  }
+  
+  extend entity User {}
+  
+  function forExp() {
+    
+    var zzz : User;
+    zzz.s := "x";
+    
+    var users : List<User>;
+    
+    for(x : User in users) {
+      
+      var piet := x; 
+      
+    }
+    
+    
+  }
+  
+  function SomeFunction() { }
+  
+  extend function SomeFunction() {
+    var x := 3;
+  }
+  
+  
+  
+  // ac test
+  access control rules
+  
+      rule page somePage() { true }
+      rule page somePage2(i : Int) { true }
+      rule template someTemplate() { true }
+      rule template someTemplate(i : Int) { true }
+      rule template nonOverloaded() { true }
+      rule action someAction() { true }
+      
+      rule template someTemplate(*) { true }
+      rule template some*(*) { true }
+  
+      rule page somePage*(*) { true }
+  
+section ui
+  
+  define template someTemplate() { }
+  define template someTemplate(i : Int) { }
+  define template someOtherTemplate( i: Int) { }
+  define template nonOverloaded() { }
+
+  define page somePage() {
+    action action1() {}
+  }
+  define page somePage2(a : Int) {
+    action action1() { }
   }
   

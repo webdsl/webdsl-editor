@@ -9,5 +9,5 @@ references
   // hover help, occurrence highlighting rules.                     
   // See the imported file for a brief introduction and examples.   
                                                                     
-  reference _                                                     : editor-resolve
+  reference _                                                     : editor-resolve-internal
   hover _                                                         : editor-hover

@@ -44,9 +44,22 @@
     
         <import file="build.common.xml"/>
     
-        <!-- Main target -->
-        <target name="all" depends="spoofaximp, import-webdsl-template, import-rtrees-for-editor-checks"/>
+        <target name="set.type.jar">
+          <copy file="editor/${esvmodule}-Builders.jar.esv" tofile="editor/${esvmodule}-Builders.esv"
+          	overwrite="true" />
+        	<delete file="include/webdsl_editor.ctree" />
+        </target>
+        <target name="set.type.ctree">
+	        <copy file="editor/${esvmodule}-Builders.ctree.esv" tofile="editor/${esvmodule}-Builders.esv"
+	         overwrite="true" />
+        	<delete file="include/webdsl-editor.jar" />
+	      </target>
+        
+	      <!-- Main target -->
+	      <target name="all" depends="set.type.ctree,spoofaximp, import-webdsl-template, import-rtrees-for-editor-checks"/>
   
+        <target name="all.jar" depends="set.type.jar,spoofaximp.jar, import-webdsl-template, import-rtrees-for-editor-checks"/>
+        
         <target name="import-webdsl-template">
             <!-- be sure to delete files from target dir if they're removed from template dir -->
         	  <sync todir="webdsl-template" includeEmptyDirs="true">
@@ -55,13 +68,12 @@
               </fileset>
             </sync>
         </target>
-	
-	<!--
+	 
+        <!-- stratego jar for running webdslc -->
         <target name="import-stratego-jar">
 	        <echo>${webdsl.home}/strategoxt.jar</echo>
         	<copy file="${webdsl.home}/strategoxt.jar" preservelastmodified="true" todir="include"/>
         </target>
-  -->
           
         <target name="import-rtrees-for-editor-checks">
         	<copy file="${webdsl.home}/libback-end-transformations.rtree" preservelastmodified="true" todir="include"/>

@@ -3,7 +3,8 @@
 <project name="common">
     
         <target name="spoofaximp" depends="stratego.ctree,sdf2table,sdf2imp"/>
-    
+        <target name="spoofaximp.jar" depends="stratego.jar,sdf2table,sdf2imp"/>
+	
         <!-- Initialization -->
         <available file="${trans}/${strmodule}.str" property="build.stratego.enabled"/>
         <dirname property="externaldefdir" file="${externaldef}"/>

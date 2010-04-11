@@ -1,0 +1,35 @@
+
+module WebDSL-Builders
+
+imports WebDSL-Builders.generated
+
+builders
+                                                                                                                                          
+  // This file can be used for custom analysis and builder rules.                                                                         
+  // See the imported file for a brief introduction and examples.                                                                         
+  /*                                                                                                                                        
+  provider                                                        : include/webdsl.ctree                                                  
+  observer                                                        : editor-analyze                                                        
+  builder                                                         : "Generate Java code" = generate-java (openeditor) (realtime)          
+  builder                                                         : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)  
+  */
+/*
+  observer : editor-analyze
+  provider : include/webdsl.ctree
+  provider : include/webdsl.jar
+  provider : include/invoke-webdsl-script.jar
+  builder  : "Build" = build-webdsl  
+*/
+  
+  observer : editor-analyze
+  
+  //provider : include/webdsl-editor.jar
+  provider  : include/webdsl_editor.ctree
+  
+  provider  : include/webdsl.jar
+  
+  provider	: lib/acoda.jar
+  builder		: "Create Database Schema"		= editor-createdatabase
+  builder		: "Show Database Schema"		= editor-wdl2schema (openeditor) (realtime)
+  builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
+  builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
