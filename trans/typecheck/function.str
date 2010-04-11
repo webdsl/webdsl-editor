@@ -7,7 +7,8 @@ imports
 
 rules // desugar
   
-  desugar-def: FunctionNoReturn(name, args, body) -> Function(name,args,None(),body)
+  // use "Void" as return type, like the compiler does
+  desugar-def: FunctionNoReturn(name, args, body) -> Function(name,args,SimpleSort("Void"),body)
   desugar-def: Predicate(name,args,body) -> Function(name,args,SimpleSort("Bool"),body)
                 
 rules // declare

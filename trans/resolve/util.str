@@ -3,9 +3,34 @@ module resolve/util
 imports
     resolve/-
     parse
+    webdsl
+    util
+    caching
 
 strategies
+  
+  editor-resolve-internal = remove-hover-info; editor-resolve; find-declaration
+    ; try(where(get-hover-info; debug(!"Got hover info: ")))
     
+  // Default resolve
+  editor-resolve: (node, position, ast, path, project-path) -> <declaration-of> node
+  editor-hover: (node, position, ast, path, project-path) -> <hover-1> node
+    
+  hover-1 = 
+    desugar-all;
+    (
+       <hover-with-info> (<id>, <get-hover-info>)
+    <+ hover
+    <+ debug(!"No hover for: "); fail
+    )
+  
+  // dummies
+  declaration-of = fail
+  hover = fail
+  hover-with-info = fail
+  
+rules // lookup definition across modules
+  
   // If the given declaration is in another module, reparse that file and return node with position information
   find-declaration: decl1 -> decl
     where FullPath => mainmod
@@ -17,25 +42,19 @@ strategies
             ; decl := decl1
           end
         ; ensure-ast(|"find-declaration")
-          
-  editor-resolve :
-    (node, position, ast, path, project-path) -> target
-    where target := <find-declaration-of; find-declaration> node
-  
-  find-declaration-of =
-      preserve(innermost(desugar-def)); debug(!"Desugared: "); declaration-of; debug(!" Found: ")
-  
-  // Simplified applications
-  editor-resolve: (node, position, ast, path, project-path) -> x
-    where x := <resolve-simple> node
-    
-  editor-hover: (node, position, ast, path, project-path) -> x
-    where x := <hover-simple> node
   
 rules   // Rules to store hover info between resolve and hover
   
-  set-hover-info(|x) = ?info; rules(HoverInfo := info)
+  // try to remove hover info from previous resolve
+  remove-hover-info = try(dr-end-scope(|"HoverInfo")); dr-begin-scope(|"HoverInfo")
+  set-hover-info = ?info; rules(HoverInfo := info)
   get-hover-info = HoverInfo
-  // Given a renamed AST node, retrieve the new-style normalized element and request hover info 
-  get-hover-info-translate = get-hover-info // desugar-def; strip-bodies; strip-annos; get-hover-info 
+  
+rules   // Context sensitive resolving
+  
+  in-context(find-context, s):
+    a@(node, position, ast, path, project-path) -> res
+    where context := <walk-ast(find-context | position)> ast
+        ; debug(!"Got context: ")
+        ; res := <s> node
   

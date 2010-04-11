@@ -8,53 +8,62 @@ imports
 rules // helpers
   
   editor-resolve: a@(node, position, ast, path, project-path) -> decl
-    where ent := <in-entity; Fst> a
-        ; decl := <debug(!"In entity resolve: "); in-entity-resolve(|ent)> node
+    where ent := <in-entity> a
+        ; {| NodeInEntity:
+                rules(NodeInEntity := ent)
+              ; debug(!"Resolve in entity: ")
+              ; decl := <debug(!".. node is : "); declaration-in-entity(|ent); debug(!".. resolved: ")> node
+          |}
 
-  editor-hover: a@(node, position, ast, path, project-path) -> decl
-    where ent := <in-entity; Fst> a
-        ; decl := <debug(!"In entity hover: "); in-entity-hover(|ent)> node
-
-  // dummy
-  in-entity-resolve(|ent) = fail
-  in-entity-hover(|ent) = fail
-
-  // get the name of the entity in which the selected node is located
+   // get the name of the entity in which the selected node is located
   in-entity =
       ?(node, position, ast, path, project-path)
-    ; <walk-ast(get-entity-def <+ get-extend-entity-def| position)> ast
+    ; <walk-ast(?Ent(<id>,_,_,_) <+ ?ExtendEntity(<id>,_) | position)> ast
+
+rules // lookup
+    
+  find-property: (x_class, propname) -> decl
+    where decl := <PropertyDecl> (x_class, propname)
+    
+  find-property: (x_class, propname) -> <find-property> (<Extends> x_class, propname)
+
+signature constructors
+	
+	FromEntity : Term -> Term
 
 rules // resolve
     
   // Explicit field access (x.y, this.x)
-  resolve-simple: f@FieldAccess(var, prop) -> decl
-    where SimpleSort(ent) := <type-of> var
-        ; decl := <PropertyDecl; find-declaration> (ent, prop)
-        ; <set-hover-info(|decl)> f
+  declaration-of: f@FieldAccess(var, prop) -> decl
+    where SimpleSort(ent) := <type-of; debug> var
+        ; decl := <find-property> (ent, prop)
+        ; <set-hover-info> FromEntity(ent)
  
   // Implicit field access 
-  in-entity-resolve(|ent): Var(x) -> decl
-    where decl := <PropertyDecl; find-declaration> (ent, <strip-annos> x)
+  declaration-in-entity(|ent): Var(x) -> decl
+    where decl := <find-property> (ent, <strip-annos> x)
+        ; <set-hover-info> FromEntity(ent)
 
   // "this"
-  in-entity-resolve(|ent): Var("this") -> decl
-    where decl := <EntDecl; find-declaration> ent 
-
+  declaration-in-entity(|ent): Var("this") -> decl
+    where decl := <EntDecl> ent
+  
+  // inverse anno
   declaration-of: InverseAnno(ent, prop) -> decl
-    where decl := <PropertyDecl> (ent, prop)
+    where decl := <find-property> (ent, prop)
+        ; <set-hover-info> FromEntity(ent)
+
+  // Extend entity to entity
+  declaration-of: ExtendEntity(name, _) -> <EntDecl> name
 
 rules // hover
   
-  // resolved field access
-  hover-simple: Prop(propname,type,srt,anno,_) -> text
-    where FieldAccess(var, prop) := <get-hover-info>
-        ; SimpleSort(ent) := <type-of> var
-        ; text := <concat-strings> [<pp-webdsl> var,".",prop," : ",<pp-type> srt, "<br/>from entity ",ent]
+  // property access
+  hover-with-info: (Prop(propname, type, srt, anno*, _), FromEntity(ent)) -> text
+    where text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt, "<br/>from entity ",ent]
  
   // property declaration
-  editor-hover: a@(node, position, ast, path, project-path) -> text
-    where Prop(propname, type, srt, anno*, _) := <desugar-def> node
-    with  ent := <in-entity; Fst> a
-        ; text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt, "<br/>from entity ",ent]
+  hover: Prop(propname,type,srt,anno,_) -> text
+    where text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt]
  
- 
+  

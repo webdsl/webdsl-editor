@@ -24,5 +24,10 @@ rules // declaring entities
 
   strip-bodies: Ent(name,super,body,type) -> Ent(name,super,<strip-ent-body> body, type)
   strip-bodies: ExtendEntity(name,body) -> ExtendEntity(name,<strip-ent-body> body)
-  strip-ent-body = map(try(strip-ent-decl)); remove-all(?ExtendFunction(_))
+  
+  strip-ent-body = map(try(strip-ent-decl))
+  
   strip-ent-decl = strip-bodies // re-use function stripping
+  strip-ent-decl: ExtendFunction(f) -> ExtendFunction(<strip-bodies> f)
+  
+  

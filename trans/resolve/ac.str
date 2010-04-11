@@ -18,19 +18,58 @@ rules
 
   declaration-of: acrule|[ rule template x_templatename(margs) { e acrule* } ]| -> decl
     where targ* := <marg-to-farg> margs
-        ; decl := <TemplateDecl> (x_templatename, targ*)
+        ; decl := <TemplateNewName; TemplateDecl> (x_templatename, targ*)
          
 rules // hover
   
-  hover-simple: AccessControlPrincipal(x_ident, props) -> label
+  hover: AccessControlPrincipal(x_ident, props) -> label
     with  <map(\prop -> <PropertyDecl> (x_ident, prop)\)> props
-        ; debug
         ; tprop* := <map(desugar-def; \Prop(_,_,srt,_,_) -> srt\)>
-        ; debug
         ; label := <concat-strings>
             ["Access control principal: ", x_ident, ", credentials: ", <separate-by(|", "); concat-strings> props]
-         
-rules
+
+  // template rule with wildcard support
+  hover: acrule|[ rule template x_templatename(margs) { e acrule* } ]| -> text
+    where templates := <find-matching-defines(
+                          bagof-TopLevelTemplateNames
+                        , bagof-TopLevelTemplateArguments)> (x_templatename, margs)
+        ; template-sigs-to-text(|"template") => text
+          
+  // page rule with wildcard support
+  hover: acrule|[ rule page x_pagename(margs) { e acrule* } ]| -> text
+    where templates := <find-matching-defines(
+                          bagof-PageNames
+                        , {?x; all-keys-CheckPageSignature; filter(?(None(), x, <id>))})>
+            (x_pagename, margs)
+        ; template-sigs-to-text(|"page") => text
+
+rules // find matching signatures
+
+  find-matching-defines(get-names, get-args): (x_name, margs) -> sig*
+    where get-names; uniq 
+        ; filter(where(\name -> <match-names> (x_name, name)\))
+        ; map(name-to-matching-sigs(get-args | margs)); flatten-list => sig*
+        
+  name-to-matching-sigs(get-args | margs): name -> sig*
+    with  <get-args> name
+        ; filter(match-template-args-to-margs(|margs))
+        ; map(\arg* -> (name, arg*)\) => sig*
+  
+  match-template-args-to-margs(|margs): arg* -> arg*
+    where // re-create farg*
+          farg* := <map(!Arg("dummy",<id>))> arg*
+        ; <match-arguments> (margs, farg*)
+
+rules // presentation
+  
+  template-sigs-to-text(|type) =
+      map(template-sig-to-text(|type))
+    ; separate-by(|"<br/>"); concat-strings => text
+  
+  template-sig-to-text(|type): (name, targ*) -> text
+    with text := <concat-strings> [type, " ", name,"(",<pp-args> targ*,")"]
+
+rules // util
   
   // Fail if there are wildcards
   marg-to-farg = ?MatchArgs(_, None()); get-formarg-from-matcharg; map(farg-to-type)

@@ -4,9 +4,24 @@ imports
   libwebdsl-front
   resolve/util
 
-strategies
+rules // object creation
   
-  hover-simple: v@Var(name) -> text
+  editor-resolve = in-context(
+      ?ObjectCreation(<id>,_)
+    , declaration-in-creation); find-declaration
+  
+  declaration-in-creation(|type): ObjectPropertyAssignment(prop, _) -> decl
+    where SimpleSort(ent) := type
+        ; decl := <find-property> (ent, prop)
+    
+rules // var
+  
+  hover: v@Var(name) -> text
     where srt := <type-of> v
         ; text := <concat-strings> [name, " : ", <pp-webdsl> srt]
+  
+  // Sort might not be filled in, like for an VarDeclInitInferred 
+  hover: v@VarDeclGeneric(x,_,_) -> text
+    where srt := <type-of> Var(x)
+        ; text := <concat-strings> ["var ", x, " : ", <pp-type> srt]
   

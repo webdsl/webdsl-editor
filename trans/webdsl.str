@@ -21,7 +21,7 @@ strategies // editor service interface
      fatal-err(|"Not designed to be invoked directly")
   
   editor-analyze:
-    (ast, path, projectpath) -> (ast-renamed, errors, warnings, notes)
+    (ast, path, projectpath) -> (ast-desugared, errors, warnings, notes)
     with
       where(!""; debug);
       // Do not lose the cached definitions
@@ -37,7 +37,7 @@ strategies // editor service interface
     ; (errors-ast, warnings-ast, ast-renamed) := 
          <dbg-time(typecheck-editor | "typecheck")> ast-simplified
     ; <try(find-extra-errors)> ast-simplified  // collect in dr
-    ; <dbg-time(desugar-declare | "resolving")> ast    // declare for resolving
+    ; ast-desugared := <dbg-time(desugar-declare | "resolving")> ast-renamed    // declare for resolving
     ; notes := []
     ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
     ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
@@ -56,7 +56,7 @@ strategies // editor service interface
   ; alltd(declare-def)
   
   desugar-all =
-      preserve(innermost(desugar-def); alltd(strip-bodies))
+      preserve(innermost(desugar-def))
   
   import-main-file: fullpath -> fullpath
     where mainfilename := <get-main-file-name>

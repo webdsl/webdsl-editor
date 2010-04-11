@@ -9,21 +9,21 @@ strategies
     
   // Template call, already uniquely renamed
   declaration-of: tc@TemplateCall(nm, arg*, _, _) -> f
-    where f := <CallToDefinedTemplate; TemplateDecl; find-declaration> nm
+    where f := <CallToDefinedTemplate; TemplateDecl> nm
   
   declaration-of: pc@PageCall(name, args) -> page
     where page := <PageDecl> name
   
-  hover-simple: Define(mods, x, farg*, _, _) -> text
+  hover: Define(mods, x, farg*, _, _) -> text
     with  type := <mods-to-define-type; capitalize-string> mods
         ; text := <concat-strings> [type, " ", x, "(", <pp-args> farg*, ")"]
   
-  // TODO: first time a TemplateCallNoBody is passed, second time a TemplateCall() --> due to reverse origin tracking ?
-  hover-simple = innermost(desugar-def); ?TemplateCall(nm, arg*, _, _)
-        ; <CallToBuiltInTemplate> nm
-        ; targ* := <map(type-of)> arg*
+  hover: TemplateCall(nm, arg*, _, _) -> text
+    where <CallToBuiltInTemplate> nm
+    with  targ* := <map(type-of)> arg*
         ; debug(!"Types:" )
-        ; <concat-strings> ["Built-in template ", nm, "(", <map(pp-type); debug; separate-by(|", "); debug; concat-strings; debug> targ*, ")"]
+        ; text := <concat-strings>
+            ["Built-in template ", nm, "(", <map(pp-type); separate-by(|", "); concat-strings> targ*, ")"]
     
 rules
 

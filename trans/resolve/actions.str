@@ -7,13 +7,13 @@ imports
 rules
 
   declaration-of: ActionCall(name, arg*) -> decl
-    where decl := <ActionDefinition; find-declaration> name
+    where decl := <ActionDefinition> name
     
   declaration-of: tc@ThisCall(name, arg*) -> decl
     where get-anno(?IsReturnInAction())
         ; decl := <declaration-of> PageCall(name, arg*)
   
-  hover-simple: Action(name, arg*, _) -> text
+  hover: Action(name, arg*, _) -> text
     with text := <concat-strings> ["action ",name,"(",<pp-args> arg*,")"]
     
   

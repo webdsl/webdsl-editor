@@ -7,24 +7,21 @@ imports
 
 strategies
   
-  editor-hover:
-    (Entity(name,super,_),position,ast,path,projec-path) -> text
-    with text := <concat-strings> ["Entity ",name," : ",super]
- 
-  editor-hover:
-    (SessionEntity(name,_),position,ast,path,project-path) -> text
+  hover: Ent(name,_,_,"session") -> text
     with text := <concat-strings> ["Session entity ",name]
 
-  editor-hover:
-    (EntityNoSuper(name,_),position,ast,path,project-path) -> text
+  hover: Ent(name,None(),_,_) -> text
     with text := <concat-strings> ["Entity ",name]
 
-  hover-simple: fa@FieldAccess(exp, "length") -> text
+  hover: Ent(name,super,_,_) -> text
+    with text := <concat-strings> ["Entity ",name," : ",super]
+ 
+  hover: fa@FieldAccess(exp, "length") -> text
     where srt := <type-of> fa
         ; exp-srt := <type-of> exp
         ; text := <concat-strings> ["length : ", <pp-type> srt, " of type ", <pp-type> exp-srt]
 
-  hover-simple = pp-type-long; capitalize-string 
+  hover = pp-type-long; capitalize-string 
   
   pp-type-long: SimpleSort(x) -> <concat-strings> ["builtin type ", x] where is-simple-sort
   pp-type-long: SimpleSort(x) -> <concat-strings> ["entity ", x]
@@ -34,4 +31,4 @@ strategies
   pp-type: SimpleSort(x) -> x
   pp-type: GenericSort(type, [srt]) -> <concat-strings> [<capitalize-string> type, "&lt;", <pp-type> srt, "&gt;"]
   pp-type: Enum(x,_) -> x
-  
+  pp-type: None() -> "void"

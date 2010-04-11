@@ -6,9 +6,8 @@ imports
 
 rules   // resolve
             
-  hover-simple: Module(x,_) -> text      
+  hover: Module(x,_) -> text      
     with  fullpath := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/", x]
         ; text := <concat-strings> ["Module ", x, "<br/>", fullpath]
 
-  hover-simple: ModuleDefs(x,_,s) -> <hover-simple> Module(x,s)
   

@@ -48,4 +48,6 @@ rules
       where([x|xs] := pos)
     ; subterm-at(|x)
     ; walk-ast(s | xs)
-      
+
+  // Dummies
+  strip-bodies = fail

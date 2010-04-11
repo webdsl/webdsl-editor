@@ -16,13 +16,15 @@ strategies
         
   store-imported-def: def -> def
     where mod := <CurrentFile>
-        ; rules(ModuleDefs :+ mod -> def)
+        ; sig := <alltd(strip-bodies)> def
+        ; rules(ModuleDefs :+ mod -> sig)
         ; <store-def-to-mod> def
+  
+  store-def-to-mod-desugar = desugar-all; store-def-to-mod
         
   store-def-to-mod: def -> def
     where mod := <CurrentFile>
-        ; ddef := <desugar-all> def
-        ; rules(DefToModule :+ ddef -> mod)
+        ; rules(DefToModule :+ def -> mod)
         
   // For main app, do not remember anything
   store-imported-def = id
