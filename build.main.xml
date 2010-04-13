@@ -1,4 +1,3 @@
-
 <project name="WebDSL" default="all">
         
         <!-- Key input modules -->
@@ -56,10 +55,12 @@
 	      </target>
         
 	      <!-- Main target -->
-	      <target name="all" depends="set.type.ctree,spoofaximp, import-webdsl-template, import-rtrees-for-editor-checks"/>
+	      <target name="all" depends="update-editor-ts,all.no-ts-update"/>
+        <target name="all.jar" depends="update-editor-ts,all.jar.no-ts-update"/>
   
-        <target name="all.jar" depends="set.type.jar,spoofaximp.jar, import-webdsl-template, import-rtrees-for-editor-checks"/>
-        
+	      <target name="all.no-ts-update" depends="update-editor-ts,set.type.ctree,spoofaximp, import-webdsl-template, import-rtrees-for-editor-checks"/>
+        <target name="all.jar.no-ts-update" depends="update-editor-ts,set.type.jar,spoofaximp.jar, import-webdsl-template, import-rtrees-for-editor-checks"/>
+	
         <target name="import-webdsl-template">
             <!-- be sure to delete files from target dir if they're removed from template dir -->
         	  <sync todir="webdsl-template" includeEmptyDirs="true">
@@ -82,5 +83,19 @@
         	<copy file="${webdsl.home}/libwebdsl-front.rtree" preservelastmodified="true" todir="include"/>
         	<copy file="${webdsl.home}/libwebdsl-generator.rtree" preservelastmodified="true" todir="include"/>
         	<copy file="${webdsl.home}/libwrite-files.rtree" preservelastmodified="true" todir="include"/>
-        </target>  
-    </project>
+        </target>
+	
+
+  <target name="update-editor-ts">
+  	<get-unix-ts/>
+  	<echo file="editor.timestamp.aterm">ModificationTime(${timestamp.unix})</echo> 
+  </target>
+  	
+  <scriptdef name="get-unix-ts" language="javascript">
+    <![CDATA[
+    var ts = Math.round(new Date().getTime()/1000.0);
+    self.getProject().setProperty('timestamp.unix', ts);
+  	]]>
+	</scriptdef>
+  		
+</project>

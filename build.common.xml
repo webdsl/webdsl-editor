@@ -223,7 +223,12 @@
                 <param name="build.stratego.extension" value="java"/>
             </antcall>
         	  <javac classpath="utils/strategoxt.jar${externaljarimport}" srcdir="${src-gen}/trans" destdir="${build}" source="1.5" debug="on"/>
-            <jar basedir="${build}" includes="trans/**" destfile="${include}/${strmodule}-editor.jar"/>
+            <jar basedir="${build}" destfile="${include}/${strmodule}-editor.jar">
+            	<!-- class files -->
+              <fileset dir="${build}" includes="trans/**" />
+              <!-- include imported terms -->
+              <fileset dir="${src-gen}/trans" excludes="**/*.java" />
+            </jar>
         </target>
             
         <target name="stratego.jvm.helper" unless="strc-java.available" if="build.stratego.enabled" depends="utils-files">

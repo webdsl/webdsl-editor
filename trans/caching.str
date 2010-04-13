@@ -22,7 +22,7 @@ strategies
         ; <store-def-to-mod> def
   
   store-def-to-mod-desugar = desugar-all; store-def-to-mod
-  store-def-to-mod-desugar(|ent) = desugar-all; add-anno(|FromEntity(ent)); debug(!"Key: "); store-def-to-mod
+  store-def-to-mod-desugar(|ent) = desugar-all; add-anno(|FromEntity(ent)); store-def-to-mod
         
   store-def-to-mod: def -> def
     where mod := <CurrentFile>
@@ -45,7 +45,23 @@ strategies // storing for compiler typechecker
   // For main app, do not remember anything
   store-tc-def = id
 
+signature constructors
+  
+  // Wrap int in ModificationTerm to avoid LazyTerm bug
+  ModificationTime : Term -> Term
+
 strategies
+
+  check-editor-version: cache-path -> cache-path
+    with  ModificationTime(editor-ts) := <import-term(editor.timestamp.aterm)>
+    where <gt <+ editor-new-version-once; fail> (<modification-time> cache-path, editor-ts)
+    
+  editor-new-version-once =
+    try(
+        where(not(EditorNewVersionShowed))
+      ; rules(EditorNewVersionShowed := True())
+      ; debug(!"Editor is updated; refreshing cache.")
+    ) 
 
   /* Custom version of open-import */
   open-import-sig(resolve-path, parse-file, record-declarations, record-sigs):
@@ -60,13 +76,11 @@ strategies
 	          rules(
 	            IsImported: path
 	          ); 
-	          if <is-newer> (cache-path, path) then
+	          if   <is-newer> (cache-path, path); <check-editor-version> cache-path then
 	            file := <log-time-helper(ReadFromFile | "read")> cache-path;
 	            <record-sigs> file 
 	          else
-	            where(!cache-path; debug(!"Is older: "));
-	            //where(!path; debug(!"Than: "));
-	            //where(!(<modification-time> cache-path, <modification-time> path); debug(!"Times: "));
+	            where(!cache-path; debug(!"Updating cache: "));
 	            file := <parse-file> path;
 	            sigs := <record-declarations> file;
 	            if <file-exists> path then
