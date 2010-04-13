@@ -8,6 +8,7 @@ imports
   application-ini
   caching
   util
+  dr
 
 rules
   
@@ -35,8 +36,41 @@ rules
    	)
   ; open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs) <+ debug(!"import failed: ")
   
-  // Transitive imports
+  is-unused-dr =
+      ?"AddWebDSLDefs"
+   <+ ?"LogTimes"
+   <+ ?"LogTimesKey"
+   
+  all-used-drs = !["Functions","EntDecl","EntDecl","VarDecl","VarDecl","ExtendGlobalFunctions","FunctionDecl","FunctionDecl","PageDecl","PageDecl","TopLevelTemplateDecl","TopLevelTemplateDecl","IsDerivedProperty","TopLevelTemplateNames","IsDefinedAsAjaxTemplate","OriginalNonUniqueName","HtmlEntityId","TemplateDefinitionFromAnnoName","ErrorDuringOverloadResolution","IncorrectTemplateCall","ReservedFunctions","Properties","EntityFunctionNoOverloading","StyleVariable","StyleProperties","TopLevelTemplateDefinitions","AccessControlEnabled","AccessControlEnabled","MatchesAccessControlPointcut","IsProperty","IsProcedure","EntityIdType","HasNaturalId","StaticRename","RenameActionCall","TemplateDecl","CallToDefinedTemplate","CallContextVars","TemplateNewName","MostSpecificFunction","MostSpecificFunction","TopLevelTemplateArguments","CallToRequiredTemplate","ReqTemplateSig","RenameType","IsGlobal","CheckEmailSignature","IsSessionEntityType","CheckGeneratedGlobalFunctionSignature","CheckGlobalFunctionSignature","CheckPageSignature","CheckFunctionSignature","TypeOf","PropertyNameToUniqueName","Properties","StylesheetIncludes","Rename","AccessControlPointcuts","pointcut-formal-argument","IndexedEntity","TypeOfProperty","TemplateSignature","TemplateDefinition","IsPage","HasNameProperty","Extends","IsNativeClass","IsEntity"]
+  is-used-dr = ?x; where(all-used-drs; fetch-elem(?x))
+  is-used-dr = ?"ModuleImports"
+  
   read-import(|fullpath) =
+      ast := <preserve(try(fix-module-name(|fullpath)))>
+    ; start-record-dynamic-rules
+    ; try(simplify-application-constructor <+ simplify-module-constructor)
+    ; alltd(
+        try(strip-bodies)
+      ; log-time-helper(declare-global | "declare tc")
+      )
+    ; alltd(
+      	{?imp@Imports(_); rules(ModuleImports :+ fullpath -> imp) } )
+    
+    ; ruleset := <end-record-dynamic-rules; filter(where(Fst; is-used-dr))>
+    ; where(<bagof-ModuleImports; map(get-imports)> fullpath)
+      // dummy
+    ; rules(DefToModule :- _)
+    ; rules(ModuleDefs :- _)
+    ; rules(ModuleDefsTc :- _) 
+      
+  read-import-sigs: ruleset -> ruleset
+    with <log-time-helper(load-dynamic-rule-closure | "load drs")> ruleset
+       ; fullpath := <CurrentFile>
+       ; bagof-ModuleImports
+       ; map(get-imports)
+  
+  // Transitive imports
+  read-import-1(|fullpath) =
     {| ModuleDefsTc, ModuleDefs: 
 	      preserve(try(fix-module-name(|fullpath)))
 	      // declare for compiler typechecking
@@ -53,7 +87,7 @@ rules
 	    ; !(<bagof-ModuleDefsTc> fullpath, <bagof-ModuleDefs> fullpath)
 	  |} 
 	  
-  read-import-sigs: p@(tc-ast, ast) -> p
+  read-import-sigs-1: p@(tc-ast, ast) -> p
     with
     {| ReadingFromCache:
         fullpath := <CurrentFile>

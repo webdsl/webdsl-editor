@@ -1,0 +1,71 @@
+module dr
+
+strategies  
+  
+  record-dr-internals = !["RecordDR_ExistingRules","RecordDR_NewRuleSets"]
+  is-record-dr-internal = ?x; where(<fetch-elem(?x)> (<record-dr-internals>))
+
+  start-record-dynamic-rules =
+    where(
+        <map(dr-begin-scope(|<id>))> (<record-dr-internals>)
+      ; rulenames := <all-dynamic-rules; remove-all(is-record-dr-internal)>
+      ; rules(RecordDR_ExistingRules := rulenames)
+      ; map(dr-start-change-set(|<id>))
+   )
+   
+  end-record-dynamic-rules =
+    where(
+        existing-rules := <RecordDR_ExistingRules>
+      ; <map(commit-and-store-changes)> existing-rules
+      ; newrules := <diff> (<all-dynamic-rules; remove-all(is-record-dr-internal)>, existing-rules)
+      ; <map(commit-and-store-rules)> newrules
+      ; recorded := <bagof-RecordDR_NewRuleSets>
+      ; <map(dr-end-scope(|<id>))> (<record-dr-internals>)  // cleanup
+    )
+    ; !recorded
+ 
+  all-dynamic-rules = <hashtable-keys> Hashtable(<dr-rule-sets-hashtable>) 
+ 
+  commit-and-store-rules: name -> name
+    with  dr-get-rule-set(|name); Hd
+        ; ?RuleScope(_, table)
+        ; <hashtable-keys> table
+        ; keyvals := <map(\x -> (x, <hashtable-get(|x)> table)\)>
+             // some rules like DR_BREAK are created but have no keys??
+        ; if not([] := keyvals) then 
+            where(!name; debug(!"New rule: ")); debug(!"... keyvals:" )
+          ; rules(RecordDR_NewRuleSets :+= (name, keyvals))
+          end
+            
+  changeset-key-to-rules(|table, oldrules): key@(scopeid, rulekey) -> keyvals
+    with  values := <hashtable-get(|key)> table
+          // see if any values were in the hashtable before
+        ; try(
+            oldvals := <dr-lookup-rule(|rulekey)> oldrules
+          ; <diff> (values, oldvals)
+          )
+        ; keyvals := (rulekey, <id>)    // (key, new-values)
+  
+  commit-and-store-changes: name -> (name, changeset)
+    with  dr-get-rule-set(|name) => ruleset@[changeset@ChangeSet(_, _, h@Hashtable(csid)) | rs]
+        
+        // Store changeset as ruleset
+        // [extended rules contain *all* values in the changeset, we only want
+        //    the newly added]
+        ; <hashtable-keys> h
+        ; keyvals := <map(\x -> <changeset-key-to-rules(|h, rs)>\); remove-all(?(_, []))>
+        ; if not([] := keyvals) then
+            where(!name; debug(!"Changeset for: "))
+          ; debug(!"... rules are: ")
+          ; rules(RecordDR_NewRuleSets :+= (name, keyvals))
+          end
+          // Commit change set
+        ; !ruleset
+        ; dr-commit-change-set
+        ; dr-set-rule-set(|name)
+        
+  load-dynamic-rule-closure: rulelist -> <map(load-dynamic-rule)> rulelist
+  load-dynamic-rule: (name, keyvals) -> <id>
+    with  [RuleScope(lbl, table) | xs] := <dr-get-rule-set(|name)>
+        ; <map(\(key, vals) -> <map(\val -> <hashtable-push(|key, val)> table\)> vals\)> keyvals
+        
