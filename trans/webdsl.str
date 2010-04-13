@@ -32,6 +32,7 @@ strategies // editor service interface
       )
     ; fullpath := <concat-strings> [<prim("SSL_EXT_projectpath")>, "/", path]
     ; rules(FullPath := fullpath)
+    ; typecheck-init    // set up built-in types before doing any declares
     ; <dbg-time(get-all-imports | "get imports")> (ast, fullpath)
     ; ast-simplified := <desugar-compat> ast
     ; (errors-ast, warnings-ast, ast-renamed) := 
