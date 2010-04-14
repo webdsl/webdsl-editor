@@ -5,7 +5,7 @@ imports
    typecheck/template
    resolve/function
 
-ruless		// resolve
+rules		// resolve
     
   // Template call, already uniquely renamed
   declaration-of: tc@TemplateCall(nm, arg*, _, _) -> f

@@ -3,7 +3,7 @@ module resolve/util
 imports
     resolve/-
     parse
-    webdsl
+    webdsl_editor
     util
     caching
 
@@ -63,5 +63,5 @@ rules   // Context sensitive resolving
     a@(node, position, ast, path, project-path) -> res
     where context := <walk-ast(find-context | position)> ast
         ; debug(!"Got context: ")
-        ; res := <s> node
+        ; res := <s(|context)> node
   

@@ -4,7 +4,7 @@ imports
   libwebdsl-front 
   libstratego-sglr
   ../lib/editor-common.generated
-  webdsl
+  webdsl_editor
   application-ini
   caching
   util

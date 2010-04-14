@@ -3,7 +3,7 @@ module entities
 imports
   libstratego-lib
   libwebdsl-front
-  webdsl
+  webdsl_editor
       
 signature
   constructors

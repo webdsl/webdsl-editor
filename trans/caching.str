@@ -5,7 +5,7 @@ imports
     ../lib/editor-common.generated
     libwebdsl-front
     util
-    webdsl
+    webdsl_editor
 
 strategies  
   

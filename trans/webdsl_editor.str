@@ -1,4 +1,4 @@
-module webdsl
+module webdsl_editor
 
 imports
   libstratego-lib
