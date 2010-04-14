@@ -1,5 +1,8 @@
 module testimport/util
  
+imports
+  testimport/util2
+ 
   // imports example
  entity EntA {
     prop :: String
