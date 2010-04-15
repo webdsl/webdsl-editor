@@ -256,7 +256,13 @@ section ui
   define page somePage2(a : Int) {
     action action1() { }
   }
-  
+
+define page zzzz() {
+    
+    navigate manageExtEntity() { "Goto " }
+    
+  }
+    
 
 section double def problems
 

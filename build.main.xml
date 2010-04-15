@@ -48,8 +48,8 @@
 	<import file="build.generated.xml" />
 
 	<!-- WEBDSL: custom main target, don't use spoofaximp.default -->
-	<target name="all" depends="utils-files, sdf2table, import-webdsl-template, import-rtrees-for-editor-checks, stratego.compile, sdf2imp" />
-	<target name="all.release" depends="update.editor-ts, all" />
+	<target name="all" depends="check.editor-ts.present, all.release" />
+	<target name="all.release" depends="update.editor-ts, utils-files, sdf2table, import-webdsl-template, import-rtrees-for-editor-checks, stratego.compile, sdf2imp" />
 
 	<!-- WEBDSL: Custom targets .................................................................... -->
 
@@ -100,9 +100,16 @@
 			preservelastmodified="true" todir="include" />
 	</target>
 
-	<target name="update.editor-ts">
+	<property name="path.timestamp.term" value="editor.timestamp.aterm" />
+	
+	<target name="check.editor-ts.present">
+		<available file="${path.timestamp.term}" property="available.editor-ts" />
+	</target>
+	
+	<target name="update.editor-ts" unless="available.editor-ts">
 		<get-unix-ts/>
-		<echo file="editor.timestamp.aterm">ModificationTime(${timestamp.unix})</echo>
+		<echo>Editor timestamp is: ${timestamp.unix}</echo>
+		<echo file="${path.timestamp.term}">ModificationTime(${timestamp.unix})</echo>
 	</target>
 
 	<scriptdef name="get-unix-ts" language="javascript">

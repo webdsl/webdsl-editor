@@ -26,6 +26,10 @@ imports
 
   entity ExtEntity{}
 
+  derive crud ExtEntity
+  
+    
+
 //var GGlobalVar : String;
 var GlobalVar : Util := Util{};
 
@@ -50,3 +54,4 @@ entity SomeChildEntity : BaseUtil {
   } 
   
 }
+

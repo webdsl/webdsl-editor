@@ -17,6 +17,8 @@ rules // global declares
     <+?AccessControlPrincipal(_,_)    // for securityContext
     <+?Define(_,_,_,_,_)
     <+?Predicate(_,_,_)
+    <+?Derive(_,_,_)                  // declares page names 
+    <+?DeriveCrud(_)
   
 rules // global declares with subelements
 
