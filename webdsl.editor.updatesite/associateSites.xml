@@ -1,0 +1,4 @@
+<associateSites>
+	<associateSite url="http://www.lclnet.nl/update" label="Spoofax/IMP Update Site"/>
+  <associateSite url="http://download.eclipse.org/webtools/updates" label="WTP Update Site" />
+</associateSites>
