@@ -1,0 +1,22 @@
+module properties
+
+imports 
+  libwebdsl-front
+  typecheck/-
+  util
+  
+signature
+  constructors
+    Prop : Id * Kind * Sort * List(Anno) * Exp -> Prop
+    
+rules
+
+  desugar-def : Property(x, k, t, a) -> Prop(x, k, t, a, None())
+  desugar-def : PropertyNoAnno(x, k, t) -> Prop(x, k, t, [], None())
+  desugar-def : DerivedPropertyNoAnno(x, k, t, e) -> Prop(x, k, t, [], e)
+  desugar-def : DerivedProperty(x, k, t, a, e) -> Prop(x, k, t, a, e)
+  
+rules
+  
+  strip-bodies: Prop(x, k, t, a, e) -> Prop(x, k, t, a, None())
+  

@@ -1,0 +1,21 @@
+module template
+
+imports 
+  libwebdsl-front 
+  libwebdsl-generator
+  webdsl_editor
+
+rules
+
+  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, TemplateBody([]))
+
+rules // desugaring
+  
+  desugar-def: TemplateCallPropsNoBody(x, args, props) -> TemplateCall(x, args, props, None())
+  desugar-def: TemplateCallProps(x, props) -> TemplateCall(x, [], props, None())
+  desugar-def: TemplateCallPropsNoArgs(x, props, elems) -> TemplateCall(x, [], props, elems)
+  desugar-def: TemplateCallNoBody(x, args) -> TemplateCall(x, args, None(), None())
+  desugar-def: TemplateCallNoArgs(x) -> TemplateCall(x, [], None(), None())
+  desugar-def: TemplateCallNoAssigns(x, args, elems) -> TemplateCall(x, args, None(), elems)
+  desugar-def: TemplateCallBody(x, elems) -> TemplateCall(x, [], None(), elems)
+

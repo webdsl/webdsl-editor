@@ -1,0 +1,88 @@
+module resolve/function
+
+imports
+  libwebdsl-front
+  typechecker
+  util
+ 
+rules // actual lookup
+  
+  find-entity-func(|ent): (nm, arg*) -> f
+    with  t_arg* := <map(type-of)> arg*
+    where <CheckFunctionSignature> (SimpleSort(ent), nm, t_arg*)  // is there any matching function
+    with  listof-t_arg* := <bagof-CheckFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
+        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
+        ; f := <declaration-of-entity(|ent); add-anno(|FromEntity(ent))> Function(nm, resolved_arg*, None(), None())  
+        ; <set-hover-info> FromEntity(ent)
+  
+  // Check super class
+  find-entity-func(|ent) = where(super := <Extends> ent); find-entity-func(|super)
+
+  find-global-func: (nm, arg*) -> f
+    with  t_arg* := <map(type-of)> arg*
+    where listof-t_arg* := <bagof-CheckGlobalFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
+        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
+        ; f := <declaration-of> Function(nm, resolved_arg*, None(), None())
+
+rules // resolve
+  
+  // Resolve entity function call
+  declaration-in-entity(|ent): tc@ThisCall(nm, arg*) -> f
+    where f := <find-entity-func(|ent)> (nm, arg*)
+          
+  // Resolve entity function call
+  declaration-of: Call(expr, nm, arg*) -> f
+    where SimpleSort(x_class) := <type-of> expr
+        ; f := <find-entity-func(|x_class)> (nm, arg*)
+
+  // Resolve global call
+  declaration-of: ThisCall(nm, arg*) -> f
+    where f := <find-global-func> (nm, arg*)
+
+  // Extend global function to normal function
+  declaration-of: ExtendFunction(f@Function(name,args,_,_)) -> decl
+    where debug
+        ; decl := <declaration-of> Function(name,args,None(),None())  // must be exact match
+
+  declaration-in-entity(|ent): ef@ExtendFunction(Function(name,args,_,_)) -> decl
+    where (decl := <declaration-of-entity(|ent)> Function(name,args,None(),None())
+          <+ decl := <debug(!"... trying supertype:"); declaration-in-entity(|<Extends> ent)> ef)
+
+rules // hover
+        
+  hover-with-info: (f@Function(_, _, _, _), FromEntity(ent)) -> text
+     with text := <concat-strings> [<pp-func> f, "<br/>", "from entity ", ent]
+
+  hover = pp-func
+  
+  // Built-in global function
+  hover: ThisCall(nm, arg*) -> txt
+    where targ* := <map(type-of)> arg*
+        ; srt := <check-builtin-signature> (None(), nm, targ*)
+    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ",<pp-type> srt]
+    
+  // Built-in function
+  hover: Call(exp, nm, arg*) -> txt 
+    where targ* := <map(type-of)> arg*
+        ; srt-exp := <type-of> exp
+        ; srt := <check-builtin-signature> (srt-exp, nm, targ*)
+    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ", <pp-type> srt, " of type ",<pp-type> srt-exp]
+        
+  // Built-ins
+  hover: ThisCall("url", [arg]) -> <concat-strings> ["Navigate to url: ", arg]
+  //hover-simple: ThisCall("email", 
+  
+  hover: Arg(x, srt) -> text
+    with  text := <concat-strings> ["Argument ", x, " : ",<pp-type> srt] 
+
+rules // utils
+  
+  pp-func: Function(name,args,ret,_) ->
+    <concat-strings> ["Function ",name,"(",<pp-args> args,") : ",<pp-type> ret]
+  pp-func: FunctionNoReturn(name, args, _) ->
+    <concat-strings> ["Function ",name,"(",<pp-args> args,")"]
+  pp-func: Predicate(name,args,_) ->
+    <concat-strings> ["Predicate ",name,"(",<pp-args> args,")"]
+  
+  pp-args = map(try(?Arg(_,<id>)); pp-type); separate-by(|", "); concat-strings
+  

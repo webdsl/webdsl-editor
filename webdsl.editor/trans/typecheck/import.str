@@ -1,0 +1,27 @@
+module import
+
+imports 
+  libwebdsl-front
+  ../lib/editor-common.generated
+  caching
+  util
+
+rules
+  
+  desugar-def: ModuleDefs(name,defs,sections) -> Module(name,[Section("defs",defs)|sections])
+  
+rules
+  
+  declaration-of: Imports(x) -> <ModuleDecl> x
+  
+  // Using strip-bodies here would strip all definitions and declare nothing.
+  strip-mod: Module(x,_) -> Module(x,None())
+  
+  declare-def: mod@Module(x,_) -> <fail>    // fail to continue traversal
+    with  stripped-mod := <preserve(strip-mod)> mod
+        ; rules(ModuleDecl : x -> stripped-mod)
+        ; <store-imported-def> stripped-mod
+        
+  // Remember imports of a module
+  declare-def: imp@Imports(x) -> imp
+    with <store-imported-def> imp

@@ -1,0 +1,35 @@
+module entities
+
+imports
+  libstratego-lib
+  libwebdsl-front
+  webdsl_editor
+      
+signature
+  constructors
+    Ent : Term * Term * Term * Term -> Ent      
+    
+rules // types
+
+  declaration-of : SimpleSort(x) -> <EntDecl> x
+  declaration-of : SimpleSort(x) -> <EnumDecl> x
+    
+rules
+
+  annotate-ent-body(|ent) = add-anno(|FromEntity(ent))
+
+  desugar-def : EntityNoSuper(name, body) -> Ent(name,None(),<map(annotate-ent-body(|name))> body,None())    
+  desugar-def : Entity(name, super, body) -> Ent(name,super,<map(annotate-ent-body(|name))> body,None())    
+  desugar-def : SessionEntity(name,body) -> Ent(name,None(),<map(annotate-ent-body(|name))> body,"session")
+  
+rules // declaring entities
+
+  strip-bodies: Ent(name,super,body,type) -> Ent(name,super,<strip-ent-body> body, type)
+  strip-bodies: ExtendEntity(name,body) -> ExtendEntity(name,<strip-ent-body> body)
+  
+  strip-ent-body = map(try(strip-ent-decl))
+  
+  strip-ent-decl = strip-bodies // re-use function stripping
+  strip-ent-decl: ExtendFunction(f) -> ExtendFunction(<strip-bodies> f)
+  
+  

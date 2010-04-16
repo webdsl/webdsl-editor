@@ -3,72 +3,84 @@ module parse
 imports 
   libwebdsl-front 
   libstratego-sglr
-  template
   ../lib/editor-common.generated
-  webdsl
+  webdsl_editor
   application-ini
+  caching
+  util
 
 rules
   
   parse-file-1 =
     parse-file(|<get-webdsl-parse-table>)
   
-  editor-parse-webdsl-module = 
-    ?x;debug
-  ; full-path := <debug;file-exists <+ debug(!"FILE DOES NOT EXIST")> $[[<ApplicationIniDir>]/[x]]// $[[projectdir]/[<DirName>]/[y]]
-  //; debug(!1)
-  ; <open-import(!full-path, parse-file-1,read-import) <+ debug(!"import failed")> /*<base-filename>*/ x
- // ; !<ParseResult>
-  //; debug(!2)
+  format-trace(|prefix) =
+  		map(\name -> <concat-strings> [prefix, name]\)
+  	; separate-by(|"<br/>")
+  	; concat-strings
+  	; try(not(?""); <concat-strings> ["<br/>", <id>])
   
- // store-result =?x; debug(!3);rules( ParseResult := x)
+  report-no-file: fullpath -> <fail>
+  	with 	trace-entries := <bigbagof-CurrentFile>
+  	    ; trace := <format-trace(|"... imported from: ")> trace-entries
+  			; msg := <concat-strings> ["Imported file not found: ", fullpath, trace]
+  			; import := <TopImport>
+  			; rules(ImportErrors :+= (import, msg))
+  			; print-stacktrace
+  			
+  editor-parse-webdsl-module: x -> x
+  	where(
+    		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
+    	; <file-exists <+ report-no-file> full-path
+   	)
+  ; open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs) <+ debug(!"import failed: ")
   
-  read-import = debug(!1);desugar-declare; alltd(remove-definition-bodies); debug(!2)
-    /*<+
-      rules(IsImportedFailed: x)*/
-
-  /*
-    where(id
-      ; path := <path-of-xtc-file>
-    )
-    ; xtc-parse-webdsl-unit-1(|path)
-    ; check-for-ambiguities(|path)
-    ; try(simplify-module-constructor)
+  // Transitive imports
+  read-import(|fullpath) =
+    {| ModuleDefsTc, ModuleDefs: 
+	      preserve(try(fix-module-name(|fullpath)))
+	      // declare for compiler typechecking
+	    ; where(   // keep old ast to preserve ast mapping
+	          try(simplify-application-constructor <+ simplify-module-constructor)
+	          ; alltd(
+	                try(get-imports)
+	              ; try(strip-bodies)
+	              ; log-time-helper(declare-global | "declare tc")
+	              )
+	      )
+	    ; log-time-helper(desugar-all | "desugar import")
+	    ; log-time-helper(alltd(declare-def) | "declare def")
+	    ; !(<bagof-ModuleDefsTc> fullpath, <bagof-ModuleDefs> fullpath)
+	  |} 
+	  
+  read-import-sigs: p@(tc-ast, ast) -> p
+    with
+    {| ReadingFromCache:
+        fullpath := <CurrentFile>
+	    ; rules(ReadingFromCache : fullpath)
+	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> tc-ast
+	    ; <alltd(try(get-imports); log-time-helper(declare-def | "declare def"))> ast
+    |}
+    
+  // find a node in an ast
+  find-node(|sig): ast -> node
+    with  <oncetd(?sig; ?node)> ast
+        <+ where(!sig; debug(!"Looking for node: ")); fail
   
-  xtc-parse-webdsl-unit-1(|path) =
-    with(
-        tbl := <get-webdsl-parse-table>
-      ; cachepath := <concat-strings> [<DirName>,"/.webdsl-parsecache-editor/",<trim-initial-dots-slashes> path,<get-webdsl-version>,".parsecache"]
-      ; dirs := <dirname; string-tokenize(|['/'])> cachepath
-      ; <create-dirs> dirs
-      )
-    ; if <file-exists> path
-      then
-        if not(<file-exists> cachepath) <+ <gt> (<modification-time> path, <modification-time> cachepath) 
-        then
-          parse-and-write-cache-1(|path,tbl,cachepath) //current term relevant
-        else
-           // if cache read fails for some reason, e.g. it contains an invalid term because 
-           // the write was interrupted with ctrl+c, then it should just parse again and ignore the cache
-           <ReadFromFile> cachepath 
-        <+ parse-and-write-cache-1(|path,tbl,cachepath) //current term relevant
-        end
-      else
-        <debug> "File does not exist: "
-      ; <trim-initial-dots-slashes;debug> path
-      ; <exit> 1
-      end
-      
-  parse-and-write-cache-1(|path,tbl,cachepath) =
-   ( parse-xtc-file-pt(err(|["cannot open file ", <trim-initial-dots-slashes> path]), strsglr-report-parse-error | tbl, "Unit", path) 
-     <+ not(is-verbose-2); <exit> 1 
-   )
-   ; implode-with-location-annos-1(|path)
-   ; alltd(remove-definition-bodies)
-   ; where(
-       <WriteToBinaryFile> (cachepath,<id>)
-     )
-     
-  implode-with-location-annos-1(|path) =
-    implode-asfix
-*/
+  get-imported-decl(|mod): sig -> node
+    with  ast := <log-time-helper(parse-file-1 <+ debug(!"Parsing failed") | "parse")> mod
+        ; if <?Module(_,_)> sig then
+              node := <preserve(try(desugar-def)); debug(!"Desugered: ") // only simplify module constructor
+                      ; preserve(strip-mod); debug(!"Stripped: ")
+                      > ast
+          else
+              <log-time-helper(
+                     preserve(desugar-all; alltd(strip-bodies))
+                  <+ debug(!"desugar/strip failed")
+                | "desugar")> ast
+            ; node := <log-time-helper(find-node(|sig)
+                | "find node desugared ast")>
+          end
+        ; print-total-log-time
+        ; <ensure-ast(|"after get-imported-decl")> node
+        

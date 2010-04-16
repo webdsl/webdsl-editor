@@ -1,0 +1,69 @@
+module resolve/entity
+
+imports
+   libwebdsl-front
+   typecheck/properties
+   resolve/util
+
+rules // helpers
+  
+  editor-resolve: a@(node, position, ast, path, project-path) -> decl
+    where ent := <in-entity> a
+        ; {| NodeInEntity:
+                rules(NodeInEntity := ent)
+              ; debug(!"Resolve in entity: ")
+              ; decl := <debug(!".. node is : "); declaration-in-entity(|ent); debug(!".. resolved: ")> node
+          |}
+
+   // get the name of the entity in which the selected node is located
+  in-entity =
+      ?(node, position, ast, path, project-path)
+    ; <walk-ast(?Ent(<id>,_,_,_) <+ ?ExtendEntity(<id>,_) | position)> ast
+
+rules // lookup
+    
+  find-property: (x_class, propname) -> decl
+    where decl := <PropertyDecl; add-anno(|FromEntity(x_class))> (x_class, propname)
+    
+  find-property: (x_class, propname) -> <find-property> (<Extends> x_class, propname)
+
+signature constructors
+	
+	FromEntity : Term -> Term
+
+rules // resolve
+    
+  // Explicit field access (x.y, this.x)
+  declaration-of: f@FieldAccess(var, prop) -> decl
+    where SimpleSort(ent) := <type-of; debug> var
+        ; decl := <find-property> (ent, prop)
+        ; <set-hover-info> FromEntity(ent)
+ 
+  // Implicit field access 
+  declaration-in-entity(|ent): Var(x) -> decl
+    where decl := <find-property> (ent, <strip-annos> x)
+        ; <set-hover-info> FromEntity(ent)
+
+  // "this"
+  declaration-in-entity(|ent): Var("this") -> decl
+    where decl := <EntDecl> ent
+  
+  // inverse anno
+  declaration-of: InverseAnno(ent, prop) -> decl
+    where decl := <find-property> (ent, prop)
+        ; <set-hover-info> FromEntity(ent)
+
+  // Extend entity to entity
+  declaration-of: ExtendEntity(name, _) -> <EntDecl> name
+
+rules // hover
+  
+  // property access
+  hover-with-info: (Prop(propname, type, srt, anno*, _), FromEntity(ent)) -> text
+    where text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt, "<br/>from entity ",ent]
+ 
+  // property declaration
+  hover: Prop(propname,type,srt,anno,_) -> text
+    where text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt]
+ 
+  

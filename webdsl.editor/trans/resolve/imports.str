@@ -1,0 +1,13 @@
+module resolve/imports
+  
+imports
+  libwebdsl-front
+  application-ini
+
+rules   // resolve
+            
+  hover: Module(x,_) -> text      
+    with  fullpath := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/", x]
+        ; text := <concat-strings> ["Module ", x, "<br/>", fullpath]
+
+  

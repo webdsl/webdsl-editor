@@ -1,0 +1,67 @@
+module resolve/util
+
+imports
+    resolve/-
+    parse
+    webdsl_editor
+    util
+    caching
+
+strategies
+  
+  editor-resolve-internal = remove-hover-info; editor-resolve; find-declaration
+    ; try(where(get-hover-info; debug(!"Got hover info: ")))
+    
+  // Default resolve
+  editor-resolve: (node, position, ast, path, project-path) -> <declaration-of> node
+  editor-hover: (node, position, ast, path, project-path) -> <hover-1> node
+    
+  hover-1 = 
+    desugar-all;
+    (
+       <hover-with-info> (<id>, <get-hover-info>)
+    <+ hover
+    <+ debug(!"No hover for: "); fail
+    )
+  
+  // dummies
+  declaration-of = fail
+  hover = fail
+  hover-with-info = fail
+  
+rules // lookup definition across modules
+// If the given declaration is in another module, reparse that file and return node with position information
+  
+  // in entity
+  find-declaration: decl1{anno*} -> decl
+    where anno := <fetch-elem(?FromEntity(_))> anno*
+        ; decl := <find-declaration(\x -> <DefToModule> x{anno}\)> decl1
+
+  find-declaration = find-declaration(DefToModule)
+  
+  find-declaration(def-to-mod): decl1 -> decl
+    where FullPath => mainmod
+        ; decl2 := <desugar-all; alltd(strip-bodies)> decl1
+        ; if mod := <def-to-mod; debug(!"Got module source: "); not(?mainmod); debug(!".. loading def from: ")> decl2 then
+            decl := <get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
+          else
+              debug(!"... def is from local ast. ")
+            ; decl := decl1
+          end
+        ; ensure-ast(|"find-declaration")
+  
+rules   // Rules to store hover info between resolve and hover
+  
+  // try to remove hover info from previous resolve
+  remove-hover-info = try(dr-end-scope(|"HoverInfo")); dr-begin-scope(|"HoverInfo")
+  set-hover-info = ?info; rules(HoverInfo := info)
+  get-hover-info = HoverInfo
+  
+rules   // Context sensitive resolving
+  
+  in-context(find-context, s):
+    a@(node, position, ast, path, project-path) -> res
+    where context := <walk-ast(find-context | position)> ast
+        ; debug(!"Got context: ")
+        ; res := <s(|context)> node
+  

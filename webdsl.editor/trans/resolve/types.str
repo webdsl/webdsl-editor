@@ -1,0 +1,34 @@
+module resolve/types
+
+imports
+    parse
+    ../lib/editor-common.generated
+    libwebdsl-front
+
+strategies
+  
+  hover: Ent(name,_,_,"session") -> text
+    with text := <concat-strings> ["Session entity ",name]
+
+  hover: Ent(name,None(),_,_) -> text
+    with text := <concat-strings> ["Entity ",name]
+
+  hover: Ent(name,super,_,_) -> text
+    with text := <concat-strings> ["Entity ",name," : ",super]
+ 
+  hover: fa@FieldAccess(exp, "length") -> text
+    where srt := <type-of> fa
+        ; exp-srt := <type-of> exp
+        ; text := <concat-strings> ["length : ", <pp-type> srt, " of type ", <pp-type> exp-srt]
+
+  hover = pp-type-long; capitalize-string 
+  
+  pp-type-long: SimpleSort(x) -> <concat-strings> ["builtin type ", x] where is-simple-sort
+  pp-type-long: SimpleSort(x) -> <concat-strings> ["entity ", x]
+  pp-type-long: GenericSort(type, [srt]) -> <concat-strings> [<capitalize-string> type, "&lt;", <pp-type; capitalize-string> srt, "&gt;"]
+  pp-type-long: Enum(x,_) -> <concat-strings> ["enum ", x]
+  
+  pp-type: SimpleSort(x) -> x
+  pp-type: GenericSort(type, [srt]) -> <concat-strings> [<capitalize-string> type, "&lt;", <pp-type> srt, "&gt;"]
+  pp-type: Enum(x,_) -> x
+  pp-type: None() -> "void"

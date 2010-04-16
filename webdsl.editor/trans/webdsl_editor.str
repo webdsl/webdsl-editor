@@ -1,0 +1,90 @@
+module webdsl_editor
+
+imports
+  libstratego-lib
+  //libstratego-sglr
+  libwebdsl-generator
+  libwebdsl-front
+  parse
+  application-ini
+  util
+  caching
+  typechecker
+  resolve
+  
+signature constructors
+  FILE : Term -> Term
+  
+strategies // editor service interface
+
+  main-webdsl =
+     fatal-err(|"Not designed to be invoked directly")
+  
+  editor-analyze:
+    (ast, path, projectpath) -> (ast-desugared, errors, warnings, notes)
+    with
+      where(!""; debug);
+      // Do not lose the cached definitions
+      where(
+ //         rulesets := <map(save-rule-set)> ["ModuleDefs", "ModuleDefsTc", "ModuleCacheTimestamp"];
+          try(dr-scope-all-end); dr-scope-all-start
+ //       <map(restore-rule-set)> rulesets
+      )
+    ; fullpath := <concat-strings> [<prim("SSL_EXT_projectpath")>, "/", path]
+    ; rules(FullPath := fullpath)
+    ; typecheck-init    // set up built-in types before doing any declares
+    ; <dbg-time(get-all-imports | "get imports")> (ast, fullpath)
+    ; ast-simplified := <desugar-compat> ast
+    ; (errors-ast, warnings-ast, ast-renamed) := 
+         <dbg-time(typecheck-editor | "typecheck")> ast-simplified
+    ; <try(find-extra-errors)> ast-simplified  // collect in dr
+    ; ast-desugared := <dbg-time(desugar-declare | "resolving")> ast-renamed    // declare for resolving
+    ; notes := []
+    ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
+    ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
+    ; print-total-log-time
+  
+  // Strc-java bug: the resulting strategy contains twice the body, resulting in two warnings...
+  // (both ctree and jar version)
+  find-extra-errors: mod@Module(name, _) -> <fail>
+    with  fullpath := <FullPath>
+    where Module(newname, _) := <fix-module-name(|fullpath)> mod
+        ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])
+        ; rules(ExtraWarnings :+= msg)
+  
+  desugar-declare =
+    desugar-all
+  ; alltd(declare-def)
+  
+  desugar-all =
+      preserve(innermost(desugar-def))
+  
+  import-main-file: fullpath -> fullpath
+    where mainfilename := <get-main-file-name>
+    with  <set-appname> FILE(mainfilename) // need to set DirName DR
+        ; appname := <AppName>
+        ; mainapp := <concat-strings> [<ApplicationIniDir>, "/", appname, ".app"]
+          // TODO: does this work on windows too ? (/ vs. \)
+        ; if not(<eq> (fullpath, mainapp)); <file-exists> mainapp then
+              where(!appname; debug(!"Explicitely importing main file: ")) 
+            ; <get-imports> Imports(appname)
+          end
+          
+  add-app-ini-error: ast -> ast
+    with rules(ImportErrors :+= (ast, "Cannot find application.ini"))
+             
+  get-all-imports: (ast, fullpath) -> <id>
+    with  rules(IsImported : fullpath) // do not reload the current file if its transitively imported
+        ; {| ParsingModule:
+              rules(ParsingModule := fullpath)
+              // try to import main file if needed
+            ; (<import-main-file> fullpath <+ <add-app-ini-error> ast)
+            ; <alltd(get-imports)> ast
+	      |}
+ 
+  get-imports: 
+    imp@Imports(x) -> imp
+    where {| TopImport: 
+     		where(try(not(TopImport); rules(TopImport := imp)))
+      ; <editor-parse-webdsl-module> (<concat-strings> [x,".app"])
+   	|}
