@@ -5,7 +5,7 @@ imports
     ../lib/editor-common.generated
     libwebdsl-front
     util
-    webdsl
+    webdsl_editor
 
 strategies  
   
@@ -22,7 +22,7 @@ strategies
         ; <store-def-to-mod> def
   
   store-def-to-mod-desugar = desugar-all; store-def-to-mod
-  store-def-to-mod-desugar(|ent) = desugar-all; add-anno(|FromEntity(ent)); debug(!"Key: "); store-def-to-mod
+  store-def-to-mod-desugar(|ent) = desugar-all; add-anno(|FromEntity(ent)); store-def-to-mod
         
   store-def-to-mod: def -> def
     where mod := <CurrentFile>
@@ -45,10 +45,17 @@ strategies // storing for compiler typechecker
   // For main app, do not remember anything
   store-tc-def = id
 
+signature constructors
+  
+  // Wrap int in ModificationTerm to avoid LazyTerm bug
+  ModificationTime : Term -> Term
+
 strategies
 
   check-editor-version: cache-path -> cache-path
-    with  editor-ts := <import-term(.editor.timestamp.aterm)>
+// NATHAN: disable until Spoofax/92 is solved. [http://yellowgrass.org/issue/Spoofax/92]
+//    with  ModificationTime(editor-ts) := <import-term(editor.timestamp.aterm)>
+    with editor-ts := 1271360674
     where <gt <+ editor-new-version-once; fail> (<modification-time> cache-path, editor-ts)
     
   editor-new-version-once =
@@ -56,7 +63,7 @@ strategies
         where(not(EditorNewVersionShowed))
       ; rules(EditorNewVersionShowed := True())
       ; debug(!"Editor is updated; refreshing cache.")
-    ) 
+    )
 
   /* Custom version of open-import */
   open-import-sig(resolve-path, parse-file, record-declarations, record-sigs):
@@ -139,7 +146,8 @@ strategies
         ; <concat-strings; debug> ["Renaming module '",modname,"' to '",newname,"'."]
         
 strategies // dr utils
-  
+
+/*
   iset-copy =
      elems := <iset-elements>
    ; count := <length> elems
@@ -159,7 +167,7 @@ strategies // dr utils
 
   restore-rule-set: (name,ruleset) -> <id>
    with <dr-set-last-scope-rule-set(|name)> ruleset
-  
+*/
 strategies // bench
   
    dbg-time(s|msg) =

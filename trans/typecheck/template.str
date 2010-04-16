@@ -3,7 +3,7 @@ module template
 imports 
   libwebdsl-front 
   libwebdsl-generator
-  webdsl
+  webdsl_editor
 
 rules
 

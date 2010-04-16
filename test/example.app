@@ -1,10 +1,8 @@
 application example
 
   imports testimport/util
-  imports testimport/util2
 
   define page root() {}
-  
   
   entity X {
     
@@ -147,6 +145,7 @@ application example
   
   define template x() {
     y(3)
+    header {  }
   }
   
   define template y(i : Int) {
@@ -257,7 +256,13 @@ section ui
   define page somePage2(a : Int) {
     action action1() { }
   }
-  
+
+define page zzzz() {
+    
+    navigate manageExtEntity() { "Goto " }
+    
+  }
+    
 
 section double def problems
 

@@ -1,5 +1,8 @@
 module testimport/util
  
+imports
+  testimport/util2
+ 
   // imports example
  entity EntA {
     prop :: String
@@ -22,6 +25,10 @@ module testimport/util
   }
 
   entity ExtEntity{}
+
+  derive crud ExtEntity
+  
+    
 
 //var GGlobalVar : String;
 var GlobalVar : Util := Util{};
@@ -47,3 +54,4 @@ entity SomeChildEntity : BaseUtil {
   } 
   
 }
+

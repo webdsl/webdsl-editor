@@ -23,8 +23,7 @@ builders
   
   observer : editor-analyze
   
-  provider : include/webdsl-editor.jar
-  //provider  : include/webdsl_editor.ctree
+  provider  : include/webdsl_editor.@spoofax.output.type@
   
   provider  : include/webdsl.jar
   

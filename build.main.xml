@@ -1,86 +1,122 @@
-
+<?xml version="1.0" encoding="UTF-8"?>
 <project name="WebDSL" default="all">
-        
-        <!-- Key input modules -->
-        <property name="sdfmodule" value="WebDSL"/>
-        <property name="esvmodule" value="WebDSL"/>
-        <property name="strmodule" value="webdsl"/>
-    
-        <!-- Project directories -->
-        <property name="trans" location="trans"/>
-        <property name="src-gen" location="editor/java"/>
-        <property name="syntax" location="syntax"/>
-        <property name="include" location="include"/>
-        <property name="lib" location="lib"/>
-        <property name="build" location="bin"/>
-        <property name="dist" location="bin/dist"/>
-        
-        <!-- Imports -->
-        <property name="build.sdf.imports" value=""/>
-      <!--customized-->
-      <property name="editor" location="editor"/>
-      <loadproperties srcFile="import.webdsl.properties"/>	
-      <property name="build.stratego.args" value="--library
-                 -I &quot;${trans}&quot;
-                   -I &quot;${basedir}&quot;
-                   -la stratego-lib -la stratego-sglr
-                 -la stratego-gpp -la stratego-xtc
-                 -la stratego-aterm
-                 -I ${webdsl.home}
-     "/>
-      <!--end customized-->    
-        
-        <!-- External .def and .jar locations
-        <property name="externaldef" location="syntax/${sdfmodule}.def"/>
-        <property name="externaljar" value="../lib.jar"/>
-        <property name="externaljarflags" value="-la org.lib"/>
-        -->
-        
-        <!-- Environment configuration for command-line builds -->
-        <condition property="build.strategoxt.sdf" value="${eclipse.spoofaximp.nativeprefix}" else="">
-            <isset property="eclipse.spoofaximp.nativeprefix"/>
-        </condition>
-        <property name="build.strategoxt.stratego" location="${user.home}/.nix-profile/bin"/>
-    
-        <import file="build.common.xml"/>
-    
-        <target name="set.type.jar">
-          <copy file="editor/${esvmodule}-Builders.jar.esv" tofile="editor/${esvmodule}-Builders.esv"
-          	overwrite="true" />
-        	<delete file="include/webdsl_editor.ctree" />
-        </target>
-        <target name="set.type.ctree">
-	        <copy file="editor/${esvmodule}-Builders.ctree.esv" tofile="editor/${esvmodule}-Builders.esv"
-	         overwrite="true" />
-        	<delete file="include/webdsl-editor.jar" />
-	      </target>
-        
-	      <!-- Main target -->
-	      <target name="all" depends="set.type.ctree,spoofaximp, import-webdsl-template, import-rtrees-for-editor-checks"/>
-  
-        <target name="all.jar" depends="set.type.jar,spoofaximp.jar, import-webdsl-template, import-rtrees-for-editor-checks"/>
-        
-        <target name="import-webdsl-template">
-            <!-- be sure to delete files from target dir if they're removed from template dir -->
-        	  <sync todir="webdsl-template" includeEmptyDirs="true">
-              <fileset dir="${webdsl.projectdir}">
-                <include name="**/*.*"/>
-              </fileset>
-            </sync>
-        </target>
-	 
-        <!-- stratego jar for running webdslc -->
-        <target name="import-stratego-jar">
-	        <echo>${webdsl.home}/strategoxt.jar</echo>
-        	<copy file="${webdsl.home}/strategoxt.jar" preservelastmodified="true" todir="include"/>
-        </target>
-          
-        <target name="import-rtrees-for-editor-checks">
-        	<copy file="${webdsl.home}/libback-end-transformations.rtree" preservelastmodified="true" todir="include"/>
-        	<copy file="${webdsl.home}/libjava-transformations.rtree" preservelastmodified="true" todir="include"/>
-        	<copy file="${webdsl.home}/libto-java-servlet.rtree" preservelastmodified="true" todir="include"/>
-        	<copy file="${webdsl.home}/libwebdsl-front.rtree" preservelastmodified="true" todir="include"/>
-        	<copy file="${webdsl.home}/libwebdsl-generator.rtree" preservelastmodified="true" todir="include"/>
-        	<copy file="${webdsl.home}/libwrite-files.rtree" preservelastmodified="true" todir="include"/>
-        </target>  
-    </project>
+
+	<!-- Key input modules -->
+	<property name="sdfmodule" value="WebDSL" />
+	<property name="esvmodule" value="WebDSL" />
+	<!-- prevent clash with webdsl.jar (the compiler) -->
+	<property name="strmodule" value="webdsl_editor" />
+
+	<!-- Project directories -->
+	<property name="trans" location="trans" />
+	<property name="src-gen" location="editor/java" />
+	<property name="syntax" location="syntax" />
+	<property name="include" location="include" />
+	<property name="lib" location="lib" />
+	<property name="build" location="bin" />
+	<property name="dist" location="bin/dist" />
+
+	<!-- WEBDSL: import compiler properties -->
+	<loadproperties srcFile="import.webdsl.properties" />
+	<!-- WEBDSL: for spoofax.output.type (ctree/jar) -->
+	<loadproperties srcFile="build.properties" />
+
+	<!-- Imports -->
+	<property name="build.sdf.imports" value="" />
+
+	<!-- WEBDSL: added ${webdsl.home} -->
+	<property name="build.stratego.args"
+		value="--library
+                        -I &quot;${trans}&quot; -I &quot;${basedir}&quot;
+                        -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm
+                        -I ${webdsl.home}" />
+
+	<!--
+		External .def and .jar locations <property name="externaldef"
+		location="syntax/${sdfmodule}.def"/> <property name="externaljar"
+		value="../lib.jar"/> <property name="externaljarflags" value="-la
+		org.lib"/>
+	-->
+
+	<!-- Environment configuration for command-line builds -->
+	<condition property="build.strategoxt.sdf" value="${eclipse.spoofaximp.nativeprefix}"
+		else="">
+		<isset property="eclipse.spoofaximp.nativeprefix" />
+	</condition>
+	<property name="build.strategoxt.stratego" location="${user.home}/.nix-profile/bin" />
+
+	<import file="build.generated.xml" />
+
+	<!-- WEBDSL: custom main target, don't use spoofaximp.default -->
+	<target name="all" depends="check.editor-ts.present, all.release" />
+	<target name="all.release" depends="update.editor-ts, utils-files, sdf2table, import-webdsl-template, import-rtrees-for-editor-checks, stratego.compile, sdf2imp" />
+
+	<!-- WEBDSL: Custom targets .................................................................... -->
+
+	<target name="stratego.compile">
+		<property name="stratego.compile.target" value="stratego.${spoofax.output.type}"/>
+		<!-- update builder -->
+		<copy file="editor/${esvmodule}-Builders.template.esv" tofile="editor/${esvmodule}-Builders.esv" overwrite="true"/>
+		<replace file="editor/${esvmodule}-Builders.esv"
+      token="@spoofax.output.type@" value="${spoofax.output.type}" />
+
+		<antcall target="${stratego.compile.target}">
+		</antcall>
+	</target>
+
+	<!-- import template to plugin -->
+	<target name="import-webdsl-template">
+		<!--
+			be sure to delete files from target dir if they're removed from
+			template dir
+		-->
+		<sync todir="webdsl-template" includeEmptyDirs="true">
+			<fileset dir="${webdsl.projectdir}">
+				<include name="**/*.*" />
+			</fileset>
+		</sync>
+	</target>
+
+	<!-- stratego jar for running webdslc from within eclipse -->
+	<target name="import-stratego-jar">
+		<echo>${webdsl.home}/strategoxt.jar</echo>
+		<copy file="${webdsl.home}/strategoxt.jar" preservelastmodified="true"
+			todir="include" />
+	</target>
+
+	<!--  copy rtrees of webdsl for stratego editor -->
+	<target name="import-rtrees-for-editor-checks">
+		<copy file="${webdsl.home}/libback-end-transformations.rtree"
+			preservelastmodified="true" todir="include" />
+		<copy file="${webdsl.home}/libjava-transformations.rtree"
+			preservelastmodified="true" todir="include" />
+		<copy file="${webdsl.home}/libto-java-servlet.rtree"
+			preservelastmodified="true" todir="include" />
+		<copy file="${webdsl.home}/libwebdsl-front.rtree"
+			preservelastmodified="true" todir="include" />
+		<copy file="${webdsl.home}/libwebdsl-generator.rtree"
+			preservelastmodified="true" todir="include" />
+		<copy file="${webdsl.home}/libwrite-files.rtree"
+			preservelastmodified="true" todir="include" />
+	</target>
+
+	<property name="path.timestamp.term" value="editor.timestamp.aterm" />
+	
+	<target name="check.editor-ts.present">
+		<available file="${path.timestamp.term}" property="available.editor-ts" />
+	</target>
+	
+	<target name="update.editor-ts" unless="available.editor-ts">
+		<get-unix-ts/>
+		<echo>Editor timestamp is: ${timestamp.unix}</echo>
+		<echo file="${path.timestamp.term}">ModificationTime(${timestamp.unix})</echo>
+	</target>
+
+	<scriptdef name="get-unix-ts" language="javascript">
+		<![CDATA[
+	    var ts = Math.round(new Date().getTime()/1000.0);
+	    self.getProject().setProperty('timestamp.unix', ts);
+	    ]]>
+	</scriptdef>
+
+</project>
