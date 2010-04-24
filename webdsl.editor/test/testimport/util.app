@@ -3,11 +3,15 @@ module testimport/util
 imports
   testimport/util2
  
+request var requestVar1 : String
+ 
   // imports example
  entity EntA {
     prop :: String
     
-    function testF() {}
+    function testF() {
+      requestVar1 := "x";
+    }
     
   }
   
@@ -15,7 +19,7 @@ imports
   entity Util : BaseUtil {
     prop :: Bool
     //dfdfgs -> Bla
-    stringprop :: String
+    //stringprop :: String
   }
   
   define template a(){

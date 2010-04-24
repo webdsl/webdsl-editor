@@ -8,20 +8,19 @@ imports
 
 rules
   
-  desugar-def: ModuleDefs(name,defs,sections) -> Module(name,[Section("defs",defs)|sections])
-  
-rules
-  
   declaration-of: Imports(x) -> <ModuleDecl> x
   
-  // Using strip-bodies here would strip all definitions and declare nothing.
-  strip-mod: Module(x,_) -> Module(x,None())
+  // Special declare case for modules 
+  declare-global =
+      ?Module(name,_)
+    ; strip-mod => stripped-mod
+    ; store-def
+    ; store-def-to-mod-desugar
+    ; rules(ModuleDecl : name -> stripped-mod)
+    ; fail // to continue traversal
+
+  // When resolving an import, the destination file is parsed but not desugared
+  // Constructor will be desugared by hover-1 
+  desugar-def = simplify-module-constructor
+  desugar-def = simplify-application-constructor
   
-  declare-def: mod@Module(x,_) -> <fail>    // fail to continue traversal
-    with  stripped-mod := <preserve(strip-mod)> mod
-        ; rules(ModuleDecl : x -> stripped-mod)
-        ; <store-imported-def> stripped-mod
-        
-  // Remember imports of a module
-  declare-def: imp@Imports(x) -> imp
-    with <store-imported-def> imp

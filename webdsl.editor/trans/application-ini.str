@@ -6,31 +6,77 @@ imports
 strategies
   
   /**
-   * Get the main file name of a WebDSL project, looking at the
-   * application.ini file in the current directory and those above it.
+   * Get the main file name of a WebDSL project, looking at the application.ini file.
+   * Ini file is searched in the following order:
+   * 1. at the root of the current module name: for a module a/b/c at path /home/user/x/a/b/c, look at /home/user/x/application.ini  
+   * 2. at the directory of the current app file, if the file contains the Application
+   * 3. at the project root
    */
   get-main-file-name =
-    <readdir> ".";
-    getfirst(
-      "application.ini";
-      application-ini-to-app-name;
-      <add-extension> (<id>,"app")
-    );
-    rules(ApplicationIniDir := <getcwd>)
-  <+
-    cwd := <getcwd>;
-    <chdir> "..";
-    not(getcwd => cwd);
-    (get-main-file-name <+ <chdir> cwd; fail)
-
+      (
+      	 get-app-ini-dir-from-module-name; try-app-ini
+      <+ get-app-ini-dir-from-app-name; try-app-ini
+      <+ get-project-path; try-app-ini
+      )
+    ; ApplicationIniPath
+    ; debug(!"Got path: ")
+    ; application-ini-to-app-name
+    ; <add-extension> (<id>,"app")
+    ; <set-appname> FILE(<id>)       // set AppName and DirName
+    
+  get-app-ini-dir-from-module-name =
+      ?Module(<id>, _)
+    ; explode-string
+    ; filter(?'/')
+    ; length => ndirs
+    ; FullPath; dirname
+      // remove the last ndirs of directories
+    ; explode-string(|'/')
+    ; take(|<subt> (<length>, ndirs))
+    ; implode-string(|'/')
+  
+  get-app-ini-dir-from-app-name: Application(_, _) -> path
+    with  FullPath; dirname => path
+        
+  get-project-path = prim("SSL_EXT_projectpath")
+       
+  // Check if application.ini is in the given dir 
+  try-app-ini: dir -> (dir, filename)
+    where filename := <concat-strings> [dir, "/", <ApplicationIniName>]
+        ; debug(!"Got filename: ")
+        ; file-exists
+        ; debug(!"exists: ")
+        ; rules(
+          	ApplicationIniPath  := filename
+            ApplicationIniDir   := dir
+          )
+    
   application-ini-to-app-name:
     filename -> appname
     where
       <read-text-file> filename;
       get-lines;
-      //debug(!"lines: ");
       (getfirst(string-starts-with(|"export APPNAME=")) <+ getfirst(string-starts-with(|"appname=")));
-      //debug(!"appname: ");
       <split-after> (<id>, "=");
       ?(_, appname)
 
+  ApplicationIniName = !"application.ini"
+  
+  
+rules  // string utils
+	
+  explode-string'(|sep) =
+      split-at(?sep); \(a,b) -> [ a | <explode-string'(|sep)> b]\
+    <+ ![<id>]
+  
+  // Sep is a character
+  explode-string(|sep) = 
+        explode-string 
+      ; explode-string'(|sep)
+      ; map(implode-string)
+
+  // Sep can be a character or a string
+  implode-string(|sep) =
+      where(sep' := <is-string <+ ![<id>]; implode-string> sep)
+    ; separate-by(|sep'); concat-strings
+      

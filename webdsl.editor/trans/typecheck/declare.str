@@ -9,8 +9,8 @@ rules // global declares
   
   declare-global = 
       is-global-decl
-    ; where(store-tc-def; store-def-to-mod-desugar)
-    ; declare
+    ; where(store-def; store-def-to-mod-desugar)
+    ; try(declare)        // Imports(_) has no declare but needs to be stored
       
   is-global-decl =
       ?Enum(_,_)
@@ -19,6 +19,8 @@ rules // global declares
     <+?Predicate(_,_,_)
     <+?Derive(_,_,_)                  // declares page names 
     <+?DeriveCrud(_)
+    <+?Imports(_)
+    <+?RequestScope(_)
   
 rules // global declares with subelements
 
@@ -26,14 +28,14 @@ rules // global declares with subelements
       where(get-entity-def => (name,body))
     ; declare
     ; where(<map(store-def-to-mod-desugar(|name))> body)
-    ; store-tc-def
+    ; store-def
     ; store-def-to-mod-desugar
     
   declare-global =
       ?ExtendEntity(ent, body)
     ; declare
     ; where(<map(store-def-to-mod-desugar(|ent))> body)
-    ; store-tc-def; store-def-to-mod-desugar
+    ; store-def; store-def-to-mod-desugar
       
 rules // only global if defined on top level
   
@@ -54,6 +56,6 @@ rules // only global if defined on top level
     
   declare-global-toplevel =
       is-global-toplevel
-    ; where(store-tc-def; store-def-to-mod-desugar)   // store VarDecl -> mod
+    ; where(store-def; store-def-to-mod-desugar)
     ; declare
     

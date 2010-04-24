@@ -41,14 +41,16 @@ rules // lookup definition across modules
   
   find-declaration(def-to-mod): decl1 -> decl
     where FullPath => mainmod
-        ; decl2 := <desugar-all; alltd(strip-bodies)> decl1
+          // desugar-all adds FromEntity anno's, which are not preserved by strip-bodies
+        ; decl2 := <preserve(alltd(strip-bodies); desugar-all)> decl1
         ; if mod := <def-to-mod; debug(!"Got module source: "); not(?mainmod); debug(!".. loading def from: ")> decl2 then
-            decl := <get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
+              decl := <strip-annos; get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
           else
               debug(!"... def is from local ast. ")
             ; decl := decl1
           end
         ; ensure-ast(|"find-declaration")
+        ; has-ast-mapping   // fail if no ast mapping; prevent messages in error log for ie. builtin functions
   
 rules   // Rules to store hover info between resolve and hover
   

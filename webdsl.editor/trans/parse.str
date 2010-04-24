@@ -20,46 +20,45 @@ rules
   	; concat-strings
   	; try(not(?""); <concat-strings> ["<br/>", <id>])
   
-  report-no-file: fullpath -> <fail>
+  report-import-failed(|txt): fullpath -> <fail>
   	with 	trace-entries := <bigbagof-CurrentFile>
   	    ; trace := <format-trace(|"... imported from: ")> trace-entries
-  			; msg := <concat-strings> ["Imported file not found: ", fullpath, trace]
-  			; import := <TopImport>
-  			; rules(ImportErrors :+= (import, msg))
-  			; print-stacktrace
+  	    ; msg := <concat-strings> [txt, ": ", fullpath, trace]
+  		  ; import := <TopImport <+ !"DummyImport(main-app)">
+  		  ; rules(ImportErrors :+= (import, msg))
   			
   editor-parse-webdsl-module: x -> x
   	where(
     		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
-    	; <file-exists <+ report-no-file> full-path
+    	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
    	)
-  ; open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs) <+ debug(!"import failed: ")
+  ; (open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs)
+      <+
+     <report-import-failed(|"Could not import file")> full-path
+    )
   
   // Transitive imports
   read-import(|fullpath) =
-    {| ModuleDefsTc, ModuleDefs: 
-	      preserve(try(fix-module-name(|fullpath)))
+    {| ModuleDefs:
+        desugar-compat  // simplify module/app constructor
+      ; preserve(try(fix-module-name(|fullpath)))
 	      // declare for compiler typechecking
-	    ; where(   // keep old ast to preserve ast mapping
-	          try(simplify-application-constructor <+ simplify-module-constructor)
-	          ; alltd(
-	                try(get-imports)
-	              ; try(strip-bodies)
-	              ; log-time-helper(declare-global | "declare tc")
-	              )
-	      )
-	    ; log-time-helper(desugar-all | "desugar import")
-	    ; log-time-helper(alltd(declare-def) | "declare def")
-	    ; !(<bagof-ModuleDefsTc> fullpath, <bagof-ModuleDefs> fullpath)
+	    ; alltd(
+         try(get-imports)
+        ; strip-bodies
+      )
+      // another traversal, because declare-global has its own traversal and should not have to call strip-bodies itself
+	    ; log-time-helper(alltd(declare-global) | "declare tc")
+	    ; <bagof-ModuleDefs> fullpath
 	  |} 
 	  
-  read-import-sigs: p@(tc-ast, ast) -> p
+  read-import-sigs: signatures -> signatures
     with
     {| ReadingFromCache:
         fullpath := <CurrentFile>
 	    ; rules(ReadingFromCache : fullpath)
-	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> tc-ast
-	    ; <alltd(try(get-imports); log-time-helper(declare-def | "declare def"))> ast
+	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> signatures
+	    ; alltd(get-imports) // do not put this inside of log-time-helper
     |}
     
   // find a node in an ast
@@ -70,12 +69,12 @@ rules
   get-imported-decl(|mod): sig -> node
     with  ast := <log-time-helper(parse-file-1 <+ debug(!"Parsing failed") | "parse")> mod
         ; if <?Module(_,_)> sig then
-              node := <preserve(try(desugar-def)); debug(!"Desugered: ") // only simplify module constructor
-                      ; preserve(strip-mod); debug(!"Stripped: ")
+              node := <preserve(try(desugar-compat)) // only simplify module constructor
+                      ; preserve(strip-mod)
                       > ast
           else
               <log-time-helper(
-                     preserve(desugar-all; alltd(strip-bodies))
+                     preserve(alltd(strip-bodies); desugar-all)
                   <+ debug(!"desugar/strip failed")
                 | "desugar")> ast
             ; node := <log-time-helper(find-node(|sig)

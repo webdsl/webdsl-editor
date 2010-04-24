@@ -20,6 +20,8 @@ strategies // editor service interface
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
   
+  // Path is relative to project, without leading slash
+  // Projectpath is an absolute path to the project root, without trailing slash
   editor-analyze:
     (ast, path, projectpath) -> (ast-desugared, errors, warnings, notes)
     with
@@ -30,15 +32,18 @@ strategies // editor service interface
           try(dr-scope-all-end); dr-scope-all-start
  //       <map(restore-rule-set)> rulesets
       )
-    ; fullpath := <concat-strings> [<prim("SSL_EXT_projectpath")>, "/", path]
-    ; rules(FullPath := fullpath)
+    ; fullpath := <concat-strings> [projectpath, "/", path]
+    ; rules(
+        AnalyzeFile := path     // path within project
+        FullPath := fullpath    // full filename
+      )
     ; typecheck-init    // set up built-in types before doing any declares
-    ; <dbg-time(get-all-imports | "get imports")> (ast, fullpath)
     ; ast-simplified := <desugar-compat> ast
+    ; <dbg-time(get-all-imports | "get imports")> ast-simplified
     ; (errors-ast, warnings-ast, ast-renamed) := 
          <dbg-time(typecheck-editor | "typecheck")> ast-simplified
     ; <try(find-extra-errors)> ast-simplified  // collect in dr
-    ; ast-desugared := <dbg-time(desugar-declare | "resolving")> ast-renamed    // declare for resolving
+    ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
     ; notes := []
     ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
     ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
@@ -52,34 +57,33 @@ strategies // editor service interface
         ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])
         ; rules(ExtraWarnings :+= msg)
   
-  desugar-declare =
-    desugar-all
-  ; alltd(declare-def)
-  
   desugar-all =
       preserve(innermost(desugar-def))
   
-  import-main-file: fullpath -> fullpath
-    where mainfilename := <get-main-file-name>
-    with  <set-appname> FILE(mainfilename) // need to set DirName DR
-        ; appname := <AppName>
+  import-main-file: ast -> ast
+    with  appname := <AppName>
         ; mainapp := <concat-strings> [<ApplicationIniDir>, "/", appname, ".app"]
           // TODO: does this work on windows too ? (/ vs. \)
-        ; if not(<eq> (fullpath, mainapp)); <file-exists> mainapp then
-              where(!appname; debug(!"Explicitely importing main file: ")) 
-            ; <get-imports> Imports(appname)
-          end
+        ; where(!appname; debug(!"Explicitely importing main file: ")) 
+        ; <get-imports> Imports(appname)
           
   add-app-ini-error: ast -> ast
     with rules(ImportErrors :+= (ast, "Cannot find application.ini"))
              
-  get-all-imports: (ast, fullpath) -> <id>
-    with  rules(IsImported : fullpath) // do not reload the current file if its transitively imported
+  get-all-imports: ast -> ast
+    with  FullPath => fullpath
+        ; rules(IsImported : fullpath) // do not transitively import the analyzed file
         ; {| ParsingModule:
               rules(ParsingModule := fullpath)
-              // try to import main file if needed
-            ; (<import-main-file> fullpath <+ <add-app-ini-error> ast)
-            ; <alltd(get-imports)> ast
+              // try to import main file if we're parsing a module
+            ; !ast
+            ; try(
+              	 // get-main-file-name also sets ApplicationIniDir
+                  where(get-main-file-name <+ add-app-ini-error; fail)
+                  // if checking a module, import main app file
+                ; ?Module(_,_); import-main-file
+              )
+            ; alltd(get-imports)
 	      |}
  
   get-imports: 

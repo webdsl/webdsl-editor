@@ -1,13 +1,23 @@
 application example
 
   imports testimport/util
-
+  
   define page root() {}
   
+
+session SomeSession {
+  
+  
+  
+}
+
+// --------
+
   entity X {
     
     z -> Y (inverse = Z.z)
     zz -> Y (inverse = Z.extendedProperty, name)
+    zzz -> SomeSession
     
   }
   entity Y {
@@ -186,7 +196,7 @@ application example
   }
   
   entity BaseUser {
-  	s :: String
+  	s :: String (id)
   	
   	function SomeFuncInBase() {}
   }
@@ -198,7 +208,7 @@ application example
     extend function SomeFunc() {}
     
     name :: String
-    pass :: String
+    pass :: String 
     
   }
   
@@ -213,7 +223,8 @@ application example
     
     for(x : User in users) {
       
-      var piet := x; 
+      var piet := x;
+      isUniqueBaseUser(piet);
       
     }
     
@@ -277,4 +288,15 @@ section double def problems
     y.prop := "a";
     y.testF();
     
+    var z := requestVar1;
+    
   }
+  
+  
+  function functionNoReturn() {
+    
+    var x := 3;
+    var y := 4;
+    var z := 5;
+  }
+  

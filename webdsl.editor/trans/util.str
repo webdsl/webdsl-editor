@@ -16,6 +16,10 @@ rules
   constraint-note=fail
   check=fail
 
+  // Re-use compiler normalization
+  desugar-def = normalize-declare
+
+  // Desugar, but remain compatible with compiler typechecker
   desugar-compat = try(preserve(simplify-application-constructor <+ simplify-module-constructor))
 
   // Documentation Presentation

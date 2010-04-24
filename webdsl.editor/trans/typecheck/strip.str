@@ -4,8 +4,9 @@ imports
     libwebdsl-front
     
 rules
-  
-  // No desugaring applied, so match all variants
+
+  // Need to store the non-desugared definitions for typechecking
+  // So strip-bodies needs to work on all variants
   
   strip-bodies: EntityNoSuper(name,body) -> EntityNoSuper(name,<strip-ent-body> body)
   strip-bodies: Entity(name,super,body) -> Entity(name,super,<strip-ent-body> body)
@@ -16,6 +17,7 @@ rules
   strip-bodies: DerivedProperty(x,type,sort,annos,e) -> DerivedProperty(x,type,sort,annos,None())
   strip-bodies: DerivedPropertyNoAnno(x,type,sort,e) -> DerivedPropertyNoAnno(x,type,sort,None())
   
+  strip-bodies: Function(name,args,ret,_) -> Function(name,args,ret,None())
   strip-bodies: FunctionNoReturn(name,args,_) -> FunctionNoReturn(name,args,None())
   
   strip-bodies: Predicate(name,args,_) -> Predicate(name,args,None())
@@ -24,3 +26,17 @@ rules
   // need expression for typechecker
   //strip-bodies: VarDeclInitInferred(x, _) -> VarDeclInitInferred(x, None())
   
+  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, TemplateBody([]))
+  
+rules // entities
+  
+  strip-ent-body = map(try(strip-ent-decl))
+  
+  strip-ent-decl = strip-bodies // re-use function stripping
+  strip-ent-decl: ExtendFunction(f) -> ExtendFunction(<strip-bodies> f)
+  
+rules // modules
+
+  // Using strip-bodies here would strip all definitions and declare nothing.
+  strip-mod: Module(x,_) -> Module(x,None())
+        
