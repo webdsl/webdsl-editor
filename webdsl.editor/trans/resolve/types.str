@@ -1,10 +1,11 @@
 module resolve/types
 
 imports
+    libwebdsl-front
+    libwebdsl-generator
     parse
     ../lib/editor-common.generated
-    libwebdsl-front
-
+    
 strategies
   
   hover: Entity(name,_,_) -> text

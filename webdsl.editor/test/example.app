@@ -16,7 +16,7 @@ session SomeSession {
   entity X {
     
     z -> Y (inverse = Z.z)
-    zz -> Y (inverse = Z.extendedProperty, name)
+    zz -> Z (inverse = Z.extendedProperty, name)
     zzz -> SomeSession
     
   }

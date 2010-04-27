@@ -2,8 +2,9 @@ module resolve/template
 
 imports
    libwebdsl-front
+   libwebdsl-generator
    typecheck/template
-   resolve/function
+   resolve/-
 
 rules		// resolve
     

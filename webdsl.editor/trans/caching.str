@@ -6,7 +6,8 @@ imports
     libwebdsl-front
     util
     webdsl_editor
-
+    application-ini
+    
 strategies  
   
   store-def-to-mod-desugar = preserve(desugar-all; store-def-to-mod)
@@ -78,16 +79,6 @@ strategies
 	        end
         |}
       end
-      
-strategies
-
-  fix-module-name(|fullpath): Module(modname, sections) -> Module(newname, sections)
-    with  base := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/"]
-    where (l,r) := <split-after> (fullpath, base)
-        ; not(<eq> (r, "")) // base not found
-        ; newname := <split-before; Fst> (r, ".app")
-        ; not(<eq> (newname, modname))  // only succeed if actually renamed
-        ; <concat-strings; debug> ["Renaming module '",modname,"' to '",newname,"'."]
         
 strategies // bench
   

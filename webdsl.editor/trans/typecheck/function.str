@@ -2,9 +2,8 @@ module resolve/function
 
 imports
   libwebdsl-front
-  typechecker
-  caching
-
+  libwebdsl-generator
+  
 rules // declare
   
   declaration-of:

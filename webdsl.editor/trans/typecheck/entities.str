@@ -1,17 +1,18 @@
 module entities
 
 imports
-  libstratego-lib
   libwebdsl-front
-  webdsl_editor
+  libwebdsl-generator
+  util
       
 rules // types
 
   declaration-of : SimpleSort(x) -> <EntDecl> x
   declaration-of : SimpleSort(x) -> <EnumDecl> x
+  
+  // Dummy
+  declaration-of-entity(|ent) = fail
     
 rules
 
   annotate-ent-body(|ent) = add-anno(|FromEntity(ent))
-
-  

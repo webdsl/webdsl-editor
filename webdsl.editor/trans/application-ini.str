@@ -2,6 +2,8 @@ module application-ini
 
 imports
   libstratego-lib
+  libwebdsl-front
+  webdsl_editor
 
 strategies
   

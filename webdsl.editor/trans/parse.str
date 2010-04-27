@@ -1,13 +1,16 @@
 module parse
 
 imports 
-  libwebdsl-front 
+  libwebdsl-front
   libstratego-sglr
   ../lib/editor-common.generated
   webdsl_editor
   application-ini
   caching
   util
+  typecheck/declare
+  typecheck/strip
+  typecheck/import
 
 rules
   

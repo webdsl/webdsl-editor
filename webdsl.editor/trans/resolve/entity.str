@@ -2,7 +2,9 @@ module resolve/entity
 
 imports
    libwebdsl-front
-   resolve/util
+   libwebdsl-generator
+   resolve/-
+   util
 
 rules // helpers
   
@@ -25,10 +27,6 @@ rules // lookup
   find-property': (x_class, propname) -> decl
     where decl := <debug(!"Trying: ");PropertyDecl; debug(!"Got: "); add-anno(|FromEntity(x_class))> (x_class, propname)
   
-signature constructors
-	
-	FromEntity : Term -> Term
-
 rules // resolve
     
   // Explicit field access (x.y, this.x)

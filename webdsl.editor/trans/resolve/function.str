@@ -2,8 +2,11 @@ module resolve/function
 
 imports
   libwebdsl-front
+  libwebdsl-generator
   typechecker
+  resolve/-
   util
+  typecheck/entities
  
 rules // actual lookup
   

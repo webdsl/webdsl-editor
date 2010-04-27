@@ -1,10 +1,14 @@
-module import
+module typecheck/import
 
 imports 
   libwebdsl-front
+  libwebdsl-generator
   ../lib/editor-common.generated
   caching
   util
+  typecheck/-
+  application-ini
+//  webdsl_editor			avoid Stratego/811 bug
 
 rules
   
@@ -23,4 +27,23 @@ rules
   // Constructor will be desugared by hover-1 
   desugar-def = simplify-module-constructor
   desugar-def = simplify-application-constructor
-  
+
+rules  
+
+  fix-module-name(|fullpath): Module(modname, sections) -> Module(newname, sections)
+    with  base := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/"]
+    where (l,r) := <split-after> (fullpath, base)
+        ; not(<eq> (r, "")) // base not found
+        ; newname := <split-before; Fst> (r, ".app")
+        ; not(<eq> (newname, modname))  // only succeed if actually renamed
+        ; <concat-strings; debug> ["Renaming module '",modname,"' to '",newname,"'."]
+
+rules
+
+	// Strc-java bug: the resulting strategy contains twice the body, resulting in two warnings...
+  // (both ctree and jar version)
+  find-extra-errors: mod@Module(name, _) -> <fail>
+    with  fullpath := <FullPath>
+    where Module(newname, _) := <fix-module-name(|fullpath)> mod
+        ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])
+        ; rules(ExtraWarnings :+= msg)

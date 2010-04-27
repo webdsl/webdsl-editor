@@ -2,7 +2,9 @@ module resolve/vars
 
 imports
   libwebdsl-front
-  resolve/util
+  libwebdsl-generator
+  typecheck/vars
+  resolve/-
 
 rules // object creation
   

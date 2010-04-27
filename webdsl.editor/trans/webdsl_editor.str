@@ -2,7 +2,6 @@ module webdsl_editor
 
 imports
   libstratego-lib
-  //libstratego-sglr
   libwebdsl-generator
   libwebdsl-front
   parse
@@ -10,7 +9,8 @@ imports
   util
   caching
   typechecker
-  resolve
+  typecheck/import		// for ExtraWarnings
+	resolve
   
 signature constructors
   FILE : Term -> Term
@@ -48,14 +48,8 @@ strategies // editor service interface
     ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
     ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
     ; print-total-log-time
-  
-  // Strc-java bug: the resulting strategy contains twice the body, resulting in two warnings...
-  // (both ctree and jar version)
-  find-extra-errors: mod@Module(name, _) -> <fail>
-    with  fullpath := <FullPath>
-    where Module(newname, _) := <fix-module-name(|fullpath)> mod
-        ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])
-        ; rules(ExtraWarnings :+= msg)
+      
+  find-extra-errors = fail
   
   desugar-all =
       preserve(innermost(desugar-def))
