@@ -59,9 +59,10 @@ rules
     with
     {| ReadingFromCache:
         fullpath := <CurrentFile>
-	    ; rules(ReadingFromCache : fullpath)
+      ; rules(ReadingFromCache : fullpath)
 	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> signatures
-	    ; alltd(get-imports) // do not put this inside of log-time-helper
+	      // try: could contain no imports at all
+	    ; try(alltd(get-imports)) // do not put this inside of log-time-helper
     |}
     
   // find a node in an ast
