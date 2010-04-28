@@ -7,10 +7,16 @@ imports
     util
     caching
 
+signature constructors
+
+  FromModule : Term -> Term
+
 strategies
   
-  editor-resolve-internal = remove-hover-info; editor-resolve; find-declaration
+  editor-resolve-internal = remove-hover-info; remove-module-info; editor-resolve; find-declaration
     ; try(where(get-hover-info; debug(!"Got hover info: ")))
+  
+  remove-module-info = try(dr-end-scope(|"LookupFromModule")); dr-begin-scope(|"LookupFromModule")
     
   // Default resolve
   editor-resolve: (node, position, ast, path, project-path) -> <declaration-of> node
@@ -28,16 +34,11 @@ strategies
   declaration-of = fail
   hover = fail
   hover-with-info = fail
-  
+    
 rules // lookup definition across modules
 // If the given declaration is in another module, reparse that file and return node with position information
   
-  // in entity
-  find-declaration: decl1{anno*} -> decl
-    where anno := <fetch-elem(?FromEntity(_))> anno*
-        ; decl := <find-declaration(\x -> <DefToModule> x{anno}\)> decl1
-
-  find-declaration = find-declaration(DefToModule)
+  find-declaration = find-declaration(LookupFromModule)
   
   find-declaration(def-to-mod): decl1 -> decl
     where FullPath => mainmod

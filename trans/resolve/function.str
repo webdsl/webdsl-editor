@@ -2,33 +2,33 @@ module resolve/function
 
 imports
   libwebdsl-front
+  libwebdsl-generator
   typechecker
+  resolve/-
   util
+  typecheck/entities
  
 rules // actual lookup
   
+  // Resolve entity function
   find-entity-func(|ent): (nm, arg*) -> f
-    with  t_arg* := <map(type-of)> arg*
-    where <CheckFunctionSignature> (SimpleSort(ent), nm, t_arg*)  // is there any matching function
-    with  listof-t_arg* := <bagof-CheckFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
-        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
-        ; f := <declaration-of-entity(|ent); add-anno(|FromEntity(ent))> Function(nm, resolved_arg*, None(), None())  
-        ; <set-hover-info> FromEntity(ent)
-  
-  // Check super class
-  find-entity-func(|ent) = where(super := <Extends> ent); find-entity-func(|super)
-
+    where f := <traverse-hierarchy(find-entity-func-in-class | ent)>
+        ; get-anno(?FromEntity(_))
+        ; set-hover-info
+          
+  find-entity-func-in-class: (x_class, (nm, arg*)) -> f-annotated
+    where <resolve-function-call-to-decl> (SimpleSort(x_class), nm, <map(type-of)> arg*)
+        ; f-annotated := <add-anno(|FromEntity(x_class))>
+        
+  // Resolve global function
   find-global-func: (nm, arg*) -> f
-    with  t_arg* := <map(type-of)> arg*
-    where listof-t_arg* := <bagof-CheckGlobalFunctionSignatureArgumentTypes> (None(), nm, t_arg*)
-        ; resolved_arg* := <find-most-specific-signature(|t_arg*,nm)> listof-t_arg*
-        ; f := <declaration-of> Function(nm, resolved_arg*, None(), None())
+    with  f := <debug; resolve-function-call-to-decl> (None(), nm, <map(type-of)> arg*)
 
 rules // resolve
   
   // Resolve entity function call
   declaration-in-entity(|ent): tc@ThisCall(nm, arg*) -> f
-    where f := <find-entity-func(|ent)> (nm, arg*)
+    where f := <debug(!"a: "); find-entity-func(|ent)> (nm, arg*)
           
   // Resolve entity function call
   declaration-of: Call(expr, nm, arg*) -> f
@@ -55,28 +55,31 @@ rules // hover
 
   hover = pp-func
   
-  // Built-in global function
-  hover: ThisCall(nm, arg*) -> txt
-    where targ* := <map(type-of)> arg*
-        ; srt := <check-builtin-signature> (None(), nm, targ*)
-    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ",<pp-type> srt]
-    
-  // Built-in function
-  hover: Call(exp, nm, arg*) -> txt 
-    where targ* := <map(type-of)> arg*
-        ; srt-exp := <type-of> exp
-        ; srt := <check-builtin-signature> (srt-exp, nm, targ*)
-    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ", <pp-type> srt, " of type ",<pp-type> srt-exp]
-        
   // Built-ins
-  hover: ThisCall("url", [arg]) -> <concat-strings> ["Navigate to url: ", arg]
+  hover: ThisCall("url", [String(arg)]) -> <concat-strings> ["Navigate to url: ", arg]
+  hover: PageCall("url", [String(arg)]) -> <concat-strings> ["Navigate to url: ", arg]
   //hover-simple: ThisCall("email", 
   
+  // Built-in global function
+  hover: tc@ThisCall(nm, arg*) -> txt
+    with  targ* := <map(type-of)> arg*
+        ; srt := <type-of> tc
+        ; txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ",<pp-type> srt]
+    
+  // Built-in function
+  hover: c@Call(exp, nm, arg*) -> txt 
+    where targ* := <map(type-of)> arg*
+        ; srt-exp := <type-of> exp
+        ; srt := <type-of> c
+    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ", <pp-type> srt, " of type ",<pp-type> srt-exp]
+        
   hover: Arg(x, srt) -> text
     with  text := <concat-strings> ["Argument ", x, " : ",<pp-type> srt] 
 
 rules // utils
   
+  pp-func: Function(name,args,ret,_) -> <pp-func> Predicate(name,args,None())
+    where <IsPredicate> (name, <map(farg-to-type)> args)
   pp-func: Function(name,args,ret,_) ->
     <concat-strings> ["Function ",name,"(",<pp-args> args,") : ",<pp-type> ret]
   pp-func: FunctionNoReturn(name, args, _) ->
@@ -85,4 +88,3 @@ rules // utils
     <concat-strings> ["Predicate ",name,"(",<pp-args> args,")"]
   
   pp-args = map(try(?Arg(_,<id>)); pp-type); separate-by(|", "); concat-strings
-  

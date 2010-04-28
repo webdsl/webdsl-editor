@@ -2,7 +2,9 @@ module resolve/vars
 
 imports
   libwebdsl-front
-  resolve/util
+  libwebdsl-generator
+  typecheck/vars
+  resolve/-
 
 rules // object creation
   
@@ -12,9 +14,16 @@ rules // object creation
   
   declaration-in-creation(|type): ObjectPropertyAssignment(prop, _) -> decl
     where SimpleSort(ent) := type
-        ; decl := <find-property> (ent, prop)
+        ; decl := <find-property(|ent)> prop
+   
+rules // var access
+  
+  declaration-of: Var(x) -> <VarDecl> x
+    with <set-hover-info> Var(x)
     
-rules // var
+rules // hover
+  
+  hover-with-info: (_, v@Var(x)) -> <hover> v
   
   hover: v@Var(name) -> text
     where srt := <type-of> v

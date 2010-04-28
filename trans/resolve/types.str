@@ -1,19 +1,21 @@
 module resolve/types
 
 imports
+    libwebdsl-front
+    libwebdsl-generator
     parse
     ../lib/editor-common.generated
-    libwebdsl-front
-
+    
 strategies
   
-  hover: Ent(name,_,_,"session") -> text
+  hover: Entity(name,_,_) -> text
+    where <IsSessionEntityType> (SimpleSort(<capitalize-string> name))
     with text := <concat-strings> ["Session entity ",name]
 
-  hover: Ent(name,None(),_,_) -> text
+  hover: Entity(name,"Entity",_) -> text
     with text := <concat-strings> ["Entity ",name]
 
-  hover: Ent(name,super,_,_) -> text
+  hover: Entity(name,super,_) -> text
     with text := <concat-strings> ["Entity ",name," : ",super]
  
   hover: fa@FieldAccess(exp, "length") -> text

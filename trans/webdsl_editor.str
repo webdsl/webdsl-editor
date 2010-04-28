@@ -2,7 +2,6 @@ module webdsl_editor
 
 imports
   libstratego-lib
-  //libstratego-sglr
   libwebdsl-generator
   libwebdsl-front
   parse
@@ -10,7 +9,9 @@ imports
   util
   caching
   typechecker
-  resolve
+  typecheck/import		// for ExtraWarnings
+	resolve
+	dependencies
   
 signature constructors
   FILE : Term -> Term
@@ -20,66 +21,109 @@ strategies // editor service interface
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
   
+  editor-check(|fullpath): ast -> (ast-renamed, errs, warns, notes)
+    with  rename-top => ast-renamed
+        // Typecheck local
+      ; {| ModulesUsed, ExtraWarnings:
+	          enable-dr-usage-tracking
+	       // ; not(find-extra-errors)       // collected in dr
+	       //; warn3 := <bagof-ExtraWarnings>
+          ; (err1, warn1) := 
+	            <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")>
+	        ; disable-dr-usage-tracking
+	        ; where(
+	            all-keys-ModulesUsed => mods
+	          ; debug(!".. modules used: ")
+	          ; rules(ModulesUsedBy : fullpath -> mods)
+	        )
+        |}
+        // Typecheck global
+      ; (err2, warn2) := <catch-errors-editor(not(<constraint-error-global> ""))>
+      ; errs := <concat> [err1,err2]
+      ; warns := <concat> [warn1,warn2]
+      ; notes := []
+      
+  // Path is relative to project, without leading slash
+  // Projectpath is an absolute path to the project root, without trailing slash
   editor-analyze:
     (ast, path, projectpath) -> (ast-desugared, errors, warnings, notes)
     with
-      where(!""; debug);
+      where(!""; debug)
+    ; disable-dr-usage-tracking     // avoid overhead
       // Do not lose the cached definitions
-      where(
+    ; where(
  //         rulesets := <map(save-rule-set)> ["ModuleDefs", "ModuleDefsTc", "ModuleCacheTimestamp"];
           try(dr-scope-all-end); dr-scope-all-start
  //       <map(restore-rule-set)> rulesets
       )
-    ; fullpath := <concat-strings> [<prim("SSL_EXT_projectpath")>, "/", path]
-    ; rules(FullPath := fullpath)
-    ; typecheck-init    // set up built-in types before doing any declares
-    ; <dbg-time(get-all-imports | "get imports")> (ast, fullpath)
-    ; ast-simplified := <desugar-compat> ast
-    ; (errors-ast, warnings-ast, ast-renamed) := 
-         <dbg-time(typecheck-editor | "typecheck")> ast-simplified
-    ; <try(find-extra-errors)> ast-simplified  // collect in dr
-    ; ast-desugared := <dbg-time(desugar-declare | "resolving")> ast-renamed    // declare for resolving
-    ; notes := []
-    ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
-    ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
+    ; fullpath := <concat-strings> [projectpath, "/", path]
+    ; rules(
+        AnalyzeFile := path     // path within project
+        FullPath := fullpath    // full filename
+      )
+    
+    ; <desugar-compat> ast
+    ; in-typechecking-phase(
+        
+        // Set up built-in types before doing any declares
+	      typecheck-init
+	      
+	      // Declare this module (processes transitive imports)
+	    ; get-main-import
+	    ; {| CurrentFile:
+		       rules(CurrentFile := fullpath)
+	        ; where(
+	            declare-globals => (ruleset, imports)
+	          ; cache-path := <import-cache-path> fullpath
+	          ; <WriteToBinaryFile> (cache-path, (ruleset, imports))
+	        )
+	      |}
+
+	    ; typechecker-after-declare
+	    ; editor-check(|fullpath) => (ast-renamed, err1, warnings, notes)
+      
+      ; bagof-ModulesToCheck    // pairs of (fullpath, ast)
+      ; map(\(fullpath-mod, ast-mod) -> <!fullpath-mod; debug(!"Checking import: "); !ast-mod; editor-check(|fullpath-mod)> ast-mod \)      // sets <ModulesUsed> fullpath2
+      
+    )
+    ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
+    
+    ; errors := <concat> [err1, <bagof-ImportErrors>]
+      
+      // create dependency graph
+    ; update-dependency-graph
+      
     ; print-total-log-time
-  
-  // Strc-java bug: the resulting strategy contains twice the body, resulting in two warnings...
-  // (both ctree and jar version)
-  find-extra-errors: mod@Module(name, _) -> <fail>
-    with  fullpath := <FullPath>
-    where Module(newname, _) := <fix-module-name(|fullpath)> mod
-        ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])
-        ; rules(ExtraWarnings :+= msg)
-  
-  desugar-declare =
-    desugar-all
-  ; alltd(declare-def)
+    ; enable-dr-usage-tracking      // for dr -> module resolving
+      
+  find-extra-errors = fail
   
   desugar-all =
       preserve(innermost(desugar-def))
   
-  import-main-file: fullpath -> fullpath
-    where mainfilename := <get-main-file-name>
-    with  <set-appname> FILE(mainfilename) // need to set DirName DR
-        ; appname := <AppName>
+  import-main-file: ast -> ast
+    with  appname := <AppName>
         ; mainapp := <concat-strings> [<ApplicationIniDir>, "/", appname, ".app"]
           // TODO: does this work on windows too ? (/ vs. \)
-        ; if not(<eq> (fullpath, mainapp)); <file-exists> mainapp then
-              where(!appname; debug(!"Explicitely importing main file: ")) 
-            ; <get-imports> Imports(appname)
-          end
+        ; where(!appname; debug(!"Explicitely importing main file: ")) 
+        ; <get-imports> Imports(appname)
           
   add-app-ini-error: ast -> ast
     with rules(ImportErrors :+= (ast, "Cannot find application.ini"))
              
-  get-all-imports: (ast, fullpath) -> <id>
-    with  rules(IsImported : fullpath) // do not reload the current file if its transitively imported
+  get-main-import: ast -> ast
+    with  FullPath => fullpath
+        ; rules(IsImported : fullpath) // do not transitively import the analyzed file
         ; {| ParsingModule:
               rules(ParsingModule := fullpath)
-              // try to import main file if needed
-            ; (<import-main-file> fullpath <+ <add-app-ini-error> ast)
-            ; <alltd(get-imports)> ast
+              // try to import main file if we're parsing a module
+            ; !ast
+            ; try(
+              	 // get-main-file-name also sets ApplicationIniDir
+                  where(get-main-file-name <+ add-app-ini-error; fail)
+                  // if checking a module, import main app file
+                ; ?Module(_,_); import-main-file
+              )
 	      |}
  
   get-imports: 

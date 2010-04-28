@@ -2,8 +2,9 @@ module resolve/entity
 
 imports
    libwebdsl-front
-   typecheck/properties
-   resolve/util
+   libwebdsl-generator
+   resolve/-
+   util
 
 rules // helpers
   
@@ -18,30 +19,32 @@ rules // helpers
    // get the name of the entity in which the selected node is located
   in-entity =
       ?(node, position, ast, path, project-path)
-    ; <walk-ast(?Ent(<id>,_,_,_) <+ ?ExtendEntity(<id>,_) | position)> ast
+    ; <walk-ast(?Entity(<id>,_,_) <+ ?ExtendEntity(<id>,_) | position)> ast
 
 rules // lookup
     
-  find-property: (x_class, propname) -> decl
-    where decl := <PropertyDecl; add-anno(|FromEntity(x_class))> (x_class, propname)
-    
-  find-property: (x_class, propname) -> <find-property> (<Extends> x_class, propname)
-
-signature constructors
-	
-	FromEntity : Term -> Term
-
+  find-property(|x_class) = traverse-hierarchy(find-property' | x_class)
+  find-property': (x_class, propname) -> decl
+    where decl := <debug(!"Trying: ");PropertyDecl; debug(!"Got: "); add-anno(|FromEntity(x_class))> (x_class, propname)
+  
 rules // resolve
     
   // Explicit field access (x.y, this.x)
   declaration-of: f@FieldAccess(var, prop) -> decl
     where SimpleSort(ent) := <type-of; debug> var
-        ; decl := <find-property> (ent, prop)
-        ; <set-hover-info> FromEntity(ent)
+        ; decl := <find-property(|ent)> prop
+        ; anno := <get-anno(?FromEntity(_))> decl
+        ; <set-hover-info> anno
+ 
+  // Non-renamed field access (derived property with expression containing 'this')
+  declaration-in-entity(|ent): FieldAccess(Var("this"){}, prop) -> decl
+    where decl := <find-property(|ent)> prop
+        ; anno := <get-anno(?FromEntity(_))> decl
+        ; <set-hover-info> anno
  
   // Implicit field access 
   declaration-in-entity(|ent): Var(x) -> decl
-    where decl := <find-property> (ent, <strip-annos> x)
+    where decl := <find-property(|ent)> (<strip-annos> x)
         ; <set-hover-info> FromEntity(ent)
 
   // "this"
@@ -50,7 +53,7 @@ rules // resolve
   
   // inverse anno
   declaration-of: InverseAnno(ent, prop) -> decl
-    where decl := <find-property> (ent, prop)
+    where decl := <find-property(|ent)> prop
         ; <set-hover-info> FromEntity(ent)
 
   // Extend entity to entity
@@ -59,11 +62,16 @@ rules // resolve
 rules // hover
   
   // property access
-  hover-with-info: (Prop(propname, type, srt, anno*, _), FromEntity(ent)) -> text
+  hover-with-info: (Property(propname, type, srt, anno*), FromEntity(ent)) -> text
     where text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt, "<br/>from entity ",ent]
  
   // property declaration
-  hover: Prop(propname,type,srt,anno,_) -> text
+  hover: Property(propname,type,srt,anno) -> text
     where text := <concat-strings> ["Property ", propname, " : ", <pp-type> srt]
  
   
+rules // utils
+	
+  traverse-hierarchy(s | x_class) =
+    <s> (x_class, <id>) <+ <s> (<Extends> x_class, <id>)
+     

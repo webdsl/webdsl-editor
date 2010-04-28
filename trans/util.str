@@ -3,6 +3,8 @@ module util
 imports
   libstratego-lib
   ../lib/editor-common.generated
+  libwebdsl-generator
+  libwebdsl-front
  
 rules
 
@@ -16,6 +18,16 @@ rules
   constraint-note=fail
   check=fail
 
+signature constructors
+  
+  FromEntity : Term -> Term
+
+rules
+
+  // Re-use compiler normalization
+  desugar-def = normalize-declare
+
+  // Desugar, but remain compatible with compiler typechecker
   desugar-compat = try(preserve(simplify-application-constructor <+ simplify-module-constructor))
 
   // Documentation Presentation

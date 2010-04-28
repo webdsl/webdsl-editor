@@ -21,81 +21,67 @@ rules
   	; concat-strings
   	; try(not(?""); <concat-strings> ["<br/>", <id>])
   
-  report-no-file: fullpath -> <fail>
+  report-import-failed(|txt): fullpath -> <fail>
   	with 	trace-entries := <bigbagof-CurrentFile>
   	    ; trace := <format-trace(|"... imported from: ")> trace-entries
-  			; msg := <concat-strings> ["Imported file not found: ", fullpath, trace]
-  			; import := <TopImport>
-  			; rules(ImportErrors :+= (import, msg))
-  			; print-stacktrace
+  	    ; msg := <concat-strings> [txt, ": ", fullpath, trace]
+  		  ; import := <TopImport <+ !"DummyImport(main-app)">
+  		  ; rules(ImportErrors :+= (import, msg))
   			
   editor-parse-webdsl-module: x -> x
   	where(
     		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
-    	; <file-exists <+ report-no-file> full-path
+    	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
    	)
-  ; open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs) <+ debug(!"import failed: ")
-  
+  ; (open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs)
+      <+
+     <report-import-failed(|"Could not import file")> full-path
+    )
+    
   is-unused-dr =
       ?"AddWebDSLDefs"
    <+ ?"LogTimes"
    <+ ?"LogTimesKey"
    
-  all-used-drs = !["Functions","EntDecl","EntDecl","VarDecl","VarDecl","ExtendGlobalFunctions","FunctionDecl","FunctionDecl","PageDecl","PageDecl","TopLevelTemplateDecl","TopLevelTemplateDecl","IsDerivedProperty","TopLevelTemplateNames","IsDefinedAsAjaxTemplate","OriginalNonUniqueName","HtmlEntityId","TemplateDefinitionFromAnnoName","ErrorDuringOverloadResolution","IncorrectTemplateCall","ReservedFunctions","Properties","EntityFunctionNoOverloading","StyleVariable","StyleProperties","TopLevelTemplateDefinitions","AccessControlEnabled","AccessControlEnabled","MatchesAccessControlPointcut","IsProperty","IsProcedure","EntityIdType","HasNaturalId","StaticRename","RenameActionCall","TemplateDecl","CallToDefinedTemplate","CallContextVars","TemplateNewName","MostSpecificFunction","MostSpecificFunction","TopLevelTemplateArguments","CallToRequiredTemplate","ReqTemplateSig","RenameType","IsGlobal","CheckEmailSignature","IsSessionEntityType","CheckGeneratedGlobalFunctionSignature","CheckGlobalFunctionSignature","CheckPageSignature","CheckFunctionSignature","TypeOf","PropertyNameToUniqueName","Properties","StylesheetIncludes","Rename","AccessControlPointcuts","pointcut-formal-argument","IndexedEntity","TypeOfProperty","TemplateSignature","TemplateDefinition","IsPage","HasNameProperty","Extends","IsNativeClass","IsEntity"]
-  is-used-dr = ?x; where(all-used-drs; fetch-elem(?x))
+  // TODO: rules needed for resolving but not typechecking??
+  all-used-drs = !["IsDerivedProperty","OriginalNonUniqueName","TemplateDecl","ErrorDuringOverloadResolution","PageDecl","IsRequestScopedVarDecl","IsReservedFunction","Properties","IsGlobal","EntityFunctionNoOverloading","TopLevelTemplateDefinitions","TemplateSignature","PrincipalDecl","HasNameProperty","PropertyDecl","IsProperty","IsProcedure","CheckEmailSignature","TypeOfProperty","IsSessionEntityType","CheckGeneratedGlobalFunctionSignature","CheckPageSignature","EntityFunctionDecl","CheckFunctionSignatureArgumentTypes","FunctionDecl","CheckGlobalFunctionSignatureArgumentTypes","MostSpecificFunction","CheckFunctionSignature","NativeClassDecl","EntDecl","TypeOf","EmailDefinition","Functions","VarDecl","ExtendGlobalFunctions","TopLevelTemplateDecl","IndexedEntity","InferringExpressionType","EntityIdType","HasNaturalId","TemplateNewName","PropertyNameToUniqueName","Rename","StaticRename","TemplateDefinition"]
+  extra-used-drs = ![]
+ 
+  is-used-dr = ?x; where(<concat> [<all-used-drs>, <extra-used-drs>]; fetch-elem(?x))
   is-used-dr = ?"ModuleImports"
   
-  read-import(|fullpath) =
-      ast := <preserve(try(fix-module-name(|fullpath)))>
-    ; start-record-dynamic-rules
-    ; try(simplify-application-constructor <+ simplify-module-constructor)
-    ; alltd(
-        try(strip-bodies)
-      ; log-time-helper(declare-global | "declare tc")
-      )
-    ; alltd(
-      	{?imp@Imports(_); rules(ModuleImports :+ fullpath -> imp) } )
-    
-    ; ruleset := <end-record-dynamic-rules; filter(where(Fst; is-used-dr))>
-    ; where(<bagof-ModuleImports; map(get-imports)> fullpath)
-      // dummy
-    ; rules(DefToModule :- _)
-    ; rules(ModuleDefs :- _)
-    ; rules(ModuleDefsTc :- _) 
-      
-  read-import-sigs: ruleset -> ruleset
-    with <log-time-helper(load-dynamic-rule-closure | "load drs")> ruleset
-       ; fullpath := <CurrentFile>
-       ; bagof-ModuleImports
-       ; map(get-imports)
+  get-transitive-import: imp@Imports(x) -> imp
+  	with <get-imports> imp
   
-  // Transitive imports
-  read-import-1(|fullpath) =
-    {| ModuleDefsTc, ModuleDefs: 
-	      preserve(try(fix-module-name(|fullpath)))
-	      // declare for compiler typechecking
-	    ; where(   // keep old ast to preserve ast mapping
-	          try(simplify-application-constructor <+ simplify-module-constructor)
-	          ; alltd(
-	                try(get-imports)
-	              ; try(strip-bodies)
-	              ; log-time-helper(declare-global | "declare tc")
-	              )
-	      )
-	    ; log-time-helper(desugar-all | "desugar import")
-	    ; log-time-helper(alltd(declare-def) | "declare def")
-	    ; !(<bagof-ModuleDefsTc> fullpath, <bagof-ModuleDefs> fullpath)
-	  |} 
-	  
-  read-import-sigs-1: p@(tc-ast, ast) -> p
-    with
-    {| ReadingFromCache:
-        fullpath := <CurrentFile>
-	    ; rules(ReadingFromCache : fullpath)
-	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> tc-ast
-	    ; <alltd(try(get-imports); log-time-helper(declare-def | "declare def"))> ast
-    |}
-    
+  read-import(|fullpath) =
+      desugar-compat  // simplify module/app constructor
+    ; preserve(try(fix-module-name(|fullpath)))
+     	// TODO: check this really release the parsetree memory
+    ; where(alltd(origin-strip); ?ast-unstripped)
+    ; alltd(strip-bodies)
+    ; where(declare-globals => (ruleset, imports))
+      // TODO: stripping of built-in functions
+    ; rules(ModulesToCheck :+= (fullpath, ast-unstripped))
+    ; !(ruleset, imports)
+      
+  declare-globals =
+      where(
+        imports := <collect(?Imports(_))>
+      ; filter(get-imports)
+    )
+    ; start-record-dynamic-rules
+		;	desugar-compat
+		; typecheck-declare
+		; where(
+		    ruleset := <end-record-dynamic-rules; filter(where(Fst; is-used-dr))>
+		  ; set-module-for-rule-closure
+		)
+  	; !(ruleset, imports)
+		  
+  read-import-sigs: (ruleset, imports) -> (ruleset, imports)
+    with <log-time-helper(load-dynamic-rule-closure | "load drs")> ruleset
+       ; <map(get-imports)> imports
+       
   // find a node in an ast
   find-node(|sig): ast -> node
     with  <oncetd(?sig; ?node)> ast
@@ -104,12 +90,12 @@ rules
   get-imported-decl(|mod): sig -> node
     with  ast := <log-time-helper(parse-file-1 <+ debug(!"Parsing failed") | "parse")> mod
         ; if <?Module(_,_)> sig then
-              node := <preserve(try(desugar-def)); debug(!"Desugered: ") // only simplify module constructor
-                      ; preserve(strip-mod); debug(!"Stripped: ")
+              node := <preserve(try(desugar-compat)) // only simplify module constructor
+                      ; preserve(strip-mod)
                       > ast
           else
               <log-time-helper(
-                     preserve(desugar-all; alltd(strip-bodies))
+                     preserve(alltd(strip-bodies); desugar-all)
                   <+ debug(!"desugar/strip failed")
                 | "desugar")> ast
             ; node := <log-time-helper(find-node(|sig)
@@ -117,4 +103,4 @@ rules
           end
         ; print-total-log-time
         ; <ensure-ast(|"after get-imported-decl")> node
-        
+          

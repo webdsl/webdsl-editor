@@ -5,10 +5,6 @@ imports
   libwebdsl-generator
   webdsl_editor
 
-rules
-
-  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, TemplateBody([]))
-
 rules // desugaring
   
   desugar-def: TemplateCallPropsNoBody(x, args, props) -> TemplateCall(x, args, props, None())

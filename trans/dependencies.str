@@ -1,0 +1,29 @@
+module dependencies
+
+imports
+  libwebdsl-front
+  application-ini
+    
+strategies  
+  
+  dependencies-file = <concat-strings> [<ApplicationIniDir>, "/.dependencies.webdsl"]
+  
+  update-dependency-graph =
+      dependencies-file; (ReadFromFile <+ ![])
+    ; filter(read-old-dependencies)   // stores old deps in DR's
+    ; all-keys-ModulesUsedBy
+      // remove self-dependencies
+    ; map(\fullpath -> (fullpath, <ModulesUsedBy; remove-all(?fullpath)> fullpath)\)
+    ; <WriteToBinaryFile> (<dependencies-file>, <id>)
+    ; find-dependent-modules
+      
+  read-old-dependencies: (fullpath, mods) -> (fullpath, mods)
+    where not(<ModulesUsedBy> fullpath)   // not updated in this analyze run
+        ; rules(ModulesUsedBy : fullpath -> mods)
+        //; !fullpath; debug(!".. using old dependencies for: ")
+   
+	find-dependent-modules =
+			FullPath => current
+		; all-keys-ModulesUsedBy
+		; filter(where(not(?current); ModulesUsedBy; fetch-elem(?current)))
+		; debug(!"Modules that should be checked: ")

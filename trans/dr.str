@@ -33,8 +33,8 @@ strategies
         ; keyvals := <map(\x -> (x, <hashtable-get(|x)> table)\)>
              // some rules like DR_BREAK are created but have no keys??
         ; if not([] := keyvals) then 
-            where(!name; debug(!"New rule: ")); debug(!"... keyvals:" )
-          ; rules(RecordDR_NewRuleSets :+= (name, keyvals))
+            //where(!name; debug(!"New rule: ")); debug(!"... keyvals:" )
+            rules(RecordDR_NewRuleSets :+= (name, keyvals))
           end
             
   changeset-key-to-rules(|table, oldrules): key@(scopeid, rulekey) -> keyvals
@@ -55,9 +55,9 @@ strategies
         ; <hashtable-keys> h
         ; keyvals := <map(\x -> <changeset-key-to-rules(|h, rs)>\); remove-all(?(_, []))>
         ; if not([] := keyvals) then
-            where(!name; debug(!"Changeset for: "))
-          ; debug(!"... rules are: ")
-          ; rules(RecordDR_NewRuleSets :+= (name, keyvals))
+            //where(!name; debug(!"Changeset for: "))
+          //; debug(!"... rules are: ")
+            rules(RecordDR_NewRuleSets :+= (name, keyvals))
           end
           // Commit change set
         ; !ruleset
@@ -65,7 +65,43 @@ strategies
         ; dr-set-rule-set(|name)
         
   load-dynamic-rule-closure: rulelist -> <map(load-dynamic-rule)> rulelist
+  
   load-dynamic-rule: (name, keyvals) -> <id>
     with  [RuleScope(lbl, table) | xs] := <dr-get-rule-set(|name)>
-        ; <map(\(key, vals) -> <map(\val -> <hashtable-push(|key, val)> table\)> vals\)> keyvals
-        
+        ; <map(\(key, vals) -> <map(\val -> <hashtable-push(|key, val); !(name,key); store-dr-module> table\)> vals\)> keyvals
+
+  store-dr-module: a@(rulename, key) -> a
+    with  file := <CurrentFile>
+        ; key2 := (rulename, key)
+        //; debug(!"Key declare: ") 
+        ; rules(RuleToModule : key2 -> file)
+          
+  set-module-for-rule-closure: rulelist -> rulelist
+    with  CurrentFile => file
+        ; <map(\(name, keyvals) -> <map(\(key, vals) -> <rules(RuleToModule : (name, key) -> file)> \)> keyvals \)> rulelist
+  
+// Track usage of DR's and return position info
+
+  TrackRuleUsage = !"__TRACK_RULE_USAGE__"
+
+  enable-dr-usage-tracking =
+      where(prim("SSL_hashtable_put", <dr-rule-sets-hashtable>, <TrackRuleUsage>, 1))
+  
+  disable-dr-usage-tracking =
+      where(prim("SSL_hashtable_remove", <dr-rule-sets-hashtable>, <TrackRuleUsage>))
+  
+  is-dr-usage-tracking-enabled =
+      where(prim("SSL_hashtable_get", <dr-rule-sets-hashtable>, <TrackRuleUsage>))
+  
+  override dr-lookup-rule(|name, key) =
+      where(try(
+          is-dr-usage-tracking-enabled
+        ; <is-used-dr> name                             // avoid overhead
+        ; not(?"RuleToModule")                          // avoid endless recursion
+        ; where(mod := <RuleToModule> (name, key))      // fails if rule is not defined for key
+        ; !(name, key)
+        //; debug(!"Recording use: ")
+        ; rules(ModulesUsed : mod -> mod)               // don't use :+= , as it created an entry for each use
+        ; rules(LookupFromModule := mod)
+    ))
+    ; proceed
