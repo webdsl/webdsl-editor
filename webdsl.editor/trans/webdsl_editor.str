@@ -51,6 +51,18 @@ strategies // editor service interface
       
   find-extra-errors = fail
   
+  typecheck-editor =
+  	in-typechecking-phase(
+  			typecheck-declare
+  		; typechecker-after-declare
+      ; rename-top => ast-renamed
+      ; catch-errors-editor(
+      		constraint-error-all
+      	; not(constraint-error-global)
+     	) => (err, warn)
+    )
+    ; !(err, warn, ast-renamed)
+  
   desugar-all =
       preserve(innermost(desugar-def))
   
