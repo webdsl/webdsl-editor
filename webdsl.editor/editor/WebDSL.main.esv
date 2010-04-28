@@ -1,6 +1,6 @@
 module WebDSL.main
 
-imports WebDSL-Builders WebDSL-Colorer WebDSL-Folding WebDSL-Outliner WebDSL-References WebDSL-Syntax
+imports WebDSL-Builders WebDSL-Colorer WebDSL-Completions WebDSL-Folding WebDSL-Outliner WebDSL-References WebDSL-Syntax
 
 language General properties
                   
