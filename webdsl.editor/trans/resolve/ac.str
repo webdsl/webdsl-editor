@@ -17,8 +17,9 @@ rules
   declaration-of: acrule|[ rule page x_pagematchname(margs) { e acrule* } ]| -> decl
     where decl := <PageDecl> x_pagematchname
 
-  declaration-of: acrule|[ rule template x_templatename(margs) { e acrule* } ]| -> decl
-    where targ* := <marg-to-farg> margs
+  declaration-of: acrule|[ rule x_kind x_templatename(margs) { e acrule* } ]| -> decl
+    where ("template" := x_kind <+ "ajaxtemplate" := x_kind)
+    		; targ* := <marg-to-farg> margs
         ; decl := <TemplateNewName; TemplateDecl> (x_templatename, targ*)
          
 rules // hover
