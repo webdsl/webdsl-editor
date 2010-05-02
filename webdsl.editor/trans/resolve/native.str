@@ -1,0 +1,28 @@
+module resolve/native
+
+imports
+  libwebdsl-front
+  libwebdsl-generator
+  resolve/-
+  
+rules
+
+  declaration-of: SimpleSort(x_class) -> <NativeClassDecl> x_class
+  declaration-of: ClassSort(x_class) -> <NativeClassDecl> x_class
+  
+rules
+  
+  hover: NativeClass(name, as, super, _) -> 
+    <concat-strings> ["native class ", pretty-name, <pp-native-alias> as, <pp-native-super> super]
+    with  pretty-name := <qid-to-list; separate-by(|"."); concat-strings> name
+    
+  pp-native-alias: NativeClassAlias(alias) -> <concat-strings> [" as ", alias]
+  pp-native-alias: None() -> ""
+  
+  pp-native-super: NativeClassSuper(super) -> <concat-strings> [" : ", super]
+  pp-native-super: None() -> ""
+  
+  hover: NativeClassConstructor(arg*) -> text
+    with  text := <concat-strings> ["constructor (",<map(native-type-to-webdsl-type); pp-args> arg*, ")"]
+  
+  pp-type: ClassSort(x_class) -> x_class

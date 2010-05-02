@@ -27,7 +27,7 @@ rules // hover
   
   hover: v@Var(name) -> text
     where srt := <type-of> v
-        ; text := <concat-strings> [name, " : ", <pp-webdsl> srt]
+        ; text := <concat-strings> [name, " : ", <pp-type> srt]
   
   // Sort might not be filled in, like for an VarDeclInitInferred 
   hover: v@VarDeclGeneric(x,_,_) -> text
