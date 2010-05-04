@@ -8,7 +8,7 @@ imports
   util
   typecheck/-
   application-ini
-//  webdsl_editor			avoid Stratego/811 bug
+  webdsl_editor
 
 rules
   

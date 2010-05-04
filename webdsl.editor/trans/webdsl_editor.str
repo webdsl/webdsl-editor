@@ -11,6 +11,7 @@ imports
   typechecker
   typecheck/import		// for ExtraWarnings
 	resolve
+	lib/editor-common.generated
   
 signature constructors
   FILE : Term -> Term
@@ -25,13 +26,8 @@ strategies // editor service interface
   editor-analyze:
     (ast, path, projectpath) -> (ast-desugared, errors, warnings, notes)
     with
-      where(!""; debug);
-      // Do not lose the cached definitions
-      where(
- //         rulesets := <map(save-rule-set)> ["ModuleDefs", "ModuleDefsTc", "ModuleCacheTimestamp"];
-          try(dr-scope-all-end); dr-scope-all-start
- //       <map(restore-rule-set)> rulesets
-      )
+      where(!""; debug)
+    ; editor-init
     ; fullpath := <concat-strings> [projectpath, "/", path]
     ; rules(
         AnalyzeFile := path     // path within project

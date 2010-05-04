@@ -61,7 +61,7 @@ rules   // Rules to store hover info between resolve and hover
   
 rules   // Context sensitive resolving
   
-  in-context(find-context, s):
+  in-context(find-context, s : ATerm * ATerm -> ATerm):
     a@(node, position, ast, path, project-path) -> res
     where context := <walk-ast(find-context | position)> ast
         ; debug(!"Got context: ")
