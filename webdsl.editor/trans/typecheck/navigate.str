@@ -1,0 +1,16 @@
+module typecheck/navigate
+
+imports
+  libwebdsl-front
+  libwebdsl-generator
+    
+rules
+  
+  declaration-of: PageCall(name, args) -> page
+    where page := <PageDecl> name
+  
+rules
+
+  desugar-def: DispatchNavigateCall(name, args) -> PageCall(name, args)
+  desugar-def: DispatchNavigateCallNoArg(name) -> PageCall(name, [])
+  

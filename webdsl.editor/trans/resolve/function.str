@@ -22,12 +22,11 @@ rules // actual lookup
         
   // Resolve global function
   find-global-func: (nm, arg*) -> f
-    with  f := <resolve-function-call-to-decl> (None(), nm, <map(type-of)> arg*)
+    where f := <resolve-function-call-to-decl> (None(), nm, <map(type-of)> arg*)
 
   // Native function
   find-entity-func(|ent): (nm, arg*) -> f-annotated
     where f := <resolve-function-call-to-decl> (ClassSort(ent), nm, <map(type-of)> arg*)
-        ; debug
         ; where(anno := FromEntity(ent))
         ; f-annotated := <add-anno(|anno)>
         ; <set-hover-info> anno
@@ -62,11 +61,6 @@ rules // hover
      with text := <concat-strings> [<pp-func> f, "<br/>", "from entity ", ent]
 
   hover = pp-func
-  
-  // Built-ins
-  hover: ThisCall("url", [String(arg)]) -> <concat-strings> ["Navigate to url: ", arg]
-  hover: PageCall("url", [String(arg)]) -> <concat-strings> ["Navigate to url: ", arg]
-  //hover-simple: ThisCall("email", 
   
   // Built-in global function
   hover: tc@ThisCall(nm, arg*) -> txt

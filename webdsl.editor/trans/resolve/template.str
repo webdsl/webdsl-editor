@@ -12,9 +12,6 @@ rules		// resolve
   declaration-of: tc@TemplateCall(nm, arg*, _, _) -> f
     where f := <CallToDefinedTemplate; TemplateDecl> nm
   
-  declaration-of: pc@PageCall(name, args) -> page
-    where page := <PageDecl> name
-  
   declaration-of: tc@ThisCall(name, args) -> decl
     where is-email-call
     with  decl := <EmailDefinition> name 
@@ -31,6 +28,8 @@ rules		// hover
         ; debug(!"Types:" )
         ; text := <concat-strings>
             ["Built-in template ", nm, "(", <map(pp-type); separate-by(|", "); concat-strings> targ*, ")"]
+    
+  hover: PageCall("url", [String(arg)]) -> <concat-strings> ["Navigate to url: ", arg]
     
 rules		// utils
 
