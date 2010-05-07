@@ -1,0 +1,143 @@
+module dranalysis
+
+imports
+  libstratego-lib
+  libstrategolib
+  libstratego-xtc
+  libstratego-tool-doc
+  libstrc
+
+strategies
+ 
+  main = 
+    xtc-io-wrap(main-work/*; <exit> 0*/)
+  
+rules     // match stratego constructors
+
+  get-rule-name = 
+       ?SDefT(<id>,_,_,_)
+    <+ ?SDefNoArgs(<id>, _)
+    <+ ?RDefT(<id>,_,_,_)
+    <+ ?RDefNoArgs(<id>,_)
+  
+  // Do not go into DR definitions
+  // like rules(R : x -> y where <s>)
+  find-call = where(find-dr-creation); !None()
+  
+  find-call = 
+       ?CallT(SVar(<id>),_,_)
+    <+ ?CallNoArgs(SVar(<id>))
+    
+  // Use collect-all: calls can be nested 
+  // (if the parameter of a Call is a strategy)
+  find-calls = collect-all(find-call); remove-all(?None())
+  
+  find-dr-creations = collect(get-dr-creation); flatten-list
+  get-dr-creation = 
+      where(get-rule-name => creator)
+    ; collect(find-dr-creation) => drs
+    ; not([] := drs)
+    ; <map(\dr -> (creator, dr)\)> drs
+  
+  get-dr-id = ?DynRuleId(RDecNoArgs(<id>)) 
+  
+  find-dr-creation =
+      ?SetDynRule(<get-dr-id>,_)        // DR : x -> y
+   <+ ?AddDynRule(<get-dr-id>,_)        // DR :+ x -> y
+   <+ ?DynRuleAssignAdd(<get-dr-id>,_)  // DR :+= x
+   <+ ?SetDynRuleMatch(<get-dr-id>,_)   // DR : x
+   
+   collect-dr-creation(|name) = 
+      find-dr-creations
+    ; not(?[])
+    ; map(\x -> x with rules(
+          DR_Creation :+ name -> x
+     )\ )
+  
+rules   // calls
+  
+  create-call-graph: ast -> (nodes, edges)
+    with  {| Calls:
+        alltd(analyze-rule)
+      ; all-keys-Calls => nodes
+      ; mapconcat(\x -> <bagof-Calls; uniq; map(\y -> (x,y)\)>\) => edges
+   |}
+    
+  analyze-rule =
+      where(get-rule-name => caller)
+    ; find-calls
+    ; map(try(RenameStrategy); try(remove-dr-prefix))
+    ; map(\callee -> <rules(Calls :+ caller -> callee)>\) 
+
+rules   // dr prefixes
+  
+  get-dr-prefixes = !["bagof-", "all-keys-", "once-", "bigbagof-"]
+  
+  remove-dr-prefix = ?x
+  	; get-dr-prefixes; filter(\prefix -> <strip-prefix(|prefix)> x\)
+  	; Hd
+  
+  strip-prefix(|prefix) = explode-string; <left-match> (<id>, <explode-string> prefix); implode-string
+  	
+rules   // graph utils
+  
+  // Return list of nodes reachable by one edge from start
+  find-connected(|start) =
+  	filter(?(start, <id>))
+  
+  get-all-connected(|start) =
+  		?edges
+  	; {| Reachable:
+  		<repeat( 
+  			 filter(
+  				\node -> 
+  					<find-connected(|node); not(?[])> edges
+  				\)
+  		  ; flatten-list
+  		  ; remove-all(Reachable)   // prevent infinite loop
+  		  ; not(?[])
+  		  ; map(\node -> node with rules(Reachable : node -> node)\)
+  		)>	[start]
+  		; all-keys-Reachable;reverse => reachable-nodes
+  	|}
+  	; <flatten-list> reachable-nodes
+  	; ![start | <id>]
+  	; uniq
+  	  
+ 	extract-reachable(|starts): edges -> (nodes, edges2)
+ 		with	nodes := <map(\x -> <get-all-connected(|x)> edges\); flatten-list> starts
+ 		    ; edges2 := <filter({x,y: ?(x,y); where(<fetch-elem(?x)> nodes); where(<fetch-elem(?y)> nodes)})> edges
+ 		    
+  rename-strategy-declare = rules(
+    RenameStrategy: "emit-webdsl-code-no-declare" -> "emit-webdsl-code-no-rename"
+  )
+ 
+rules     // main
+
+  main-work =
+      read-from
+    ; ?ast
+    
+    ; create-rules := ["declare","declare-override"]
+    ; use-rules := ["constraint-error", "constraint-error-global", "declare-override", "rename-top"] 
+     
+    ; rename-strategy-declare
+    ; (nodes, edges) := <create-call-graph> ast
+    ; dr-creations := <find-dr-creations> ast
+    ; map(\(r, dr) -> <rules(DrCreations :+ r -> dr)>\)
+     
+      // Find out which dynamic rules are created by declare 
+    ; (declaring-nodes, _) := <extract-reachable(|create-rules)> edges
+    ; created-drs := <filter(\node -> <bagof-DrCreations> node\); flatten-list> declaring-nodes
+      
+      // Find out which dynamic rules are used by typechecking
+    ; (typecheck-nodes, _) := <extract-reachable(|use-rules)> edges
+    
+    ; <isect> (created-drs, typecheck-nodes)
+    ; uniq; sort-list(LSort(string-gt))
+    ; write-to
+        
+rules       // output
+  
+  output = 
+    where(<fprintnl> (stdout(), [<id>]))
