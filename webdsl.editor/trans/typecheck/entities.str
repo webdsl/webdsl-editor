@@ -1,4 +1,4 @@
-module entities
+module typecheck/entities
 
 imports
   libwebdsl-front

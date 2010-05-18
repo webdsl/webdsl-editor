@@ -9,8 +9,20 @@ rules
 
   declaration-of: ActionCall(name, arg*) -> decl
     where decl := <ActionDefinition> name
+  
+  get-ajax-target-id: AjaxReplace(thediv, _) -> thediv 
+  get-ajax-target-id: AjaxAppend(thediv, _) -> thediv 
+  get-ajax-target-id: AjaxVisibility(thediv,_) -> thediv
+  get-ajax-target-id: AjaxRestyle(thediv,_) -> thediv
+  get-ajax-target-id: AjaxClear(thediv) -> thediv
+    
+  declaration-of: element -> placeholder
+    where div := <get-ajax-target-id; is-string> element
+        ; not("this" := div)  // TODO
+        ; all-keys-HtmlEntityId
+    with  placeholder := <debug; HtmlEntityId> div
+    
+rules  
     
   hover: Action(name, arg*, _) -> text
-    with text := <concat-strings> ["action ",name,"(",<pp-args> arg*,")"]
-    
-  
+    with  text := <concat-strings> ["action ",name,"(",<pp-args> arg*,")"]
