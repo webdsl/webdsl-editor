@@ -57,8 +57,8 @@
 
 	<!-- WEBDSL: custom main target, don't use spoofaximp.default -->
 	<target name="all" depends="check.editor-ts.present, all.release" />
-	<target name="all.release" depends="update.editor-ts, utils-files, sdf2table, import-webdsl-template, import-rtrees-for-editor-checks, stratego.compile, sdf2imp" />
-
+	<target name="all.release" depends="update.editor-ts, utils-files, sdf2table, import-webdsl-template, import-rtrees-for-editor-checks, ppgen, pppack, stratego.compile, sdf2imp, refresh" />
+	
 	<!-- WEBDSL: Custom targets .................................................................... -->
 
 	<target name="stratego.compile">
@@ -68,11 +68,8 @@
 		<replace file="editor/${esvmodule}-Builders.esv"
       token="@spoofax.output.type@" value="${spoofax.output.type}" />
 
-	  <!-- copy timestamp into bin dir for jar -->
-	  <mkdir dir="${build}/trans"/>
-		<copy file="${path.timestamp.term}" todir="${build}/trans" />
-		
-		<antcall target="${stratego.compile.target}" />
+	  	<antcall target="${stratego.compile.target}" />
+	
 	</target>
 
 	<!-- import template to plugin -->
@@ -104,7 +101,7 @@
 			preservelastmodified="true" todir="lib" />
 	</target>
 
-	<property name="path.timestamp.term" value="editor.timestamp.aterm" />
+	<property name="path.timestamp.term" value="${include}/editor.timestamp.aterm" />
 	
 	<target name="check.editor-ts.present">
 		<available file="${path.timestamp.term}" property="available.editor-ts" />
@@ -113,7 +110,7 @@
 	<target name="update.editor-ts" unless="available.editor-ts">
 		<get-unix-ts/>
 		<echo>Editor timestamp is: ${timestamp.unix}</echo>
-		<echo file="${path.timestamp.term}">ModificationTime(${timestamp.unix})</echo>
+		<echo file="${path.timestamp.term}">${timestamp.unix}</echo>
 	</target>
 
 	<scriptdef name="get-unix-ts" language="javascript">

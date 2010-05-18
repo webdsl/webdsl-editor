@@ -2,7 +2,7 @@ module caching
 
 imports
     parse
-    ../lib/editor-common.generated
+    lib/editor-common.generated
     libwebdsl-front
     util
     webdsl_editor
@@ -39,9 +39,7 @@ signature constructors
 strategies
 
   check-editor-version: cache-path -> cache-path
-// NATHAN: disable until Spoofax/92 is solved. [http://yellowgrass.org/issue/Spoofax/92]
-    with  ModificationTime(editor-ts) := <import-term(editor.timestamp.aterm)>
-//    with editor-ts := 1271360674
+    with  editor-ts := <import-term(include/editor.timestamp.aterm)>
     where <gt <+ editor-new-version-once; fail> (<modification-time> cache-path, editor-ts)
     
   editor-new-version-once =

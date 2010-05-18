@@ -41,7 +41,7 @@ rules // hover
   hover: acrule|[ rule page x_pagename(margs) { e acrule* } ]| -> text
     where templates := <find-matching-defines(
                           PageNames
-                        , {?x; all-keys-CheckPageSignature; filter(?(None(), x, <id>))})>
+                        , {?x; all-keys-CheckPageSignature; filter(?(_, x, <id>))})>
             (x_pagename, margs)
         ; template-sigs-to-text(|"page") => text
 

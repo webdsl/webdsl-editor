@@ -3,7 +3,7 @@ module typecheck/import
 imports 
   libwebdsl-front
   libwebdsl-generator
-  ../lib/editor-common.generated
+  lib/editor-common.generated
   caching
   util
   typecheck/-
@@ -40,8 +40,6 @@ rules
 
 rules
 
-	// Strc-java bug: the resulting strategy contains twice the body, resulting in two warnings...
-  // (both ctree and jar version)
   find-extra-errors: mod@Module(name, _) -> <fail>
     with  fullpath := <FullPath>
     where Module(newname, _) := <fix-module-name(|fullpath)> mod

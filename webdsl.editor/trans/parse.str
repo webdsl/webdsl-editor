@@ -3,7 +3,7 @@ module parse
 imports 
   libwebdsl-front
   libstratego-sglr
-  ../lib/editor-common.generated
+  lib/editor-common.generated
   webdsl_editor
   application-ini
   caching
