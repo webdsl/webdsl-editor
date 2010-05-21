@@ -68,8 +68,10 @@
 		<replace file="editor/${esvmodule}-Builders.esv"
       token="@spoofax.output.type@" value="${spoofax.output.type}" />
 
-	  	<antcall target="${stratego.compile.target}" />
-	
+	  <antcall target="${stratego.compile.target}" />
+	  <jar update="true" destfile="${include}/${strmodule}.jar">
+	   <fileset dir="${src-gen}" excludes="**/*.java" />
+	  </jar>
 	</target>
 
 	<!-- import template to plugin -->

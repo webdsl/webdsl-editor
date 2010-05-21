@@ -5,6 +5,7 @@ imports
   libwebdsl-generator
   typecheck/vars
   resolve/-
+  util
 
 rules // object creation
   
@@ -18,7 +19,8 @@ rules // object creation
    
 rules // var access
   
-  declaration-of: Var(x) -> <VarDecl> x
+  declaration-of: Var(x) -> decl
+  	where decl := <VarDecl; has-ast-mapping> x	// no generated vars here
     with <set-hover-info> Var(x)
     
 rules // hover

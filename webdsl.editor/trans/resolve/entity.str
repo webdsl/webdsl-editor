@@ -23,9 +23,10 @@ rules // helpers
 
 rules // lookup
     
-  find-property(|x_class) = 
-  		traverse-hierarchy(find-property' | x_class)
+	find-property(|x_class) = 
+      traverse-hierarchy(find-property' | x_class)
   	; not(get-anno(?IsGeneratedProperty()))
+  	; has-ast-mapping
   find-property': (x_class, propname) -> decl
     where decl := <debug(!"Trying: ");PropertyDecl; debug(!"Got: "); add-anno(|FromEntity(x_class))> (x_class, propname)
   
