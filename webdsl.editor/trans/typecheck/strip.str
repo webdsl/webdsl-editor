@@ -26,7 +26,7 @@ rules
   // need expression for typechecker
   //strip-bodies: VarDeclInitInferred(x, _) -> VarDeclInitInferred(x, None())
   
-  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, TemplateBody([]))
+  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, <strip-template-body> body)
   
 rules // entities
   
@@ -40,3 +40,9 @@ rules // modules
   // Using strip-bodies here would strip all definitions and declare nothing.
   strip-mod: Module(x,_) -> Module(x,None())
         
+rules // template
+	
+	strip-template-body = collect(strip-in-template-body)
+
+	strip-in-template-body: Placeholder(name, _) -> Placeholder(name, None())
+	
