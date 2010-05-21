@@ -1,5 +1,2 @@
-* Resolving of placeholders:
-	replace(placeholder, template(x));
-
 * Resolving for HQL query parts
-	
+  

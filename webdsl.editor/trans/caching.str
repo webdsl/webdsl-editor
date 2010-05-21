@@ -31,15 +31,10 @@ strategies // storing for compiler typechecker
   // If CurrentFile is not set, we're parsing the main file
   store-def = id
 
-signature constructors
-  
-  // Wrap int in ModificationTerm to avoid LazyTerm bug
-  ModificationTime : Term -> Term
-
 strategies
 
   check-editor-version: cache-path -> cache-path
-    with  editor-ts := <import-term(include/editor.timestamp.aterm)>
+    with  editor-ts := <editor-timestamp>
     where <gt <+ editor-new-version-once; fail> (<modification-time> cache-path, editor-ts)
     
   editor-new-version-once =
@@ -59,12 +54,14 @@ strategies
         {| CurrentFile:
           rules(CurrentFile := path);
           if not(<IsImported> path) then
-	          rules(
-	            IsImported: path
-	          ); 
 	          if   <is-newer> (cache-path, path); <check-editor-version> cache-path then
 	            file := <log-time-helper(ReadFromFile | "read")> cache-path;
-	            <record-sigs> file 
+	            if not(<record-sigs> file) then
+	               // assume corrupt file
+	               <remove-file> cache-path
+	             ; <debug(!"Corrupt cache file, regenerating: ")> path
+	             ; <open-import-sig(resolve-path, parse-file, record-declarations, record-sigs)> import
+	            end 
 	          else
 	            where(!cache-path; debug(!"Updating cache: "));
 	            file := <parse-file> path;
@@ -73,7 +70,10 @@ strategies
 	              // Only cache if on filesystem (e.g., ignore libstratego-lib)
 	              <WriteToBinaryFile> (cache-path, sigs)
 	            end
-	          end
+	          end;
+	        rules(
+            IsImported: path
+          )
 	        end
         |}
       end

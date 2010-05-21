@@ -1,6 +1,7 @@
 application example
 
   imports testimport/util
+  imports ui/test1
   
   define page root() {}
   

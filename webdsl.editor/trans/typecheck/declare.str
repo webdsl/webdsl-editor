@@ -27,7 +27,7 @@ rules // template with subelements (placeholders)
 			?Define(_,_,_,_,body)
 		; where(store-def; store-def-to-mod-desugar)
 		; declare
-		; <debug; map(debug; store-def-to-mod-desugar)> body		// body is a list of stripped elements
+		; <map(store-def-to-mod-desugar)> body		// body is a list of stripped elements
 
 rules // global declares with subelements
 
