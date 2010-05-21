@@ -19,10 +19,12 @@ rules
   declaration-of: element -> placeholder
     where div := <get-ajax-target-id; is-string> element
         ; not("this" := div)  // TODO
-        ; all-keys-HtmlEntityId
-    with  placeholder := <debug; HtmlEntityId> div
+    with  placeholder := <HtmlEntityId> div
     
 rules  
     
   hover: Action(name, arg*, _) -> text
     with  text := <concat-strings> ["action ",name,"(",<pp-args> arg*,")"]
+
+	hover: Placeholder(name, _) -> text
+		with	text := <concat-strings> ["placeholder ", name]

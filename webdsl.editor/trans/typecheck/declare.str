@@ -15,13 +15,20 @@ rules // global declares
   is-global-decl =
       ?Enum(_,_)
     <+?AccessControlPrincipal(_,_)    // for securityContext
-    <+?Define(_,_,_,_,_)
     <+?Predicate(_,_,_)
     <+?Derive(_,_,_)                  // declares page names 
     <+?DeriveCrud(_)
     <+?Imports(_)
     <+?RequestScope(_)
   
+rules // template with subelements (placeholders)
+
+	declare-global =
+			?Define(_,_,_,_,body)
+		; where(store-def; store-def-to-mod-desugar)
+		; declare
+		; <debug; map(debug; store-def-to-mod-desugar)> body		// body is a list of stripped elements
+
 rules // global declares with subelements
 
   declare-global = 

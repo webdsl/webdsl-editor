@@ -2,6 +2,7 @@ module typecheck/strip
 
 imports
     libwebdsl-front
+    util
     
 rules
 
@@ -42,7 +43,7 @@ rules // modules
         
 rules // template
 	
-	strip-template-body = collect(strip-in-template-body)
+	strip-template-body = collect(preserve(strip-in-template-body))
 
 	strip-in-template-body: Placeholder(name, _) -> Placeholder(name, None())
 	
