@@ -40,7 +40,7 @@ rules // resolve
         ; <set-hover-info> anno
  
   // Non-renamed field access (derived property with expression containing 'this')
-  declaration-in-entity(|ent): FieldAccess(Var("this"){}, prop) -> decl
+  declaration-in-entity(|ent): FieldAccess(Var("this"{}), prop) -> decl
     where decl := <find-property(|ent)> prop
         ; anno := <get-anno(?FromEntity(_))> decl
         ; <set-hover-info> anno
@@ -76,5 +76,5 @@ rules // hover
 rules // utils
 	
   traverse-hierarchy(s | x_class) =
-    <s> (x_class, <id>) <+ <s> (<Extends> x_class, <id>)
-     
+    <s> (x_class, <id>) <+ traverse-hierarchy(s | <Extends> x_class)
+      
