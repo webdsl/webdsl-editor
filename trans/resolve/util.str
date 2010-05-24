@@ -6,6 +6,7 @@ imports
     webdsl_editor
     util
     caching
+    dr
 
 signature constructors
 
@@ -38,7 +39,7 @@ strategies
 rules // lookup definition across modules
 // If the given declaration is in another module, reparse that file and return node with position information
   
-  find-declaration = find-declaration(LookupFromModule)
+  find-declaration = has-ast-mapping <+ find-declaration(LookupFromModule)
   
   find-declaration(def-to-mod): decl1 -> decl
     where FullPath => mainmod

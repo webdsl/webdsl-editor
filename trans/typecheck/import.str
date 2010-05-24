@@ -3,26 +3,26 @@ module typecheck/import
 imports 
   libwebdsl-front
   libwebdsl-generator
-  ../lib/editor-common.generated
+  lib/editor-common.generated
   caching
   util
   typecheck/-
   application-ini
-//  webdsl_editor			avoid Stratego/811 bug
+  webdsl_editor
 
 rules
   
   declaration-of: Imports(x) -> <ModuleDecl> x
   
-  // Special declare case for modules 
-  declare-global =
+  strip-mod: Module(x,_) -> Module(x,None())
+  
+  store-module =
       ?Module(name,_)
-    ; strip-mod => stripped-mod
-    ; store-def
-    ; store-def-to-mod-desugar
+    ; preserve(strip-mod) => stripped-mod
     ; rules(ModuleDecl : name -> stripped-mod)
-    ; fail // to continue traversal
-
+      
+  is-used-dr = ?"ModuleDecl"
+    
   // When resolving an import, the destination file is parsed but not desugared
   // Constructor will be desugared by hover-1 
   desugar-def = simplify-module-constructor
@@ -40,9 +40,7 @@ rules
 
 rules
 
-	// Strc-java bug: the resulting strategy contains twice the body, resulting in two warnings...
-  // (both ctree and jar version)
-  find-extra-errors: mod@Module(name, _) -> <fail>
+	find-extra-errors: mod@Module(name, _) -> <fail>
     with  fullpath := <FullPath>
     where Module(newname, _) := <fix-module-name(|fullpath)> mod
         ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])

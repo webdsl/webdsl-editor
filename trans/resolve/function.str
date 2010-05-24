@@ -22,17 +22,25 @@ rules // actual lookup
         
   // Resolve global function
   find-global-func: (nm, arg*) -> f
-    with  f := <debug; resolve-function-call-to-decl> (None(), nm, <map(type-of)> arg*)
+    where f := <resolve-function-call-to-decl> (None(), nm, <map(type-of)> arg*)
 
+  // Native function
+  find-entity-func(|ent): (nm, arg*) -> f-annotated
+    where f := <resolve-function-call-to-decl> (ClassSort(ent), nm, <map(type-of)> arg*)
+        ; where(anno := FromEntity(ent))
+        ; f-annotated := <add-anno(|anno)>
+        ; <set-hover-info> anno
+  
 rules // resolve
   
   // Resolve entity function call
   declaration-in-entity(|ent): tc@ThisCall(nm, arg*) -> f
-    where f := <debug(!"a: "); find-entity-func(|ent)> (nm, arg*)
+    where f := <find-entity-func(|ent)> (nm, arg*)
           
   // Resolve entity function call
   declaration-of: Call(expr, nm, arg*) -> f
-    where SimpleSort(x_class) := <type-of> expr
+    where type := <type-of> expr
+        ; <?SimpleSort(x_class) <+ ?ClassSort(x_class)> type  // ClassSort for static native functions 
         ; f := <find-entity-func(|x_class)> (nm, arg*)
 
   // Resolve global call
@@ -41,8 +49,7 @@ rules // resolve
 
   // Extend global function to normal function
   declaration-of: ExtendFunction(f@Function(name,args,_,_)) -> decl
-    where debug
-        ; decl := <declaration-of> Function(name,args,None(),None())  // must be exact match
+    where decl := <declaration-of> Function(name,args,None(),None())  // must be exact match
 
   declaration-in-entity(|ent): ef@ExtendFunction(Function(name,args,_,_)) -> decl
     where (decl := <declaration-of-entity(|ent)> Function(name,args,None(),None())
@@ -54,11 +61,6 @@ rules // hover
      with text := <concat-strings> [<pp-func> f, "<br/>", "from entity ", ent]
 
   hover = pp-func
-  
-  // Built-ins
-  hover: ThisCall("url", [String(arg)]) -> <concat-strings> ["Navigate to url: ", arg]
-  hover: PageCall("url", [String(arg)]) -> <concat-strings> ["Navigate to url: ", arg]
-  //hover-simple: ThisCall("email", 
   
   // Built-in global function
   hover: tc@ThisCall(nm, arg*) -> txt

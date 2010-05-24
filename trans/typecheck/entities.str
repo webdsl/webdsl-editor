@@ -1,4 +1,4 @@
-module entities
+module typecheck/entities
 
 imports
   libwebdsl-front
@@ -15,4 +15,9 @@ rules // types
     
 rules
 
-  annotate-ent-body(|ent) = add-anno(|FromEntity(ent))
+  desugar-def: Entity(name, super, body) -> Entity(name, super, <annotate-ent-body(|name)> body)
+  desugar-def: ExtendEntity(name, body) -> ExtendEntity(name, <annotate-ent-body(|name)> body)
+    
+  annotate-ent-body(|ent): body -> body2
+    where not(<?[] <+ Hd; get-anno(?FromEntity(_))> body)
+    with  body2 := <map(add-anno(|FromEntity(ent)))> body

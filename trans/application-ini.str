@@ -21,7 +21,7 @@ strategies
       <+ get-project-path; try-app-ini
       )
     ; ApplicationIniPath
-    ; debug(!"Got path: ")
+    ; debug(!"Got app ini path: ")
     ; application-ini-to-app-name
     ; <add-extension> (<id>,"app")
     ; <set-appname> FILE(<id>)       // set AppName and DirName
@@ -45,9 +45,7 @@ strategies
   // Check if application.ini is in the given dir 
   try-app-ini: dir -> (dir, filename)
     where filename := <concat-strings> [dir, "/", <ApplicationIniName>]
-        ; debug(!"Got filename: ")
         ; file-exists
-        ; debug(!"exists: ")
         ; rules(
           	ApplicationIniPath  := filename
             ApplicationIniDir   := dir

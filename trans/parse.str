@@ -2,13 +2,15 @@ module parse
 
 imports 
   libwebdsl-front 
+  libwebdsl-generator
   libstratego-sglr
-  ../lib/editor-common.generated
+  lib/editor-common.generated
   webdsl_editor
   application-ini
   caching
   util
   dr
+  typecheck/import
 
 rules
   
@@ -27,7 +29,7 @@ rules
   	    ; msg := <concat-strings> [txt, ": ", fullpath, trace]
   		  ; import := <TopImport <+ !"DummyImport(main-app)">
   		  ; rules(ImportErrors :+= (import, msg))
-  			
+
   editor-parse-webdsl-module: x -> x
   	where(
     		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
@@ -38,17 +40,10 @@ rules
      <report-import-failed(|"Could not import file")> full-path
     )
     
-  is-unused-dr =
-      ?"AddWebDSLDefs"
-   <+ ?"LogTimes"
-   <+ ?"LogTimesKey"
-   
-  // TODO: rules needed for resolving but not typechecking??
-  all-used-drs = !["IsDerivedProperty","OriginalNonUniqueName","TemplateDecl","ErrorDuringOverloadResolution","PageDecl","IsRequestScopedVarDecl","IsReservedFunction","Properties","IsGlobal","EntityFunctionNoOverloading","TopLevelTemplateDefinitions","TemplateSignature","PrincipalDecl","HasNameProperty","PropertyDecl","IsProperty","IsProcedure","CheckEmailSignature","TypeOfProperty","IsSessionEntityType","CheckGeneratedGlobalFunctionSignature","CheckPageSignature","EntityFunctionDecl","CheckFunctionSignatureArgumentTypes","FunctionDecl","CheckGlobalFunctionSignatureArgumentTypes","MostSpecificFunction","CheckFunctionSignature","NativeClassDecl","EntDecl","TypeOf","EmailDefinition","Functions","VarDecl","ExtendGlobalFunctions","TopLevelTemplateDecl","IndexedEntity","InferringExpressionType","EntityIdType","HasNaturalId","TemplateNewName","PropertyNameToUniqueName","Rename","StaticRename","TemplateDefinition"]
-  extra-used-drs = ![]
+  all-used-drs = !<import-term(include/webdsl-typechecker-rules.aterm)>
+  is-used-dr = ?"ModuleDecl"
  
-  is-used-dr = ?x; where(<concat> [<all-used-drs>, <extra-used-drs>]; fetch-elem(?x))
-  is-used-dr = ?"ModuleImports"
+  is-used-dr = ?x; where(all-used-drs; fetch-elem(?x))
   
   get-transitive-import: imp@Imports(x) -> imp
   	with <get-imports> imp
@@ -56,13 +51,15 @@ rules
   read-import(|fullpath) =
       desugar-compat  // simplify module/app constructor
     ; preserve(try(fix-module-name(|fullpath)))
-     	// TODO: check this really release the parsetree memory
     ; where(alltd(origin-strip); ?ast-unstripped)
-    ; alltd(strip-bodies)
+    //; try(alltd(strip-bodies))
     ; where(declare-globals => (ruleset, imports))
       // TODO: stripping of built-in functions
     ; rules(ModulesToCheck :+= (fullpath, ast-unstripped))
     ; !(ruleset, imports)
+      
+  strip-dr-bodies =
+    map(\(key,vals) -> (key,<map(\val -> <try(alltd(strip-bodies))> val\)> vals) \)
       
   declare-globals =
       where(
@@ -71,12 +68,14 @@ rules
     )
     ; start-record-dynamic-rules
 		;	desugar-compat
+	  ; try(where(store-module))
 		; typecheck-declare
-		; where(
-		    ruleset := <end-record-dynamic-rules; filter(where(Fst; is-used-dr))>
-		  ; set-module-for-rule-closure
-		)
-  	; !(ruleset, imports)
+		; end-record-dynamic-rules
+		; filter(where(Fst; is-used-dr))
+		  // strip bodies of generated definitions
+		; strip-dr-bodies
+		; set-module-for-rule-closure
+		; !(<id>, imports)
 		  
   read-import-sigs: (ruleset, imports) -> (ruleset, imports)
     with <log-time-helper(load-dynamic-rule-closure | "load drs")> ruleset
@@ -95,7 +94,7 @@ rules
                       > ast
           else
               <log-time-helper(
-                     preserve(alltd(strip-bodies); desugar-all)
+                     preserve(desugar-all)
                   <+ debug(!"desugar/strip failed")
                 | "desugar")> ast
             ; node := <log-time-helper(find-node(|sig)

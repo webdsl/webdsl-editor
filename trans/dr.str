@@ -1,5 +1,9 @@
 module dr
 
+imports
+  parse
+  webdsl_editor
+
 strategies  
   
   record-dr-internals = !["RecordDR_ExistingRules","RecordDR_NewRuleSets"]
@@ -25,6 +29,9 @@ strategies
     ; !recorded
  
   all-dynamic-rules = <hashtable-keys> Hashtable(<dr-rule-sets-hashtable>) 
+  
+  remove-dr-dummy: x{anno*} -> x{anno2*}
+    with  anno2* := <remove-all(?DR_DUMMY())> anno*
  
   commit-and-store-rules: name -> name
     with  dr-get-rule-set(|name); Hd
@@ -44,7 +51,7 @@ strategies
             oldvals := <dr-lookup-rule(|rulekey)> oldrules
           ; <diff> (values, oldvals)
           )
-        ; keyvals := (rulekey, <id>)    // (key, new-values)
+        ; keyvals := (rulekey, <id>)
   
   commit-and-store-changes: name -> (name, changeset)
     with  dr-get-rule-set(|name) => ruleset@[changeset@ChangeSet(_, _, h@Hashtable(csid)) | rs]
@@ -78,9 +85,14 @@ strategies
           
   set-module-for-rule-closure: rulelist -> rulelist
     with  CurrentFile => file
-        ; <map(\(name, keyvals) -> <map(\(key, vals) -> <rules(RuleToModule : (name, key) -> file)> \)> keyvals \)> rulelist
+        ; <map(\(name, keyvals) ->
+            <map({ruleid: \(key, vals) ->
+              <rules(RuleToModule : ruleid -> file)> 
+              with ruleid := (name, key) \})> 
+            keyvals \)>
+          rulelist
   
-// Track usage of DR's and return position info
+rules // Track usage of DR's and return position info
 
   TrackRuleUsage = !"__TRACK_RULE_USAGE__"
 
@@ -98,10 +110,13 @@ strategies
           is-dr-usage-tracking-enabled
         ; <is-used-dr> name                             // avoid overhead
         ; not(?"RuleToModule")                          // avoid endless recursion
-        ; where(mod := <RuleToModule> (name, key))      // fails if rule is not defined for key
-        ; !(name, key)
-        //; debug(!"Recording use: ")
-        ; rules(ModulesUsed : mod -> mod)               // don't use :+= , as it created an entry for each use
-        ; rules(LookupFromModule := mod)
+        ; rules(DynamicRulesUsed : (name,key))
+        ; track := 1
     ))
     ; proceed
+      // Only if lookup has succeeded:
+    ; try(where(
+          1 := track
+        ; mod := <RuleToModule> (name, key)
+        ; rules(LookupFromModule := mod)
+      ))

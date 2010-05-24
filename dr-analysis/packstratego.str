@@ -20,17 +20,11 @@ strategies
       , id
       , id
       , ![]
-      , /*where(add-includes); */pack-process-options; main-work
+      , pack-process-options; main-work
     )
     
-  add-includes =
-      <post-extend-config> ("-I", [IncludeDir("/home/nathan/.nix-profile/share/java-front")])
-    
   main-work =
-        where(inc := <get-config> "-I")
-      ; where(pack-include-dirs)
+        where(pack-include-dirs)
       ; pack-stratego(|<get-config> "-I") => (files, spec)
       ; <write-to> spec
     
-// ~/workspace/analyze/strat -i org/webdsl/dsl/generation/webdsl-generator.str -I . -I org/webdsl/dsl/syntax -o webdsl-generator-packed.str
-// ~/workspace/analyze/strat -i org/webdsl/dsl/syntax/webdsl-front.str -I . -I org/webdsl/dsl/syntax -o webdsl-front-packed.str

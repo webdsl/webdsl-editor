@@ -14,7 +14,7 @@
 	
 	<target name="create-dr-term" depends="pack-stratego, dranalysis">
 	  <dependset>
-	  	<srcfileset file="${webdsl.home}/org/webdsl/dsl/generation/webdsl-generator.str" />
+	  	<srcfileset file="${webdsl.home}/libwebdsl-generator.rtree" />
 	  	<srcfileset dir="${dir}" includes="*.str" />
 	  	<targetfileset file="${out}" />
 	  </dependset>
@@ -23,6 +23,7 @@
 	</target>
 		
 	<target name="create-dr-term.helper" unless="outfile.available">
+		<echo>Packing stratego sources of typechecker...</echo>
 		<java classname="packstratego" failonerror="true">
 		  <classpath>
 		  	<path path="${dir}/bin" />
@@ -31,11 +32,12 @@
 			<arg line="-i ${webdsl.home}/org/webdsl/dsl/generation/webdsl-generator.str" />
 			<arg line="-I ${webdsl.home}" />
 			<arg line="-I ${webdsl.home}/org/webdsl/dsl/syntax" />
-			<arg line="-I ${user.dir}/.nix-profile/share/java-front" /> <!-- TODO; remove -->
+			<arg line="-I ${user.home}/.nix-profile/share/java-front" /> <!-- TODO; remove -->
 			<arg value="-o"/>
 			<arg file="${dir}/bin/webdsl-generator-packed.str" />
 		</java>
 		
+		<echo>Analyzing dynamic rule dependencies...</echo>
 		<java classname="dranalysis" failonerror="true">
 		  <classpath>
 		    <path path="${dir}/bin" />
@@ -67,13 +69,13 @@
   	  <srcfileset file="${dir}/{$file}.str" />
   	  <targetfileset file="${dir}/bin/${file}.java" />
   	</dependset>
-  	<available file="${dir}/bin/${file}.java" property="compile-str.available" />
+  	<available file="${dir}/bin/${file}.java" property="compile-str.${file}.available" />
   	<antcall target="-compile-str-helper" />
   	<javac srcdir="${dir}/bin" destdir="${dir}/bin" classpathref="strj" source="1.5" target="1.5"/>
   	
   </target>
   	
-	<target name="-compile-str-helper" if="file" unless="compile-str.available">
+	<target name="-compile-str-helper" if="file" unless="compile-str.${file}.available">
 	  <java classname="org.strategoxt.strj.Main" failonerror="true">
 	    <classpath>
 	      <pathelement location="${eclipse.strategoxt.strategojar}" />
