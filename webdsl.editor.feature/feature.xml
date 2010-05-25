@@ -2,12 +2,16 @@
 <feature
       id="webdsl.editor.feature"
       label="WebDSL Editor"
-      version="1.1.0.qualifier"
+      version="1.1.1"
       plugin="webdsl.editor">
 
    <description url="http://webdsl.org">
       An Eclipse editor for WebDSL applications.
    </description>
+
+   <license>
+      This is the WebDSL Editor Plugin license agreement.
+   </license>
 
    <url>
       <update label="webdsl.org" url="http://www.webdsl.org/update"/>
