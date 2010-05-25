@@ -14,9 +14,6 @@ imports
 
 rules
   
-  parse-file-1 =
-    parse-file(|<get-webdsl-parse-table>)
-  
   format-trace(|prefix) =
   		map(\name -> <concat-strings> [prefix, name]\)
   	; separate-by(|"<br/>")
@@ -35,9 +32,13 @@ rules
     		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
     	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
    	)
-  ; (open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs)
+  ; (open-import-sig(
+    		!full-path
+    	, log-time-helper(parse-file | "parse")
+    	, read-import(|full-path)
+    	, read-import-sigs)
       <+
-     <report-import-failed(|"Could not import file")> full-path
+    	 <report-import-failed(|"Could not import file")> full-path
     )
   
   // Transitive imports
@@ -53,14 +54,14 @@ rules
       // another traversal, because declare-global has its own traversal and should not have to call strip-bodies itself
 	    ; log-time-helper(alltd(declare-global) | "declare tc")
 	    ; <bagof-ModuleDefs> fullpath
-	  |} 
+	  |}
 	  
   read-import-sigs: signatures -> signatures
     with
     {| ReadingFromCache:
         fullpath := <CurrentFile>
       ; rules(ReadingFromCache : fullpath)
-	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global")> signatures
+	    ; <log-time-helper(alltd(declare-global <+ declare-global-toplevel) | "declare global sig")> signatures
 	      // try: could contain no imports at all
 	    ; try(alltd(get-imports)) // do not put this inside of log-time-helper
     |}
@@ -71,7 +72,7 @@ rules
         <+ where(!sig; debug(!"Looking for node: ")); fail
   
   get-imported-decl(|mod): sig -> node
-    with  ast := <log-time-helper(parse-file-1 <+ debug(!"Parsing failed") | "parse")> mod
+    with  ast := <log-time-helper(parse-file <+ debug(!"Parsing failed") | "parse")> mod
         ; if <?Module(_,_)> sig then
               node := <preserve(try(desugar-compat)) // only simplify module constructor
                       ; preserve(strip-mod)

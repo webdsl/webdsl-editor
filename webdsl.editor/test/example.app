@@ -301,3 +301,11 @@ section double def problems
     var z := 5;
   }
   
+  
+// ---------- HQL
+
+function recentReviews() {
+	var publicReview : User;
+  var x := (from Review as r where r.view = ~publicReview order by r.posted desc limit 4);
+}
+

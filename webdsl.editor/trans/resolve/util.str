@@ -1,16 +1,27 @@
 module resolve/util
 
 imports
-    resolve/-
-    parse
-    webdsl_editor
-    util
-    caching
+	libwebdsl-front
+  resolve/-
+  parse
+  webdsl_editor
+  util
+  caching
 
 strategies
   
-  editor-resolve-internal = remove-hover-info; editor-resolve; find-declaration
-    ; try(where(get-hover-info; debug(!"Got hover info: ")))
+  editor-resolve-internal =
+  		remove-hover-info
+  	; if editor-resolve => tgt then
+  	  		<find-declaration> tgt
+  	  	; try(where(get-anno(?FromEntity(_)); set-hover-info))
+    		; try(where(get-hover-info; debug(!"Got hover info: ")))
+    		; debug(!"Resolved: ")
+    	else
+    	    ?(<id>,_,_,_,_)
+    		; debug(!"No resolve for: ")
+    		; fail
+    	end
     
   // Default resolve
   editor-resolve: (node, position, ast, path, project-path) -> <declaration-of> node
@@ -49,8 +60,8 @@ rules // lookup definition across modules
               debug(!"... def is from local ast. ")
             ; decl := decl1
           end
-        ; ensure-ast(|"find-declaration")
-        ; has-ast-mapping   // fail if no ast mapping; prevent messages in error log for ie. builtin functions
+        ; (has-ast-mapping
+           <+ debug(!"No ast mapping, is built-in: "); fail)
   
 rules   // Rules to store hover info between resolve and hover
   

@@ -113,6 +113,8 @@
 		<get-unix-ts/>
 		<echo>Editor timestamp is: ${timestamp.unix}</echo>
 		<echo file="${path.timestamp.term}">${timestamp.unix}</echo>
+		<!-- force strj to run -->
+		<touch file="${trans}/${strmodule}.str" />
 	</target>
 
 	<scriptdef name="get-unix-ts" language="javascript">

@@ -13,6 +13,3 @@ rules // types
   // Dummy
   declaration-of-entity(|ent) = fail
     
-rules
-
-  annotate-ent-body(|ent) = add-anno(|FromEntity(ent))

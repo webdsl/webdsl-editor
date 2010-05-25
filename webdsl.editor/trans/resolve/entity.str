@@ -26,7 +26,6 @@ rules // lookup
 	find-property(|x_class) = 
       traverse-hierarchy(find-property' | x_class)
   	; not(get-anno(?IsGeneratedProperty()))
-  	; has-ast-mapping
   find-property': (x_class, propname) -> decl
     where decl := <debug(!"Trying: ");PropertyDecl; debug(!"Got: "); add-anno(|FromEntity(x_class))> (x_class, propname)
   
@@ -36,19 +35,14 @@ rules // resolve
   declaration-of: f@FieldAccess(var, prop) -> decl
     where SimpleSort(ent) := <type-of; debug> var
         ; decl := <find-property(|ent)> prop
-        ; anno := <get-anno(?FromEntity(_))> decl
-        ; <set-hover-info> anno
- 
+        
   // Non-renamed field access (derived property with expression containing 'this')
   declaration-in-entity(|ent): FieldAccess(Var("this"{}), prop) -> decl
     where decl := <find-property(|ent)> prop
-        ; anno := <get-anno(?FromEntity(_))> decl
-        ; <set-hover-info> anno
- 
+        
   // Implicit field access 
   declaration-in-entity(|ent): Var(x) -> decl
     where decl := <find-property(|ent)> (<strip-annos> x)
-        ; <set-hover-info> FromEntity(ent)
 
   // "this"
   declaration-in-entity(|ent): Var("this") -> decl
@@ -57,7 +51,6 @@ rules // resolve
   // inverse anno
   declaration-of: InverseAnno(ent, prop) -> decl
     where decl := <find-property(|ent)> prop
-        ; <set-hover-info> FromEntity(ent)
 
   // Extend entity to entity
   declaration-of: ExtendEntity(name, _) -> <EntDecl> name
