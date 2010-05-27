@@ -10,6 +10,8 @@ public class WebDSLJarAntPropertyProvider implements IAntPropertyValueProvider {
 		if (Platform.getOS().equals(Platform.OS_WIN32)) { // FIXME: proper paths on Windows
 			plugindir = plugindir.substring(1);
 		}
+		if (plugindir.endsWith("/"))
+			plugindir = plugindir.substring(0, plugindir.length()-1);
 		return plugindir;
 	}
 }

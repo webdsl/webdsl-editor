@@ -26,10 +26,12 @@ rules
   	    ; msg := <concat-strings> [txt, ": ", fullpath, trace]
   		  ; import := <TopImport <+ !"DummyImport(main-app)">
   		  ; rules(ImportErrors :+= (import, msg))
+
+  import-to-fullpath: x -> $[[<ApplicationIniDir>]/[x].app]
   			
   editor-parse-webdsl-module: x -> x
   	where(
-    		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
+    		full-path := <import-to-fullpath> x
     	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
    	)
   ; (open-import-sig(

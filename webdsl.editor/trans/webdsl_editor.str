@@ -21,6 +21,8 @@ strategies // editor service interface
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
   
+  fix-path: path -> <string-replace(|"\\","/")> path
+  
   // Path is relative to project, without leading slash
   // Projectpath is an absolute path to the project root, without trailing slash
   editor-analyze:
@@ -28,7 +30,8 @@ strategies // editor service interface
     with
       where(!""; debug)
     ; editor-init
-    ; fullpath := <concat-strings> [projectpath, "/", path]
+    ; fullpath1 := <concat-strings> [projectpath,"/",path] //$[[projectpath]/[path]]
+    ; fullpath := <try(fix-path)> fullpath1
     ; rules(
         AnalyzeFile := path     // path within project
         FullPath := fullpath    // full filename
@@ -92,5 +95,5 @@ strategies // editor service interface
     imp@Imports(x) -> imp
     where {| TopImport: 
      		where(try(not(TopImport); rules(TopImport := imp)))
-      ; <editor-parse-webdsl-module> (<concat-strings> [x,".app"])
+      ; <editor-parse-webdsl-module> x
    	|}
