@@ -25,5 +25,12 @@
             name="plugindir">
       </antProperty>
     </extension>
+    <extension
+          point="org.eclipse.ant.core.antProperties">
+       <antProperty
+             class="webdsl.WebDSLVersionPropertyProvider"
+             name="webdsl.plugin.version">
+       </antProperty>
+    </extension>
 
 </plugin>
