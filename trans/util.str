@@ -75,4 +75,5 @@ rules
   complete-work-unit = prim("SSL_EXT_complete_work_unit")
   queue-strategy(|s,description) = prim("SSL_EXT_queue_strategy", s, description)
   set-markers(|ast) = prim("SSL_EXT_set_markers", ast)
+  set-analysis-backgrounded = !"BACKGROUNDED"
   

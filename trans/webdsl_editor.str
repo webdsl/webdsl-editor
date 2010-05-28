@@ -82,7 +82,7 @@ strategies // editor service interface
         ; <webdsl-editor-init> (path, projectpath)
         ; not(PerformingUpdate); is-editor-updated; with(
               <schedule-background-update> input
-            ; result := (ast, [], [], [])
+            ; set-analysis-backgrounded => result
           )
           <+ <editor-analyze-work> ast => result
   
