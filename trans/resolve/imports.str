@@ -7,7 +7,6 @@ imports
 rules   // resolve
             
   hover: Module(x,_) -> text      
-    with  fullpath := <concat-strings> [<ApplicationIniDir <+ prim("SSL_EXT_projectpath")>, "/", x]
-        ; text := <concat-strings> ["Module ", x, "<br/>", fullpath]
-
+    with  fullpath := <import-to-fullpath> x
+        ; text := $[Module [x]<br/>[fullpath]]
   

@@ -17,6 +17,19 @@ strategies
   editor-resolve-internal = remove-hover-info; remove-module-info; editor-resolve; find-declaration
     ; try(where(get-hover-info; debug(!"Got hover info: ")))
   
+  editor-resolve-internal =
+  		remove-hover-info
+  	; if editor-resolve => tgt then
+  	  		<find-declaration> tgt
+  	  	; try(where(get-anno(?FromEntity(_)); set-hover-info))
+    		; try(where(get-hover-info; debug(!"Got hover info: ")))
+    		; debug(!"Resolved: ")
+    	else
+    	    ?(<id>,_,_,_,_)
+    		; debug(!"No resolve for: ")
+    		; fail
+    	end
+  
   remove-module-info = try(dr-end-scope(|"LookupFromModule")); dr-begin-scope(|"LookupFromModule")
     
   // Default resolve

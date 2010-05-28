@@ -14,9 +14,6 @@ imports
 
 rules
   
-  parse-file-1 =
-    parse-file(|<get-webdsl-parse-table>)
-  
   format-trace(|prefix) =
   		map(\name -> <concat-strings> [prefix, name]\)
   	; separate-by(|"<br/>")
@@ -30,14 +27,20 @@ rules
   		  ; import := <TopImport <+ !"DummyImport(main-app)">
   		  ; rules(ImportErrors :+= (import, msg))
 
+  import-to-fullpath: x -> $[[<ApplicationIniDir>]/[x].app]
+  			
   editor-parse-webdsl-module: x -> x
   	where(
-    		full-path := $[[<ApplicationIniDir>]/[x]] // $[[projectdir]/[<DirName>]/[y]]
+    		full-path := <import-to-fullpath> x
     	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
    	)
-  ; (open-import-sig(!full-path, parse-file-1, read-import(|full-path), read-import-sigs)
+  ; (open-import-sig(
+    		!full-path
+    	, log-time-helper(parse-file | "parse")
+    	, read-import(|full-path)
+    	, read-import-sigs)
       <+
-     <report-import-failed(|"Could not import file")> full-path
+    	 <report-import-failed(|"Could not import file")> full-path
     )
     
   all-used-drs = !<import-term(include/webdsl-typechecker-rules.aterm)>
@@ -81,25 +84,22 @@ rules
     with <log-time-helper(load-dynamic-rule-closure | "load drs")> ruleset
        ; <map(get-imports)> imports
        
-  // find a node in an ast
-  find-node(|sig): ast -> node
-    with  <oncetd(?sig; ?node)> ast
-        <+ where(!sig; debug(!"Looking for node: ")); fail
-  
+  // Try subnodes before stripping the node
+  find-node(|sig): node -> res
+    where <one(find-node(|sig); ?res)> node
+      <+  preserve(strip-bodies); ?sig; ?res
+      <+  ?sig; ?res
+
   get-imported-decl(|mod): sig -> node
-    with  ast := <log-time-helper(parse-file-1 <+ debug(!"Parsing failed") | "parse")> mod
+    with  ast := <log-time-helper(parse-file <+ debug(!"Parsing failed") | "parse")> mod
         ; if <?Module(_,_)> sig then
-              node := <preserve(try(desugar-compat)) // only simplify module constructor
-                      ; preserve(strip-mod)
-                      > ast
+              node := ast
           else
-              <log-time-helper(
-                     preserve(desugar-all)
-                  <+ debug(!"desugar/strip failed")
+              <log-time-helper(preserve(desugar-all)
+                  <+ debug(!"desugar failed")
                 | "desugar")> ast
             ; node := <log-time-helper(find-node(|sig)
                 | "find node desugared ast")>
           end
         ; print-total-log-time
         ; <ensure-ast(|"after get-imported-decl")> node
-          

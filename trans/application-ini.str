@@ -4,6 +4,7 @@ imports
   libstratego-lib
   libwebdsl-front
   webdsl_editor
+  lib/editor-common.generated
 
 strategies
   
@@ -18,7 +19,7 @@ strategies
       (
       	 get-app-ini-dir-from-module-name; try-app-ini
       <+ get-app-ini-dir-from-app-name; try-app-ini
-      <+ get-project-path; try-app-ini
+      <+ project-path; try-app-ini
       )
     ; ApplicationIniPath
     ; debug(!"Got app ini path: ")
@@ -40,8 +41,6 @@ strategies
   get-app-ini-dir-from-app-name: Application(_, _) -> path
     with  FullPath; dirname => path
         
-  get-project-path = prim("SSL_EXT_projectpath")
-       
   // Check if application.ini is in the given dir 
   try-app-ini: dir -> (dir, filename)
     where filename := <concat-strings> [dir, "/", <ApplicationIniName>]
@@ -62,7 +61,11 @@ strategies
 
   ApplicationIniName = !"application.ini"
   
-  
+  split-fullpath: fullpath -> (in-project-path, project-location)
+    with  <split-after> (fullpath, <project-path>)
+        ; ?(project-location, in-project-path-with-slash)
+        ; in-project-path := <ltrim-chars(?'/')> in-project-path-with-slash
+ 
 rules  // string utils
 	
   explode-string'(|sep) =

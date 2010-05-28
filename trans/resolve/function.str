@@ -13,8 +13,6 @@ rules // actual lookup
   // Resolve entity function
   find-entity-func(|ent): (nm, arg*) -> f
     where f := <traverse-hierarchy(find-entity-func-in-class | ent)>
-        ; get-anno(?FromEntity(_))
-        ; set-hover-info
           
   find-entity-func-in-class: (x_class, (nm, arg*)) -> f-annotated
     where <resolve-function-call-to-decl> (SimpleSort(x_class), nm, <map(type-of)> arg*)
@@ -29,7 +27,6 @@ rules // actual lookup
     where f := <resolve-function-call-to-decl> (ClassSort(ent), nm, <map(type-of)> arg*)
         ; where(anno := FromEntity(ent))
         ; f-annotated := <add-anno(|anno)>
-        ; <set-hover-info> anno
   
 rules // resolve
   

@@ -31,8 +31,8 @@ strategies // editor service interface
         // Typecheck local
       ; {| DynamicRulesUsed, ExtraWarnings:
 	          enable-dr-usage-tracking
-	       // ; not(find-extra-errors)       // collected in dr
-	       //; warn3 := <bagof-ExtraWarnings>
+	        ; not(find-extra-errors)       // collected in dr
+	        ; warn3 := <bagof-ExtraWarnings>
           ; (err1, warn1) := 
 	            <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")>
 	        ; disable-dr-usage-tracking
@@ -47,22 +47,20 @@ strategies // editor service interface
           (err2, warn2) := <catch-errors-editor(not(<constraint-error-global> ""))>
         | "constraint-global")
       ; errs := <concat> [err1,err2]
-      ; warns := <concat> [warn1,warn2]
+      ; warns := <concat> [warn1,warn2,warn3]
       ; notes := []
   
   // If editor is updated, we need to reparse and recheck all files to create a new dependency graph.
   // This might take a while; we'll schedule a background job for this.
-  /* 
   is-editor-updated = 
       dependencies-file => filename
     ; (   not(<file-exists> filename)
         <+ <gt> (<editor-timestamp>, <modification-time> filename))
-  */
-  is-editor-updated = fail
+  //is-editor-updated = fail
     
   schedule-background-update =
       where(!""; debug(!"Editor updated; scheduling background update."))
-    ; queue-strategy(|"editor-analyze-work-update")
+    ; queue-strategy(|"editor-analyze-work-update", "Updating editor...")
   
   editor-analyze-work-update =
       rules(PerformingUpdate := True())
@@ -82,18 +80,12 @@ strategies // editor service interface
         ; !""; debug
         ; !path; debug(!"Analyzing: ")
         ; <webdsl-editor-init> (path, projectpath)
-        ; is-editor-updated; with(
+        ; not(PerformingUpdate); is-editor-updated; with(
               <schedule-background-update> input
             ; result := (ast, [], [], [])
           )
           <+ <editor-analyze-work> ast => result
   
-  /*
-  editor-analyze-update-modules =
-      where(length; set-total-work-units)
-    ; map(update-module)
-  */
-      
   read-old-signature: filename -> sig
     with  path := <import-cache-path> filename
     where <gt> (<file-exists; modification-time> path, <editor-timestamp>)
@@ -130,10 +122,7 @@ strategies // editor service interface
     ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
     
     ; errors := <concat> [err1, <bagof-ImportErrors>]
-    // TODO: provide feedback before checking other modules ?
-
-    //; update-other-modules
-      
+    
     ; log-time-helper(update-dependency-graph | "update dependency graph")
       
     ; print-total-log-time
@@ -146,30 +135,45 @@ strategies // editor service interface
           ; bagof-ModulesToCheck; map(Fst) => dependent-mods2
           ; try(not(?[]); debug(!"Unchecked modules to check: "))
           ; <concat; uniq> [dependent-mods1, dependent-mods2]
-//          ; (  where(PerformingUpdate); queue-strategy(|"editor-analyze-update-modules")    // with progress meter
-//           <+ queue-analysis     // without ui
-          ; queue-analysis
-//            )
+            
+          ; try(where(ModulesEnqueued => enqueued); <diff> (<id>, enqueued))
+          ; debug(!"... all modules to check: ")
+          ; try(
+            	 not(?[])
+            ; if PerformingUpdate then
+              	// with progress meter
+              	queue-strategy(|"editor-analyze-update-modules", "Performing complete typecheck")
+              else
+                queue-analysis     // without ui
+              end
+            )
         | "finding dependent mods")
      )
     ; enable-dr-usage-tracking      // for dr -> module resolving
   
-  /*
   update-other-modules =
       bagof-ModulesToCheck    // pairs of (fullpath, ast)
     ; where(length; set-total-work-units)
     ; map(update-module)
-  */
+  
+  editor-analyze-update-modules =
+      ?modules
+    ; rules(ModulesEnqueued := modules)
+    ; {| ModulesEnqueued:   // scope again so the rule survives editor-init
+        where(length; set-total-work-units)
+      ; map(update-module)
+      |}
       
-  /*
-  update-module: path -> errors
-    with  <debug(!"Checking import: ")> path
+  update-module: fullpath -> fullpath
+    with  <debug(!"Checking import: ")> fullpath
         ; editor-init                 // clear all dynamic rules
-        ; ast := <parse-file> path
-        ; errors := <editor-analyze> (
+        ; ModulesEnqueued; debug(!"Modules enqueued: ")
+        ; ast := <parse-file> fullpath
+        ; (path, project-path) := <split-fullpath> fullpath
+        ; debug(!"Path, project-path: ")
+        ; errors := <editor-analyze> (ast, path, project-path)
         ; <set-markers(|ast)> errors
         ; complete-work-unit
-  */
     
   find-extra-errors = fail
   
@@ -178,8 +182,6 @@ strategies // editor service interface
   
   import-main-file: ast -> ast
     with  appname := <AppName>
-        ; mainapp := <concat-strings> [<ApplicationIniDir>, "/", appname, ".app"]
-          // TODO: does this work on windows too ? (/ vs. \)
         ; where(!appname; debug(!"Explicitely importing main file: ")) 
         ; <get-imports> Imports(appname)
           
@@ -188,7 +190,6 @@ strategies // editor service interface
              
   get-main-import: ast -> ast
     with  FullPath => fullpath
-        ; rules(IsImported : fullpath) // do not transitively import the analyzed file
         ; {| ParsingModule:
               rules(ParsingModule := fullpath)
               // try to import main file if we're parsing a module
@@ -204,5 +205,5 @@ strategies // editor service interface
     imp@Imports(x) -> imp
     where {| TopImport: 
      		where(try(not(TopImport); rules(TopImport := imp)))
-      ; <editor-parse-webdsl-module> (<concat-strings> [x,".app"])
+      ; <editor-parse-webdsl-module> x
    	|}

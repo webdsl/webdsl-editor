@@ -31,9 +31,4 @@ rules
 rules // entities
   
   strip-ent-body = ![]
-  /*
-  strip-ent-body = map(try(strip-ent-decl))
   
-  strip-ent-decl = strip-bodies // re-use function stripping
-  strip-ent-decl: ExtendFunction(f) -> ExtendFunction(<strip-bodies> f)
-  */
