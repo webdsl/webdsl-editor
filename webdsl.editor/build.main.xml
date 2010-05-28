@@ -82,7 +82,11 @@
 		-->
 		<sync todir="webdsl-template" includeEmptyDirs="true">
 			<fileset dir="${webdsl.projectdir}">
-				<include name="**/*.*" />
+				<exclude name="*.in" />
+				<exclude name="*.am" />
+				<exclude name="**/.servletapp/**" />
+				<exclude name="**/.webdsl-parsecache/**" />
+				<exclude name="**/.webdsl-fragment-cache/**" />
 			</fileset>
 		</sync>
 	</target>
