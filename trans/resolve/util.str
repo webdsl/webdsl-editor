@@ -1,12 +1,9 @@
 module resolve/util
 
 imports
-    resolve/-
-    parse
-    webdsl_editor
-    util
-    caching
-    dr
+  libwebdsl-front
+  resolve/-
+  trans/-
 
 signature constructors
 
@@ -14,12 +11,9 @@ signature constructors
 
 strategies
   
-  editor-resolve-internal = remove-hover-info; remove-module-info; editor-resolve; find-declaration
-    ; try(where(get-hover-info; debug(!"Got hover info: ")))
-  
   editor-resolve-internal =
   		remove-hover-info
-  	; if editor-resolve => tgt then
+    ; if editor-resolve => tgt then
   	  		<find-declaration> tgt
   	  	; try(where(get-anno(?FromEntity(_)); set-hover-info))
     		; try(where(get-hover-info; debug(!"Got hover info: ")))
@@ -52,18 +46,19 @@ strategies
 rules // lookup definition across modules
 // If the given declaration is in another module, reparse that file and return node with position information
   
-  find-declaration = has-ast-mapping <+ find-declaration(LookupFromModule)
+  // 1. Local ast, non-generated: has ast mapping
+  // 2. Local ast, generated: LookupFromModule is unset, rule fails
+  // 3. Module ast, non-generated: find-declaration looks up the node
+  // 4. Module ast, generated: has IsGeneratedAnno(), rule fails
+  find-declaration = 
+      has-ast-mapping
+   <+ not(get-anno(?IsGeneratedAnno())); find-declaration(LookupFromModule)
   
   find-declaration(def-to-mod): decl1 -> decl
     where FullPath => mainmod
         ; decl2 := <desugar-all; alltd(strip-bodies)> decl1
-        ; if mod := <def-to-mod; debug(!"Got module source: "); not(?mainmod); debug(!".. loading def from: ")> decl2 then
-            decl := <get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
-          else
-              debug(!"... def is from local ast. ")
-            ; decl := decl1
-          end
-        ; ensure-ast(|"find-declaration")
+        ; mod := <def-to-mod; debug(!".. loading def from: ")> decl2
+        ; decl := <get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
   
 rules   // Rules to store hover info between resolve and hover
   

@@ -2,9 +2,7 @@ module dependencies
 
 imports
   libwebdsl-front
-  application-ini
-  webdsl_editor
-  dr
+  trans/-
     
 strategies  
   
@@ -17,10 +15,9 @@ strategies
     ; map(\fullpath -> (fullpath, <RulesUsedBy> fullpath)\)
     ; <WriteToBinaryFile> (<dependencies-file>, <id>)
       
-  read-old-dependencies: (fullpath, mods) -> (fullpath, mods)
+  read-old-dependencies: (fullpath, usedrules) -> (fullpath, usedrules)
     where not(<RulesUsedBy> fullpath)   // not updated in this analyze run
-        ; rules(RulesUsedBy : fullpath -> mods)
-        //; !fullpath; debug(!".. using old dependencies for: ")
+        ; rules(RulesUsedBy : fullpath -> usedrules)
   
 	find-dependent-modules =
       FullPath => current
@@ -59,10 +56,3 @@ strategies
            |}
         ; all-changes := <concat;uniq> [changed, added, removed]
         //; debug(!"All changes: ")
-  
-  rules-as-key-val-pairs(s) =
-      mapconcat(\(name, keyvals) -> <mapconcat(\(key,vals) -> <map(\val -> <s> ((name,key),val)\)> vals \)> keyvals \)
-   
-  rules-to-keys =
-      mapconcat(\(name,keyvals) -> <map(\(key,vals) -> (name,key)\)> keyvals\)
-  

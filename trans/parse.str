@@ -32,7 +32,7 @@ rules
   editor-parse-webdsl-module: x -> x
   	where(
     		full-path := <import-to-fullpath> x
-    	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
+   	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
    	)
   ; (open-import-sig(
     		!full-path
@@ -55,17 +55,21 @@ rules
       desugar-compat  // simplify module/app constructor
     ; preserve(try(fix-module-name(|fullpath)))
     ; where(alltd(origin-strip); ?ast-unstripped)
-    //; try(alltd(strip-bodies))
     ; where(declare-globals => (ruleset, imports))
-      // TODO: stripping of built-in functions
     ; rules(ModulesToCheck :+= (fullpath, ast-unstripped))
     ; !(ruleset, imports)
+  
+  strip-and-annotate-dr-value =
+      try(preserve(alltd(strip-bodies)))
+    ; try(add-generated-anno)
       
-  strip-dr-bodies =
-    map(\(key,vals) -> (key,<map(\val -> <try(alltd(strip-bodies))> val\)> vals) \)
-      
+  add-generated-anno: (stamp, value) -> (stamp, value2)
+    where <not(has-ast-mapping)> value
+        ; not(is-string <+ is-list)
+        ; value2 := <add-anno(|IsGeneratedAnno())> value
+
   declare-globals =
-      where(
+     where(
         imports := <collect(?Imports(_))>
       ; filter(get-imports)
     )
@@ -76,8 +80,7 @@ rules
 		; end-record-dynamic-rules
 		; filter(where(Fst; is-used-dr))
 		  // strip bodies of generated definitions
-		; strip-dr-bodies
-		; set-module-for-rule-closure
+		; map-dr-values(strip-and-annotate-dr-value)
 		; !(<id>, imports)
 		  
   read-import-sigs: (ruleset, imports) -> (ruleset, imports)

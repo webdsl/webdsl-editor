@@ -79,9 +79,7 @@ strategies
 
   store-dr-module: a@(rulename, key) -> a
     with  file := <CurrentFile>
-        ; key2 := (rulename, key)
-        //; debug(!"Key declare: ") 
-        ; rules(RuleToModule : key2 -> file)
+        ; rules(RuleToModule : a -> file)
           
   set-module-for-rule-closure: rulelist -> rulelist
     with  CurrentFile => file
@@ -91,6 +89,17 @@ strategies
               with ruleid := (name, key) \})> 
             keyvals \)>
           rulelist
+
+rules // helpers for dynamic rule set traversal
+  
+  rules-as-key-val-pairs(s) =
+      mapconcat(\(name, keyvals) -> <mapconcat(\(key,vals) -> <map(\val -> <s> ((name,key),val)\)> vals \)> keyvals \)
+   
+  rules-to-keys =
+      mapconcat(\(name,keyvals) -> <map(\(key,vals) -> (name,key)\)> keyvals\)
+  
+  map-dr-values(s) =
+      map(\(name,keyvals) -> (name, <map(\(key,vals) -> (key,<map(s)> vals) \)> keyvals )\)
   
 rules // Track usage of DR's and return position info
 
@@ -115,8 +124,10 @@ rules // Track usage of DR's and return position info
     ))
     ; proceed
       // Only if lookup has succeeded:
-    ; try(where(
-          1 := track
-        ; mod := <RuleToModule> (name, key)
-        ; rules(LookupFromModule := mod)
-      ))
+    ; if 1 := track then
+        if mod := <RuleToModule> (name, key) then
+            rules(LookupFromModule := mod)
+        else
+            rules(LookupFromModule :- _)
+        end
+      end

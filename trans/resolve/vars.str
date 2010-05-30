@@ -20,7 +20,7 @@ rules // object creation
 rules // var access
   
   declaration-of: Var(x) -> decl
-  	where decl := <VarDecl; has-ast-mapping> x	// no generated vars here
+  	where decl := <VarDecl> x
     with <set-hover-info> Var(x)
     
 rules // hover

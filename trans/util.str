@@ -21,6 +21,7 @@ rules
 signature constructors
   
   FromEntity : Term -> Term
+  IsGeneratedAnno : Term
 
 rules
 

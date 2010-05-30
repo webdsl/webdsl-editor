@@ -1,4 +1,4 @@
-module template
+module typecheck/template
 
 imports 
   libwebdsl-front 

@@ -11,6 +11,6 @@ signature constructors
 rules // desugar
   
   desugar-def: VarDecl(name, srt) -> VarDeclGeneric(name, srt, None())
-  desugar-def: VarDeclInit(name, srt, val) -> VarDeclGeneric(name, srt, None())
+  desugar-def: VarDeclInit(name, srt, val) -> VarDeclGeneric(name, srt, val)
   desugar-def: VarDeclInitInferred(name, val) -> VarDeclGeneric(name, None(), val)
   

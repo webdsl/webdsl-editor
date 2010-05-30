@@ -34,13 +34,12 @@ strategies // editor service interface
 	        ; not(find-extra-errors)       // collected in dr
 	        ; warn3 := <bagof-ExtraWarnings>
           ; (err1, warn1) := 
-	            <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")>
+	            <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")> ast-renamed
 	        ; disable-dr-usage-tracking
 	          
 	          // remove {DR_DUMMY()}
 	        ; all-keys-DynamicRulesUsed; remove-dr-dummies => drs
 	        ; rules(RulesUsedBy : fullpath -> drs)
-	          
         |}
         // Typecheck global
       ; dbg-time(
