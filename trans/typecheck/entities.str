@@ -3,7 +3,7 @@ module typecheck/entities
 imports
   libwebdsl-front
   libwebdsl-generator
-  util
+  trans/util
       
 rules // types
 

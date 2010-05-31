@@ -4,16 +4,10 @@ imports
   libstratego-lib
   libwebdsl-generator
   libwebdsl-front
-  parse
-  application-ini
-  util
-  caching
-  typechecker
+  
   typecheck/import		// for ExtraWarnings
-	resolve
-	dependencies
 	lib/editor-common.generated
-	dr
+	trans/-
   
 signature constructors
   FILE : Term -> Term

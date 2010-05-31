@@ -4,7 +4,7 @@ imports
    libwebdsl-front
    libwebdsl-generator
    resolve/-
-   util
+   trans/util
 
 rules // helpers
   

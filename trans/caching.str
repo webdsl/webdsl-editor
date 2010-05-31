@@ -1,12 +1,10 @@
 module caching
 
 imports
-    parse
     lib/editor-common.generated
     libwebdsl-front
-    util
-    webdsl_editor
-    application-ini
+    
+    trans/-
     
 strategies
 

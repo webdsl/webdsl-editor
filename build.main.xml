@@ -84,7 +84,11 @@
 		-->
 		<sync todir="webdsl-template" includeEmptyDirs="true">
 			<fileset dir="${webdsl.projectdir}">
-				<include name="**/*.*" />
+				<exclude name="*.in" />
+				<exclude name="*.am" />
+				<exclude name="**/.servletapp/**" />
+				<exclude name="**/.webdsl-parsecache/**" />
+				<exclude name="**/.webdsl-fragment-cache/**" />
 			</fileset>
 		</sync>
 	</target>
@@ -115,6 +119,8 @@
 		<get-unix-ts/>
 		<echo>Editor timestamp is: ${timestamp.unix}</echo>
 		<echo file="${path.timestamp.term}">${timestamp.unix}</echo>
+		<!-- force strj to run -->
+		<touch file="${trans}/${strmodule}.str" />
 	</target>
 
 	<scriptdef name="get-unix-ts" language="javascript">

@@ -3,13 +3,11 @@ module typecheck/import
 imports 
   libwebdsl-front
   libwebdsl-generator
+  
   lib/editor-common.generated
-  caching
-  util
+  trans/-
   typecheck/-
-  application-ini
-  webdsl_editor
-
+  
 rules
   
   declaration-of: Imports(x) -> <ModuleDecl> x

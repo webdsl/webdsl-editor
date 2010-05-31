@@ -7,10 +7,8 @@ imports
   lib/editor-common.generated
   webdsl_editor
   application-ini
-  caching
-  util
-  dr
   typecheck/import
+  trans/-
 
 rules
   
@@ -89,10 +87,10 @@ rules
        
   // Try subnodes before stripping the node
   find-node(|sig): node -> res
-    where <one(find-node(|sig); ?res)> node
-      <+  preserve(strip-bodies); ?sig; ?res
+    where preserve(strip-bodies); ?sig; ?res
       <+  ?sig; ?res
-
+      <+  <one(find-node(|sig); ?res)> node
+      
   get-imported-decl(|mod): sig -> node
     with  ast := <log-time-helper(parse-file <+ debug(!"Parsing failed") | "parse")> mod
         ; if <?Module(_,_)> sig then

@@ -5,7 +5,7 @@ imports
   libwebdsl-generator
   typecheck/vars
   resolve/-
-  util
+  trans/util
 
 rules // object creation
   
