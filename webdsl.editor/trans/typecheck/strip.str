@@ -47,3 +47,9 @@ rules // template
 
 	strip-in-template-body: Placeholder(name, _) -> Placeholder(name, None())
 	
+	// Preserve template call, could be a container with ID which is needed to resolve ajax targets
+	strip-in-template-body: TemplateCallPropsNoBody(_,_,passign*) -> TemplateCallPropsNoBody(None(),None(),passign*)
+	strip-in-template-body: TemplateCallProps(_, passign*) -> TemplateCallProps(None(), passign*)
+	strip-in-template-body: TemplateCallPropsNoArgs(_, passign*, _) -> TemplateCallPropsNoArgs(None(), passign*, None())
+	strip-in-template-body: TemplateCall(_, _, passign*, _) -> TemplateCall(None(), None(), passign*, None())
+	
