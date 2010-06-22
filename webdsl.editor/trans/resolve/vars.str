@@ -20,7 +20,7 @@ rules // object creation
 rules // var access
   
   declaration-of: Var(x) -> decl
-  	where decl := <VarDecl>
+  	where decl := <VarDecl> x
     with <set-hover-info> Var(x)
     
 rules // hover
