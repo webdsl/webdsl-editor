@@ -89,6 +89,7 @@
 				<exclude name="**/.webdsl-fragment-cache/**" />
 			</fileset>
 		</sync>
+		<untar overwrite="false" src="webdsl-template/template-java-servlet/tomcat/apache-tomcat-6.0.26.tar.gz" dest="webdsl-template/tomcat" compression="gzip"/>
 	</target>
 
 	<!--  copy rtrees of webdsl for stratego editor -->
