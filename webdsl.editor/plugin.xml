@@ -25,12 +25,18 @@
             name="plugindir">
       </antProperty>
     </extension>
-    <extension
-          point="org.eclipse.ant.core.antProperties">
+    <extension point="org.eclipse.ant.core.antProperties">
        <antProperty
              class="webdsl.WebDSLVersionPropertyProvider"
              name="webdsl.plugin.version">
        </antProperty>
     </extension>
-
+    <!-- in .project use: <buildCommand><name>webdsl.editor.builder</name></buildCommand> -->
+    <extension id="builder"
+    name="WebDSL Project Builder"
+    point="org.eclipse.core.resources.builders">
+      <builder hasNature="false">
+        <run class="webdsl.WebDSLProjectBuilder"/>
+      </builder>
+    </extension>
 </plugin>

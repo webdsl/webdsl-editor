@@ -307,38 +307,6 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         buildLaunchFile.append("</launchConfiguration>\n");
         writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" build.xml.launch");
         
-        //overwrite .project file with correct settings
-        StringBuffer projectFile = new StringBuffer();
-        projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        projectFile.append("<projectDescription>\n");
-        projectFile.append("\t<name>"+projectName+"</name>\n");
-        projectFile.append("\t<buildSpec>\n");
-        projectFile.append("\t\t<buildCommand>\n");
-        projectFile.append("\t\t\t<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>\n");
-        projectFile.append("\t\t\t<triggers>full,incremental,</triggers>\n");
-        projectFile.append("\t\t\t<arguments><dictionary>\n");
-        projectFile.append("\t\t\t\t<key>LaunchConfigHandle</key>\n");
-        projectFile.append("\t\t\t\t<value>&lt;project&gt;/"+projectName+" build.xml.launch</value>\n");
-        projectFile.append("\t\t\t</dictionary></arguments>\n");
-        projectFile.append("\t\t</buildCommand>\n");
-        projectFile.append("\t\t<buildCommand>\n");
-        projectFile.append("\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n");
-        projectFile.append("\t\t</buildCommand>\n");
-        projectFile.append("\t\t<buildCommand>\n");
-        projectFile.append("\t\t\t<name>org.eclipse.wst.common.project.facet.core.builder</name>\n");
-        projectFile.append("\t\t</buildCommand>\n");
-        //projectFile.append("\t\t<buildCommand>\n");
-        //projectFile.append("\t\t\t<name>org.eclipse.wst.validation.validationbuilder</name>\n");
-        //projectFile.append("\t\t</buildCommand>\n");
-        projectFile.append("\t</buildSpec>\n");
-        projectFile.append("\t<natures>\n");
-        projectFile.append("\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n");
-        projectFile.append("\t\t<nature>org.eclipse.wst.common.project.facet.core.nature</nature>\n");
-        projectFile.append("\t\t<nature>org.eclipse.wst.common.modulecore.ModuleCoreNature</nature>\n");
-        projectFile.append("\t\t<nature>org.eclipse.jem.workbench.JavaEMFNature</nature>\n");
-        projectFile.append("\t</natures>\n");
-        projectFile.append("</projectDescription>\n");
-        writeStringToFile(projectFile.toString(), project.getLocation()+"/.project");
         
         //write a .classpath for java nature of project
         StringBuffer classpathFile = new StringBuffer();
@@ -420,22 +388,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         wstfacetFile.append("\t<installed facet=\"jst.web\" version=\"2.4\"/>\n");
         wstfacetFile.append("</faceted-project>\n");
         writeStringToFile(wstfacetFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.project.facet.core.xml");
-        /*
-        StringBuffer tomcatconfigFile = new StringBuffer();
-        tomcatconfigFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-        tomcatconfigFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.tomcat.core.launchConfigurationType\">\n");
-        tomcatconfigFile.append("\t<listAttribute key=\"org.eclipse.jdt.launching.CLASSPATH\">\n");
-        tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.launching.macosx.MacOSXType/JVM 1.6.0 (MacOS X Default)&quot; path=&quot;2&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
-        tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;/Users/dan/apache-tomcat-6.0.26/bin/bootstrap.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
-        tomcatconfigFile.append("\t</listAttribute>\n");
-        tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
-        tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.JRE_CONTAINER\" value=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.launching.macosx.MacOSXType/JVM 1.6.0 (MacOS X Default)\"/>\n");
-        tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROGRAM_ARGUMENTS\" value=\"start\"/>\n");
-        tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;/Users/dan/runtime-EclipseApplication/.metadata/.plugins/org.eclipse.wst.server.core/tmp0&quot; -Dcatalina.home=&quot;/Users/dan/apache-tomcat-6.0.26&quot; -Dwtp.deploy=&quot;/Users/dan/runtime-EclipseApplication/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;/Users/dan/apache-tomcat-6.0.26/endorsed&quot; -Xss8m -Xms256m -Xmx1024m -XX:MaxPermSize=256m -server\"/>\n");
-        tomcatconfigFile.append("\t<stringAttribute key=\"server-id\" value=\"Tomcat v6.0 Server at localhost\"/>\n");
-        tomcatconfigFile.append("</launchConfiguration>\n");
-        writeStringToFile(tomcatconfigFile.toString(), project.getLocation()+"/Tomcat v6.0 Server at localhost.launch");
-        */
+        
 /*
  * 
         monitor.worked(3);*/
@@ -479,10 +432,11 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         monitor.worked(1);
         EditorState.asyncOpenEditor(display, project.getFile("/test/example." + extensions.split(",")[0]), false);*/
         
-        
+        writeProjectFileWithoutWebDSLBuilder(project);
         refreshProject(project);
         initWtpServerConfig(plugindir,project,projectName,monitor);
-
+        writeProjectFile(project);
+        refreshProject(project);
         
         monitor.setTaskName("Opening editor tabs");
 
@@ -492,30 +446,127 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         monitor.worked(1);
     }
      
-     public static void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
-         // createServersProject(plugindir);
-         //EclipseUtil.createNewServerProject(null, "Tomcat v6.0 Server at localhost", null, monitor);
-         //TaskModel tm = new TaskModel();
-         //tm.putObject("runtime", ""); //Runtime[Apache Tomcat v6.0, Apache Tomcat v6.0, /Users/dan/apache-tomcat-6.0.26, RuntimeType[org.eclipse.jst.server.tomcat.runtime.60, Apache Tomcat v6.0]]
-         //tm.putObject("server", null);
-         
+     public static void writeTomcatConfigFile(IWorkspace workspace){
+         StringBuffer tomcatconfigFile = new StringBuffer();
+         tomcatconfigFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+         tomcatconfigFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.tomcat.core.launchConfigurationType\">\n");
+         tomcatconfigFile.append("\t<listAttribute key=\"org.eclipse.jdt.launching.CLASSPATH\">\n");
+         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.launching.macosx.MacOSXType/JVM 1.6.0 (MacOS X Default)&quot; path=&quot;2&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
+         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;/Users/dan/apache-tomcat-6.0.26/bin/bootstrap.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
+         tomcatconfigFile.append("\t</listAttribute>\n");
+         tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.JRE_CONTAINER\" value=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.launching.macosx.MacOSXType/JVM 1.6.0 (MacOS X Default)\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROGRAM_ARGUMENTS\" value=\"start\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;/Users/dan/runtime-EclipseApplication/.metadata/.plugins/org.eclipse.wst.server.core/tmp0&quot; -Dcatalina.home=&quot;/Users/dan/apache-tomcat-6.0.26&quot; -Dwtp.deploy=&quot;/Users/dan/runtime-EclipseApplication/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;/Users/dan/apache-tomcat-6.0.26/endorsed&quot; -Xss8m -Xms256m -Xmx1024m -XX:MaxPermSize=512m -server\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"server-id\" value=\"Tomcat v6.0 Server at localhost\"/>\n");
+         tomcatconfigFile.append("</launchConfiguration>\n");
+         IProject project = workspace.getRoot().getProject("Servers");
+         try {
+            writeStringToFile(tomcatconfigFile.toString(), project.getLocation()+"/Tomcat v6.0 Server at localhost.launch");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+     }
+     
+     /**
+      * Using this .project file will prevent the webdsl builder from running if eclipse is set to 'build automatically'.
+      * The configuration as server module needs to be created before running an actual build.
+      * @param project
+      */
+     public static void writeProjectFileWithoutWebDSLBuilder(IProject project){
+         //overwrite .project file with correct settings
+         StringBuffer projectFile = new StringBuffer();
+         projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+         projectFile.append("<projectDescription>\n");
+         projectFile.append("\t<name>"+project.getName()+"</name>\n");
+         projectFile.append("\t<buildSpec>\n");
+         projectFile.append("\t\t<buildCommand>\n");
+         projectFile.append("\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n");
+         projectFile.append("\t\t</buildCommand>\n");
+         projectFile.append("\t\t<buildCommand>\n");
+         projectFile.append("\t\t\t<name>org.eclipse.wst.common.project.facet.core.builder</name>\n");
+         projectFile.append("\t\t</buildCommand>\n");
+         projectFile.append("\t</buildSpec>\n");
+         projectFile.append("\t<natures>\n");
+         projectFile.append("\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n");
+         projectFile.append("\t\t<nature>org.eclipse.wst.common.project.facet.core.nature</nature>\n");
+         projectFile.append("\t\t<nature>org.eclipse.wst.common.modulecore.ModuleCoreNature</nature>\n");
+         projectFile.append("\t\t<nature>org.eclipse.jem.workbench.JavaEMFNature</nature>\n");
+         projectFile.append("\t</natures>\n");
+         projectFile.append("</projectDescription>\n");
+         try {
+             writeStringToFile(projectFile.toString(), project.getLocation()+"/.project");
+         } catch (IOException e) {
+             e.printStackTrace();
+         }
+     }
+     public static void writeProjectFile(IProject project){
+        //overwrite .project file with correct settings
+         StringBuffer projectFile = new StringBuffer();
+         projectFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+         projectFile.append("<projectDescription>\n");
+         projectFile.append("\t<name>"+project.getName()+"</name>\n");
+         projectFile.append("\t<buildSpec>\n");
+
+         projectFile.append("\t\t<buildCommand>\n");
+         projectFile.append("\t\t\t<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>\n");
+         projectFile.append("\t\t\t<triggers>full,incremental,</triggers>\n");
+         projectFile.append("\t\t\t<arguments><dictionary>\n");
+         projectFile.append("\t\t\t\t<key>LaunchConfigHandle</key>\n");
+         projectFile.append("\t\t\t\t<value>&lt;project&gt;/"+project.getName()+" build.xml.launch</value>\n");
+         projectFile.append("\t\t\t</dictionary></arguments>\n");
+         projectFile.append("\t\t</buildCommand>\n");
+
+         projectFile.append("\t\t<buildCommand>\n");
+         projectFile.append("\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n");
+         projectFile.append("\t\t</buildCommand>\n");
+         projectFile.append("\t\t<buildCommand>\n");
+         projectFile.append("\t\t\t<name>org.eclipse.wst.common.project.facet.core.builder</name>\n");
+         projectFile.append("\t\t</buildCommand>\n");
+         //projectFile.append("\t\t<buildCommand>\n");
+         //projectFile.append("\t\t\t<name>org.eclipse.wst.validation.validationbuilder</name>\n");
+         //projectFile.append("\t\t</buildCommand>\n");
+
+         projectFile.append("\t\t<buildCommand><name>webdsl.editor.builder</name></buildCommand>\n");
+
+         projectFile.append("\t</buildSpec>\n");
+         projectFile.append("\t<natures>\n");
+         projectFile.append("\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n");
+         projectFile.append("\t\t<nature>org.eclipse.wst.common.project.facet.core.nature</nature>\n");
+         projectFile.append("\t\t<nature>org.eclipse.wst.common.modulecore.ModuleCoreNature</nature>\n");
+         projectFile.append("\t\t<nature>org.eclipse.jem.workbench.JavaEMFNature</nature>\n");
+         projectFile.append("\t</natures>\n");
+         projectFile.append("</projectDescription>\n");
+         try {
+            writeStringToFile(projectFile.toString(), project.getLocation()+"/.project");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+     }
+     
+     
+     public static final String tomcatruntimeid = "webdsl_tomcat6runtime"; 
+     public static final String tomcatserverid = "webdsl_tomcat6server";
+     
+     
+     public static IRuntimeType getTomcatRuntimeType(){
          IRuntimeType[] runtimeTypes = ServerUtil.getRuntimeTypes(null, null, null);
          IRuntimeType tomcat6runtimetype = null;
          if (runtimeTypes != null) {
              int size = runtimeTypes.length;
              for (int i = 0; i < size; i++) {
                  IRuntimeType runtimeType = runtimeTypes[i];
-                 System.out.println("  "+ runtimeType +"    "+ runtimeType.getName());
+                 //System.out.println("  "+ runtimeType +"    "+ runtimeType.getName());
                  if(runtimeType.getName().equals("Apache Tomcat v6.0")){
                      tomcat6runtimetype = runtimeType;
                  }
              }
          }
-         System.out.println(tomcat6runtimetype);
-         
-         //add tomcat 6 runtime for webdsl plugin if not created yet
+         System.out.println("runtime type: "+tomcat6runtimetype);
+         return tomcat6runtimetype;
+     }
+     public static IRuntime getWebDSLTomcatRuntime(){
          IRuntime[] runtimes = ServerUtil.getRuntimes(null, null);
-         String tomcatruntimeid = "webdsl_tomcat6runtime"; 
          IRuntime plugintomcat6runtime = null;
          for(IRuntime ir : runtimes){
              System.out.println(ir.getId());
@@ -523,33 +574,91 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
                  plugintomcat6runtime = ir;
              }
          }
+         System.out.println("runtime: "+plugintomcat6runtime);
+         return plugintomcat6runtime;
+     }
+     public static IRuntime createWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
+             IRuntimeType tomcat6runtimetype = getTomcatRuntimeType();
+             IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(tomcatruntimeid, monitor);
+             rwc.setLocation(Path.fromOSString(plugindir+"/webdsl-template/tomcat/apache-tomcat-6.0.26"));
+             //System.out.println("Location of Tomcat 6 runtime: "+rwc.getLocation());
+             IRuntime rt = rwc.save(true, monitor);
+             System.out.println("created runtime: "+rt);
+             return rt;
+     }
+     /**
+      * add tomcat 6 runtime for webdsl plugin if not created yet
+      * @param plugindir
+      * @param monitor
+      * @return
+      * @throws CoreException
+      */
+     public static IRuntime getOrCreateWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor)throws CoreException{
+         IRuntime plugintomcat6runtime = getWebDSLTomcatRuntime();
          if(plugintomcat6runtime == null){
-           IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(tomcatruntimeid, monitor);
-           rwc.setLocation(Path.fromOSString(plugindir+"/webdsl-template/tomcat/apache-tomcat-6.0.26"));
-           System.out.println("Location of Tomcat 6 runtime: "+rwc.getLocation());
-           plugintomcat6runtime = rwc.save(false, monitor);
-         }         
-         
-         //add tomcat 6 server for webdsl plugin of not created yet
-         IServerType st = getCompatibleServerType(tomcat6runtimetype);
-         System.out.println(st);
-         String tomcatserverid = "webdsl_tomcat6server";
+             plugintomcat6runtime = createWebDSLTomcatRuntime(plugindir,monitor);
+         }
+         System.out.println("get or create runtime: "+plugintomcat6runtime);
+         return plugintomcat6runtime;
+     }
+     
+     
+     public static IServer getWebDSLTomcatServer(IProject project,IProgressMonitor monitor){
          IServer plugintomcat6server = null;
          for(IServer serv : ServerUtil.getAvailableServersForModule(ServerUtil.getModule(project), true, monitor)){
              if(serv.getId().equals(tomcatserverid)){
                  plugintomcat6server = serv;
              }
-         }
+         } 
+         System.out.println("server: "+plugintomcat6server);
+         return plugintomcat6server;
+     }
+     public static IServer createWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
+         IRuntime plugintomcat6runtime = getOrCreateWebDSLTomcatRuntime(plugindir,monitor);
+         IRuntimeType tomcat6runtimetype = getTomcatRuntimeType();
+         IServerType st = getCompatibleServerType(tomcat6runtimetype);
+         //System.out.println(st);
+         IServer plugintomcat6server = null;
+         IServerWorkingCopy server = st.createServer(tomcatserverid, null, plugintomcat6runtime, monitor);
+         plugintomcat6server = server.saveAll(true, monitor); //saveAll will also save ServerConfiguration and Runtime if they were still WorkingCopy
+         System.out.println("created server: "+plugintomcat6server);
+         return plugintomcat6server;
+     }
+     /**
+      * add tomcat 6 server for webdsl plugin of not created yet
+      * @param project
+      * @param monitor
+      * @return
+      * @throws CoreException
+      */
+     public static IServer getOrCreateWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
+         IServer plugintomcat6server = getWebDSLTomcatServer(project,monitor);
          if(plugintomcat6server==null){
-           IServerWorkingCopy server = st.createServer(tomcatserverid, null, plugintomcat6runtime, monitor);
-           plugintomcat6server = server.saveAll(false, monitor); //saveAll will also save ServerConfiguration and Runtime if they were still WorkingCopy
+             plugintomcat6server = createWebDSLTomcatServer(project, plugindir, monitor);
          }
+         System.out.println("get or create server: "+plugintomcat6server);
+         return plugintomcat6server;
+     }
+     
+     public static void addProjectModuleToServer(IProject project, IServer plugintomcat6server, IProgressMonitor monitor) throws CoreException{
          IServerWorkingCopy serveraddmodule = new ServerWorkingCopy((Server) plugintomcat6server);
          // attach the project module to the server config
          IModule[] modules = {ServerUtil.getModule(project)};
          serveraddmodule.modifyModules(modules, null, null);
          serveraddmodule.saveAll(false,monitor);
+     }
+     
+     public static void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
+         // createServersProject(plugindir);
+         //EclipseUtil.createNewServerProject(null, "Tomcat v6.0 Server at localhost", null, monitor);
+         //TaskModel tm = new TaskModel();
+         //tm.putObject("runtime", ""); //Runtime[Apache Tomcat v6.0, Apache Tomcat v6.0, /Users/dan/apache-tomcat-6.0.26, RuntimeType[org.eclipse.jst.server.tomcat.runtime.60, Apache Tomcat v6.0]]
+         //tm.putObject("server", null);
          
+         //IRuntime plugintomcat6runtime = getOrCreateWebDSLTomcatRuntime(plugindir, monitor);
+         IServer plugintomcat6server = getOrCreateWebDSLTomcatServer(project,plugindir,monitor);
+         addProjectModuleToServer(project,plugintomcat6server,monitor);
+    
          
          //plugintomcat6server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
          //project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, monitor);
