@@ -158,18 +158,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
     }
     
      private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, IProgressMonitor monitor) throws IOException, CoreException {
-         final int TASK_COUNT = 3;
+        final int TASK_COUNT = 3;
         lastProject = null;
         monitor.beginTask("Creating " + appName + " application", TASK_COUNT);
         
-        //EditorIOAgent agent = new EditorIOAgent();
-        //agent.setAlwaysActivateConsole(true);
-        //Context context = new Context(Environment.getTermFactory(), agent);
-        //context.registerClassLoader(make_permissive.class.getClassLoader());
-        //sdf2imp.init(context);
-        
-        
-
         monitor.setTaskName("Creating Eclipse project");
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IProject project = lastProject = workspace.getRoot().getProject(projectName);
@@ -177,23 +169,12 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         project.open(null);
         monitor.worked(1);
         
-        
         monitor.setTaskName("Copying example application files");
 
-        //agent.setWorkingDir(project.getLocation().toOSString());
-         String plugindir = webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
-        if (Platform.getOS().equals(Platform.OS_WIN32)) { // FIXME: proper paths on Windows
+        String plugindir = webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+        if (Platform.getOS().equals(Platform.OS_WIN32)) {
             plugindir = plugindir.substring(1);
-            //jar2 = jar2.substring(1);
-            //jar3 = jar3.substring(1);
         }
-        /*
-        if (!jar1.endsWith(".jar")) { // ensure correct jar at development time
-            String jar1a = jar1 + "/../strategoxt.jar";
-            if (new File(jar1a).exists()) jar1 = jar1a;
-            jar1a = jar1 + "/java/strategoxt.jar";
-            if (new File(jar1a).exists()) jar1 = jar1a;
-        }*/
         System.out.println("path: "+plugindir);
         
         try { 
@@ -227,216 +208,29 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             throw e;
         } 
         
-        copyFile(plugindir+"webdsl-template/new_project/templates.app", project.getLocation()+"/templates.app");
-        copyFile(plugindir+"webdsl-template/new_project/APPLICATION_NAME.app", project.getLocation()+"/"+appName+".app");
-        createDirs(project.getLocation()+"/images");
-        copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
-        createDirs(project.getLocation()+"/stylesheets");
-        copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
+        writeExampleApplicationFiles(project, appName, plugindir);
         
         monitor.worked(1);
         
-        StringBuffer ant = new StringBuffer();
-        ant.append("<project name=\"webdsl-eclipse-plugin\" default=\"plugin-eclipse-build\">\n");
-        //ant.append("\t<property name=\"plugindir\" value=\""+plugindir+"\" />\n");
-        ant.append("\t<fail unless=\"plugindir\" message=\"WebDSL plugin is not correctly installed. The 'plugindir' property is not available.\" />\n");
-        ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
-        ant.append("\t<property name=\"currentdir\" value=\"${basedir}\"/>\n");
-        ant.append("\t<property name=\"webdsl-java-cp\" value=\"${plugindir}/include/webdsl.jar\"/>\n");
-        ant.append("\t<property name=\"webdslexec\" value=\"java\"/>\n");
-        ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
-       
-        ant.append("\t<target name=\"plugin-eclipse-build\">\n");
-        ant.append("\t\t<antcall target=\"eclipse-build\"/>\n");
-        ant.append("\t</target>\n");
+        writeBuildXmlFile(project);
+        writeBuildXmlLaunchFile(project, appName, plugindir);
         
-        ant.append("\t<target name=\"plugin-build\">\n");
-           ant.append("\t\t<property name=\"buildoptions\" value=\"build\" />\n");
-           ant.append("\t\t<antcall target=\"command\"/>\n");
-         ant.append("\t</target>\n");
-         
-         ant.append("\t<target name=\"plugin-run\">\n");
-         ant.append("\t\t<property name=\"buildoptions\" value=\"run\" />\n");
-         ant.append("\t\t<antcall target=\"command\"/>\n");
-         ant.append("\t</target>\n");
-         
-         ant.append("\t<target name=\"plugin-deploy\">\n");
-         ant.append("\t\t<property name=\"buildoptions\" value=\"deploy\" />\n");
-         ant.append("\t\t<antcall target=\"command\"/>\n");
-         ant.append("\t</target>\n");
-         
-         ant.append("\t<target name=\"plugin-tomcatdeploy\">\n");
-         ant.append("\t\t<property name=\"buildoptions\" value=\"tomcatdeploy\" />\n");
-         ant.append("\t\t<antcall target=\"command\"/>\n");
-         ant.append("\t</target>\n");
-         
-         ant.append("\t<target name=\"plugin-cleanall\">\n");
-         ant.append("\t\t<property name=\"buildoptions\" value=\"cleanall\" />\n");
-         ant.append("\t\t<antcall target=\"command\"/>\n");
-         ant.append("\t</target>\n");
-         
-        ant.append("</project>");
-        
-        writeStringToFile(ant.toString(), project.getLocation()+"/build.xml");
-        
-        //create build launch file to make sure ant uses same jre instance as eclipse, otherwise the plugindir property provider won't work
-        StringBuffer buildLaunchFile = new StringBuffer();
-        buildLaunchFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-        buildLaunchFile.append("<launchConfiguration type=\"org.eclipse.ant.AntLaunchConfigurationType\">\n");
-        buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ant.ui.DEFAULT_VM_INSTALL\" value=\"false\"/>\n");
-        buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_PATHS\">\n");
-        buildLaunchFile.append("\t\t<listEntry value=\"/"+appName+"/build.xml\"/>\n");
-        buildLaunchFile.append("\t</listAttribute>\n");
-        buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_TYPES\">\n");
-        buildLaunchFile.append("\t\t<listEntry value=\"1\"/>\n");
-        buildLaunchFile.append("\t</listAttribute>\n");
-        buildLaunchFile.append("<listAttribute key=\"org.eclipse.jdt.launching.CLASSPATH\">\n");
-        //<!--buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6&quot; path=&quot;1&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");-->
-        buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry id=&quot;org.eclipse.ant.ui.classpathentry.antHome&quot;&gt;&#10;&lt;memento default=&quot;true&quot;/&gt;&#10;&lt;/runtimeClasspathEntry&gt;&#10;\"/>\n");
-        buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry id=&quot;org.eclipse.ant.ui.classpathentry.extraClasspathEntries&quot;&gt;&#10;&lt;memento/&gt;&#10;&lt;/runtimeClasspathEntry&gt;&#10;\"/>\n");
-        buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+plugindir+"/webdsl-template/template-java-servlet/lib-test/org.eclipse.wst.server.core_1.1.102.v20100123.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
-        buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+plugindir+"/webdsl-template/template-java-servlet/lib-test/org.eclipse.wst.server.ui_1.1.103.v20100123.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
-        buildLaunchFile.append("</listAttribute>\n");
-        buildLaunchFile.append("<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
-        buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.CLASSPATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
-        buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROJECT_ATTR\" value=\""+appName+"\"/>\n");
-        buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
-        buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_ANT_TARGETS\" value=\"plugin-eclipse-build,\"/>\n");
-        buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"${workspace_loc:/"+appName+"/build.xml}\"/>\n");
-        buildLaunchFile.append("\t<stringAttribute key=\"process_factory_id\" value=\"org.eclipse.ant.ui.remoteAntProcessFactory\"/>\n");
-        buildLaunchFile.append("</launchConfiguration>\n");
-        writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" build.xml.launch");
-        
-        
-        //write a .classpath for java nature of project
-        StringBuffer classpathFile = new StringBuffer();
-        classpathFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        classpathFile.append("<classpath>\n");
-        classpathFile.append("\t<classpathentry kind=\"src\" path=\".servletapp/src\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jst.j2ee.internal.web.container\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jst.j2ee.internal.module.container\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"output\" path=\"WebContent/WEB-INF/classes\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/antlr.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/asm-attrs.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/asm.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/c3p0-0.9.1.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/cglib.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-codec-1.3.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-collections.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-fileupload-1.2.1.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-io-1.4.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-lang-2.3.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-logging.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/dom4j.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/ehcache-1.2.3.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/ejb3-persistence.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate-annotations.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate-commons-annotations.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate-search-3.1.1.GA.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate3.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/icu4j-3_8.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/jasypt-1.3.1.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/javaee.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/javassist-3.4.GA.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/jcaptcha-all-1.0-RC6.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/jta.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/junit.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/log4j.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/lucene-core-2.4.1.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/mail.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/markdownj.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/mysql-connector-java-5.1.6-bin.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/slf4j-api.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/slf4j-log4j12.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/sqlite-jdbc-3.6.17.1.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/strategoxt.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/urlrewrite.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/webdsl-support.jar\"/>\n");
-        classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/xercesImpl.jar\"/>\n");
-        classpathFile.append("</classpath>\n");
-        writeStringToFile(classpathFile.toString(), project.getLocation()+"/.classpath");
+        writeClassPathFile(project);
         
         //write .settings/* files
         createDirs(project.getLocation()+"/.settings");
-        
-        StringBuffer jdtprefsFile = new StringBuffer();
-        jdtprefsFile.append("eclipse.preferences.version=1\n");
-        jdtprefsFile.append("org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6\n");
-        jdtprefsFile.append("org.eclipse.jdt.core.compiler.compliance=1.6\n");
-        jdtprefsFile.append("org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n");
-        jdtprefsFile.append("org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n");
-        jdtprefsFile.append("org.eclipse.jdt.core.compiler.source=1.6\n");
-        writeStringToFile(jdtprefsFile.toString(), project.getLocation()+"/.settings/org.eclipse.jdt.core.prefs");
-        
-        StringBuffer wstcomponentFile = new StringBuffer();
-        wstcomponentFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        wstcomponentFile.append("<project-modules id=\"moduleCoreId\" project-version=\"1.5.0\">\n");
-        wstcomponentFile.append("\t<wb-module deploy-name=\""+projectName+"\">\n");
-        wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/\" source-path=\"/WebContent\"/>\n");
-        wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src\"/>\n");
-        wstcomponentFile.append("\t\t<property name=\"context-root\" value=\""+projectName+"\"/>\n");
-        wstcomponentFile.append("\t\t<property name=\"java-output-path\"/>\n");
-        wstcomponentFile.append("\t</wb-module>\n");
-        wstcomponentFile.append("</project-modules>\n");
-        writeStringToFile(wstcomponentFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.component");
-        
-        StringBuffer wstfacetFile = new StringBuffer();
-        wstfacetFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        wstfacetFile.append("<faceted-project>\n");
-        wstfacetFile.append("\t<installed facet=\"jst.java\" version=\"6.0\"/>\n");
-        wstfacetFile.append("\t<installed facet=\"jst.web\" version=\"2.4\"/>\n");
-        wstfacetFile.append("</faceted-project>\n");
-        writeStringToFile(wstfacetFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.project.facet.core.xml");
-        
-/*
- * 
-        monitor.worked(3);*/
-/*
-        monitor.setTaskName("Acquiring workspace lock"); // need root lock for builder
-        IWorkspaceRoot root = project.getWorkspace().getRoot();
-        Job.getJobManager().beginRule(root, monitor); // avoid ant builder launching
-        try {
-            monitor.setTaskName("Acquiring environment lock");
-            monitor.worked(1);
-            synchronized (Environment.getSyncRoot()) { // avoid background editor loading
-                monitor.setTaskName("Loading new resources");
-                project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-                monitor.worked(1);
-                
-                monitor.setTaskName("Building and loading example editor");
-                project.build(IncrementalProjectBuilder.FULL_BUILD, null);
-                monitor.worked(6);
-
-                // TODO: Optimize - don't reload editor (already done from Ant file)
-                // DynamicDescriptorLoader.getInstance().forceNoUpdate(descriptor);
-                monitor.setTaskName("Loading editor");
-                IResource descriptor = project.findMember("include/" + languageName + ".packed.esv");
-                DynamicDescriptorLoader.getInstance().forceUpdate(descriptor);
-                monitor.worked(2);
-
-                //project.refreshLocal(DEPTH_INFINITE, new NullProgressMonitor());
-                monitor.worked(1);
-            }
-        } finally {
-            Job.getJobManager().endRule(root);
-        }
-
-        monitor.setTaskName("Opening editor tabs");
-        Display display = getShell().getDisplay();
-        EditorState.asyncOpenEditor(display, project.getFile("/trans/" + toStrategoName(languageName) +  ".str"), true);
-        monitor.worked(2);
-        EditorState.asyncOpenEditor(display, project.getFile("/editor/" + languageName +  ".main.esv"), true);
-        monitor.worked(1);
-        EditorState.asyncOpenEditor(display, project.getFile("/syntax/" + languageName +  ".sdf"), true);
-        monitor.worked(1);
-        EditorState.asyncOpenEditor(display, project.getFile("/test/example." + extensions.split(",")[0]), false);*/
+        writeJdtPrefsFile(project);
+        writeWstComponentFile(project);
+        writeWstFacetFile(project);
         
         writeProjectFileWithoutWebDSLBuilder(project);
+        
         refreshProject(project);
         initWtpServerConfig(plugindir,project,projectName,monitor);
         writeProjectFile(project);
         refreshProject(project);
+        
+        writeTomcatConfigFile(workspace, plugindir);
         
         monitor.setTaskName("Opening editor tabs");
 
@@ -446,26 +240,197 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         monitor.worked(1);
     }
      
-     public static void writeTomcatConfigFile(IWorkspace workspace){
+     public static void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{
+         copyFile(plugindir+"webdsl-template/new_project/templates.app", project.getLocation()+"/templates.app");
+         copyFile(plugindir+"webdsl-template/new_project/APPLICATION_NAME.app", project.getLocation()+"/"+appName+".app");
+         createDirs(project.getLocation()+"/images");
+         copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
+         createDirs(project.getLocation()+"/stylesheets");
+         copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
+     }
+     
+     public static void writeBuildXmlFile(IProject project) throws IOException{
+         StringBuffer ant = new StringBuffer();
+         ant.append("<project name=\"webdsl-eclipse-plugin\" default=\"plugin-eclipse-build\">\n");
+         //ant.append("\t<property name=\"plugindir\" value=\""+plugindir+"\" />\n");
+         ant.append("\t<fail unless=\"plugindir\" message=\"WebDSL plugin is not correctly installed. The 'plugindir' property is not available.\" />\n");
+         ant.append("\t<property name=\"templatedir\" value=\"${plugindir}/webdsl-template\"/>\n");
+         ant.append("\t<property name=\"currentdir\" value=\"${basedir}\"/>\n");
+         ant.append("\t<property name=\"webdsl-java-cp\" value=\"${plugindir}/include/webdsl.jar\"/>\n");
+         ant.append("\t<property name=\"webdslexec\" value=\"java\"/>\n");
+         ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
+        
+         ant.append("\t<target name=\"plugin-eclipse-build\">\n");
+         ant.append("\t\t<antcall target=\"eclipse-build\"/>\n");
+         ant.append("\t</target>\n");
+         
+         ant.append("\t<target name=\"plugin-build\">\n");
+         ant.append("\t\t<property name=\"buildoptions\" value=\"build\" />\n");
+         ant.append("\t\t<antcall target=\"command\"/>\n");
+         ant.append("\t</target>\n");
+          
+          ant.append("\t<target name=\"plugin-run\">\n");
+          ant.append("\t\t<property name=\"buildoptions\" value=\"run\" />\n");
+          ant.append("\t\t<antcall target=\"command\"/>\n");
+          ant.append("\t</target>\n");
+          
+          ant.append("\t<target name=\"plugin-deploy\">\n");
+          ant.append("\t\t<property name=\"buildoptions\" value=\"deploy\" />\n");
+          ant.append("\t\t<antcall target=\"command\"/>\n");
+          ant.append("\t</target>\n");
+          
+          ant.append("\t<target name=\"plugin-tomcatdeploy\">\n");
+          ant.append("\t\t<property name=\"buildoptions\" value=\"tomcatdeploy\" />\n");
+          ant.append("\t\t<antcall target=\"command\"/>\n");
+          ant.append("\t</target>\n");
+          
+          ant.append("\t<target name=\"plugin-cleanall\">\n");
+          ant.append("\t\t<property name=\"buildoptions\" value=\"cleanall\" />\n");
+          ant.append("\t\t<antcall target=\"command\"/>\n");
+          ant.append("\t</target>\n");
+          
+         ant.append("</project>");
+         
+         writeStringToFile(ant.toString(), project.getLocation()+"/build.xml");
+         
+     }
+     
+     public static void writeBuildXmlLaunchFile(IProject project, String appName, String plugindir) throws IOException{
+        //create build launch file to make sure ant uses same jre instance as eclipse, otherwise the plugindir property provider won't work
+         StringBuffer buildLaunchFile = new StringBuffer();
+         buildLaunchFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+         buildLaunchFile.append("<launchConfiguration type=\"org.eclipse.ant.AntLaunchConfigurationType\">\n");
+         buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ant.ui.DEFAULT_VM_INSTALL\" value=\"false\"/>\n");
+         buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_PATHS\">\n");
+         buildLaunchFile.append("\t\t<listEntry value=\"/"+appName+"/build.xml\"/>\n");
+         buildLaunchFile.append("\t</listAttribute>\n");
+         buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_TYPES\">\n");
+         buildLaunchFile.append("\t\t<listEntry value=\"1\"/>\n");
+         buildLaunchFile.append("\t</listAttribute>\n");
+         buildLaunchFile.append("<listAttribute key=\"org.eclipse.jdt.launching.CLASSPATH\">\n");
+         //<!--buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6&quot; path=&quot;1&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");-->
+         buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry id=&quot;org.eclipse.ant.ui.classpathentry.antHome&quot;&gt;&#10;&lt;memento default=&quot;true&quot;/&gt;&#10;&lt;/runtimeClasspathEntry&gt;&#10;\"/>\n");
+         buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry id=&quot;org.eclipse.ant.ui.classpathentry.extraClasspathEntries&quot;&gt;&#10;&lt;memento/&gt;&#10;&lt;/runtimeClasspathEntry&gt;&#10;\"/>\n");
+         buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+plugindir+"/webdsl-template/template-java-servlet/lib-test/org.eclipse.wst.server.core_1.1.102.v20100123.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
+         buildLaunchFile.append("<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+plugindir+"/webdsl-template/template-java-servlet/lib-test/org.eclipse.wst.server.ui_1.1.103.v20100123.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
+         buildLaunchFile.append("</listAttribute>\n");
+         buildLaunchFile.append("<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.CLASSPATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROJECT_ATTR\" value=\""+appName+"\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_ANT_TARGETS\" value=\"plugin-eclipse-build,\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"${workspace_loc:/"+appName+"/build.xml}\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"process_factory_id\" value=\"org.eclipse.ant.ui.remoteAntProcessFactory\"/>\n");
+         buildLaunchFile.append("</launchConfiguration>\n");
+         writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" build.xml.launch");
+     }
+     
+     public static void writeClassPathFile(IProject project) throws IOException{
+        //write a .classpath for java nature of project
+         StringBuffer classpathFile = new StringBuffer();
+         classpathFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+         classpathFile.append("<classpath>\n");
+         classpathFile.append("\t<classpathentry kind=\"src\" path=\".servletapp/src\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jst.j2ee.internal.web.container\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jst.j2ee.internal.module.container\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"output\" path=\"WebContent/WEB-INF/classes\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/antlr.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/asm-attrs.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/asm.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/c3p0-0.9.1.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/cglib.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-codec-1.3.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-collections.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-fileupload-1.2.1.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-io-1.4.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-lang-2.3.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/commons-logging.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/dom4j.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/ehcache-1.2.3.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/ejb3-persistence.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate-annotations.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate-commons-annotations.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate-search-3.1.1.GA.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/hibernate3.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/icu4j-3_8.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/jasypt-1.3.1.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/javaee.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/javassist-3.4.GA.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/jcaptcha-all-1.0-RC6.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/jta.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/junit.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/log4j.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/lucene-core-2.4.1.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/mail.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/markdownj.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/mysql-connector-java-5.1.6-bin.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/slf4j-api.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/slf4j-log4j12.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/sqlite-jdbc-3.6.17.1.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/strategoxt.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/urlrewrite.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/webdsl-support.jar\"/>\n");
+         classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/xercesImpl.jar\"/>\n");
+         classpathFile.append("</classpath>\n");
+         writeStringToFile(classpathFile.toString(), project.getLocation()+"/.classpath"); 
+     }
+     
+     public static void writeJdtPrefsFile(IProject project) throws IOException{
+         StringBuffer jdtprefsFile = new StringBuffer();
+         jdtprefsFile.append("eclipse.preferences.version=1\n");
+         jdtprefsFile.append("org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6\n");
+         jdtprefsFile.append("org.eclipse.jdt.core.compiler.compliance=1.6\n");
+         jdtprefsFile.append("org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n");
+         jdtprefsFile.append("org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n");
+         jdtprefsFile.append("org.eclipse.jdt.core.compiler.source=1.6\n");
+         writeStringToFile(jdtprefsFile.toString(), project.getLocation()+"/.settings/org.eclipse.jdt.core.prefs");
+     }
+     public static void writeWstComponentFile(IProject project) throws IOException{
+         String projectName = project.getName();
+         StringBuffer wstcomponentFile = new StringBuffer();
+         wstcomponentFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+         wstcomponentFile.append("<project-modules id=\"moduleCoreId\" project-version=\"1.5.0\">\n");
+         wstcomponentFile.append("\t<wb-module deploy-name=\""+projectName+"\">\n");
+         wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/\" source-path=\"/WebContent\"/>\n");
+         wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src\"/>\n");
+         wstcomponentFile.append("\t\t<property name=\"context-root\" value=\""+projectName+"\"/>\n");
+         wstcomponentFile.append("\t\t<property name=\"java-output-path\"/>\n");
+         wstcomponentFile.append("\t</wb-module>\n");
+         wstcomponentFile.append("</project-modules>\n");
+         writeStringToFile(wstcomponentFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.component");
+     }
+     
+     public static void writeWstFacetFile(IProject project) throws IOException{
+         StringBuffer wstfacetFile = new StringBuffer();
+         wstfacetFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+         wstfacetFile.append("<faceted-project>\n");
+         wstfacetFile.append("\t<installed facet=\"jst.java\" version=\"6.0\"/>\n");
+         wstfacetFile.append("\t<installed facet=\"jst.web\" version=\"2.4\"/>\n");
+         wstfacetFile.append("</faceted-project>\n");
+         writeStringToFile(wstfacetFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.project.facet.core.xml");
+     }
+     
+     public static void writeTomcatConfigFile(IWorkspace workspace, String plugindir) throws IOException{
+         String tomcatdir = plugindir+"webdsl-template/tomcat/apache-tomcat-6.0.26";
+         String jre = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6";
+         String workspacedir = workspace.getRoot().getRawLocation().toString();
          StringBuffer tomcatconfigFile = new StringBuffer();
          tomcatconfigFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
          tomcatconfigFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.tomcat.core.launchConfigurationType\">\n");
          tomcatconfigFile.append("\t<listAttribute key=\"org.eclipse.jdt.launching.CLASSPATH\">\n");
-         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.launching.macosx.MacOSXType/JVM 1.6.0 (MacOS X Default)&quot; path=&quot;2&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
-         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;/Users/dan/apache-tomcat-6.0.26/bin/bootstrap.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
+         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;"+jre+"&quot; path=&quot;1&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
+         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+tomcatdir+"/bin/bootstrap.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
          tomcatconfigFile.append("\t</listAttribute>\n");
-         tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.JRE_CONTAINER\" value=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.launching.macosx.MacOSXType/JVM 1.6.0 (MacOS X Default)\"/>\n");
+         //tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.JRE_CONTAINER\" value=\""+jre+"\"/>\n");
          tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROGRAM_ARGUMENTS\" value=\"start\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;/Users/dan/runtime-EclipseApplication/.metadata/.plugins/org.eclipse.wst.server.core/tmp0&quot; -Dcatalina.home=&quot;/Users/dan/apache-tomcat-6.0.26&quot; -Dwtp.deploy=&quot;/Users/dan/runtime-EclipseApplication/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;/Users/dan/apache-tomcat-6.0.26/endorsed&quot; -Xss8m -Xms256m -Xmx1024m -XX:MaxPermSize=512m -server\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"server-id\" value=\"Tomcat v6.0 Server at localhost\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0&quot; -Dcatalina.home=&quot;"+tomcatdir+"&quot; -Dwtp.deploy=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;"+tomcatdir+"/endorsed&quot; -Xss8m -Xms256m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"server-id\" value=\"webdsl_tomcat6server\"/>\n");
          tomcatconfigFile.append("</launchConfiguration>\n");
          IProject project = workspace.getRoot().getProject("Servers");
-         try {
-            writeStringToFile(tomcatconfigFile.toString(), project.getLocation()+"/Tomcat v6.0 Server at localhost.launch");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+         writeStringToFile(tomcatconfigFile.toString(), project.getLocation()+"/Tomcat v6.0 Server at localhost.launch");
+         refreshProject(project);
      }
      
      /**
@@ -649,72 +614,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      }
      
      public static void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
-         // createServersProject(plugindir);
-         //EclipseUtil.createNewServerProject(null, "Tomcat v6.0 Server at localhost", null, monitor);
-         //TaskModel tm = new TaskModel();
-         //tm.putObject("runtime", ""); //Runtime[Apache Tomcat v6.0, Apache Tomcat v6.0, /Users/dan/apache-tomcat-6.0.26, RuntimeType[org.eclipse.jst.server.tomcat.runtime.60, Apache Tomcat v6.0]]
-         //tm.putObject("server", null);
-         
-         //IRuntime plugintomcat6runtime = getOrCreateWebDSLTomcatRuntime(plugindir, monitor);
          IServer plugintomcat6server = getOrCreateWebDSLTomcatServer(project,plugindir,monitor);
          addProjectModuleToServer(project,plugintomcat6server,monitor);
-    
-         
-         //plugintomcat6server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
-         //project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, monitor);
-     
-/*
-                IPublishListener publishListener = new PublishAdapter() {
-                    public void publishStarted(IServer server) {
-                        //showServersView(false);
-                    }
-
-                    public void publishFinished(IServer server, IStatus status) {
-                        //showServersView(false);
-                        System.out.println("status: " + status);
-                        Job job = new Job("start server") { 
-                            public IStatus run(IProgressMonitor monitor){
-                                for(int i = 0;i<10;i++){
-                                    doHttpRequest("http://localhost:8080/"+projectName);
-                                }
-                          //opens default external browser     
-                        try {
-                            IWorkbenchBrowserSupport browserSupport = ServerUIPlugin.getInstance().getWorkbench().getBrowserSupport();
-                            IWebBrowser browser = browserSupport.createBrowser(IWorkbenchBrowserSupport.LOCATION_BAR | IWorkbenchBrowserSupport.NAVIGATION_BAR, null, null, null);
-                            browser.openURL(new URL("http://localhost:8080/"+projectName));
-                        } catch (MalformedURLException e) {
-                            e.printStackTrace();
-                        } catch (PartInitException e) {
-                            e.printStackTrace();
-                        }
-                        return Status.OK_STATUS;
-                            }  
-                            };
-                            job.schedule(5000);
-                    }
-                };*/
-                /*
-                IServerListener serverListener = new IServerListener() {
-                    public void serverChanged(ServerEvent event) {
-                        int eventKind = event.getKind();
-                        // if (eventKind == (ServerEvent.SERVER_CHANGE | ServerEvent.STATE_CHANGE)) {
-                        if ((eventKind & ServerEvent.STATE_CHANGE) != 0) {
-                            System.out.println("state changed: "+event);
-                        } else if ((eventKind & ServerEvent.SERVER_CHANGE) != 0) {
-                            System.out.println("server changed: "+event);
-                        }
-                        
-                        IModule[] ims = {ServerUtil.getModule(project)};
-                        int state = plugintomcat6server.getModuleState(ims);
-                        System.out.println("state: "+state);
-                        int statep = plugintomcat6server.getModulePublishState(ims);
-                        System.out.println("state publish: "+statep);
-                        boolean stater = plugintomcat6server.getModuleRestartState(ims);
-                        System.out.println("state restart: "+stater);
-                    }
-                };*/
-                //plugintomcat6server.addPublishListener(publishListener);
-                //plugintomcat6server.addServerListener(serverListener);
      }
      
      //copy from org.eclipse.wst.server.ui.internal.wizard.page.NewRuntimeComposite (protected access)
@@ -730,42 +631,6 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          if (list.size() == 1)
              return list.get(0);
          return null;
-     }
-     
-    /*
-     public static void createServersProject(String plugindir) throws CoreException, IOException {
-         IWorkspace workspace = ResourcesPlugin.getWorkspace();
-         IProject project = workspace.getRoot().getProject("Servers");
-         project.create(null);
-         project.open(null);
-         
-         copyFile(plugindir+"webdsl-template/servers-project/.settings/org.eclipse.wst.server.core.prefs", project.getLocation()+"/.settings/org.eclipse.wst.server.core.prefs");
-         copyFile(plugindir+"webdsl-template/servers-project/.settings/Tomcat v6.0 Server at localhost-config/catalina.policy", project.getLocation()+"/Tomcat v6.0 Server at localhost-config/catalina.policy");
-         copyFile(plugindir+"webdsl-template/servers-project/.settings/Tomcat v6.0 Server at localhost-config/catalina.properties", project.getLocation()+"/Tomcat v6.0 Server at localhost-config/catalina.properties");
-         copyFile(plugindir+"webdsl-template/servers-project/.settings/Tomcat v6.0 Server at localhost-config/context.xml", project.getLocation()+"/Tomcat v6.0 Server at localhost-config/context.xml");
-         copyFile(plugindir+"webdsl-template/servers-project/.settings/Tomcat v6.0 Server at localhost-config/server.xml", project.getLocation()+"/Tomcat v6.0 Server at localhost-config/server.xml");
-         copyFile(plugindir+"webdsl-template/servers-project/.settings/Tomcat v6.0 Server at localhost-config/tomcat-users.xml", project.getLocation()+"/Tomcat v6.0 Server at localhost-config/tomcat-users.xml");
-         copyFile(plugindir+"webdsl-template/servers-project/.settings/Tomcat v6.0 Server at localhost-config/web.xml", project.getLocation()+"/Tomcat v6.0 Server at localhost-config/web.xml");
-         
-         refreshProject(project);
-     }*/
-     
-     public static void doHttpRequest(String requestUrl){
-          try {
-              URL url = new URL(requestUrl.toString());
-              BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-              String inputLine;
-              System.out.println("-----RESPONSE START-----");
-              while ((inputLine = in.readLine()) != null) {
-                  System.out.println(inputLine);
-              }
-              in.close();
-              System.out.println("-----RESPONSE END-----");
-              
-          } catch (IOException e) {
-              e.printStackTrace();
-          }
- 
      }
      
      public static void writeStringToFile(String s, String file) throws IOException{
@@ -788,8 +653,6 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      public static void createDirs(String dirs){
          new File(dirs).mkdirs();
      }
-     
-     
      
      public static void copyFile(String ssource, String sdest) throws IOException {
          System.out.println("Copying "+ssource+" to "+sdest);
@@ -823,7 +686,6 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             project.open(monitor);
             
         } catch (CoreException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

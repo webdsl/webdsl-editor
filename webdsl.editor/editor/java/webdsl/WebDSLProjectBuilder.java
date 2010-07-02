@@ -1,11 +1,13 @@
 package webdsl;
 
+import java.util.List;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 
@@ -65,22 +67,13 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         try{
             final IProject project = getProject();
             
-            String buildid=null;
-            try{
-                FileReader input = new FileReader(project.getLocation().toString()+"/.servletapp/.last-build-id");
-                BufferedReader bufRead = new BufferedReader(input);
-                String line = bufRead.readLine();
-                buildid=line;
-                bufRead.close();
-            }
-            catch(Exception e){
-              System.out.println("Could not find a build-id in .servletapp/.last-build-id");
-            }
+            String buildid = getBuildIdCompleted(project);
             
-            setPublishListener(project, monitor, buildid);
-            project.refreshLocal(IProject.DEPTH_INFINITE, monitor);
-            tryStartServer(project,monitor);
-            
+            if(buildid != null){
+              setPublishListener(project, monitor, buildid);
+              project.refreshLocal(IProject.DEPTH_INFINITE, monitor);
+              tryStartServer(project,monitor);
+            }
             worked( monitor, 1 );
             //System.out.println("build done");
         }
@@ -93,6 +86,27 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             }
         }
         return new IProject[0];
+    }
+    
+    public static String getBuildId(IProject project){
+        return getIdFromFile(project,".last-build-id");
+    }
+    public static String getBuildIdCompleted(IProject project){
+        return getIdFromFile(project,".last-build-id-completed");
+    }
+    public static String getIdFromFile(IProject project, String fileName){
+        String buildid = null;
+        try{
+            FileReader input = new FileReader(project.getLocation().toString()+"/.servletapp/"+fileName);
+            BufferedReader bufRead = new BufferedReader(input);
+            String line = bufRead.readLine();
+            buildid = line;
+            bufRead.close();
+        }
+        catch(Exception e){
+            System.out.println("Could not find a build id in .servletapp/"+fileName);
+        }	
+        return buildid;
     }
     
     private static void worked( final IProgressMonitor monitor,
@@ -235,7 +249,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         String searchfor = "build-id:"+buildid;
         System.out.println("searching for: "+searchfor);
         boolean found = false;
-        int tries = 3;
+        int tries = 5;
         while(tries > 0 && !found){
           tries = tries - 1;
           try {
@@ -268,15 +282,23 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         return found;
     }
     
+    //restart once for a new project
+    public static List<String> alreadyStarted = new ArrayList<String>();
+    
     public static void tryStartServer(IProject project,IProgressMonitor monitor) throws CoreException{
         System.out.println("Polling server status.");
-        IServer tomcatserver = getTomcatServer(project,monitor);
-        if(tomcatserver.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
+        IServer server = getTomcatServer(project,monitor);
+        if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
             System.out.println("Starting server.");
-            getTomcatServer(project,monitor).start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
+            server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
         }
         else{
             System.out.println("Server already started.");
+            if(!alreadyStarted.contains(project.getName())){
+                server.restart(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);  	
+                alreadyStarted.add(project.getName());
+                System.out.println("Restart server for new project.");
+            }
         }
     }
     
