@@ -295,11 +295,14 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         else{
             System.out.println("Server already started.");
             if(!alreadyStarted.contains(project.getName())){
-                server.restart(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);  	
-                alreadyStarted.add(project.getName());
+                server.stop(true);
+                try { Thread.sleep (2000); } catch (InterruptedException e) { e.printStackTrace(); }
+                server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);  	
                 System.out.println("Restart server for new project.");
             }
         }
+        if(!alreadyStarted.contains(project.getName())){
+            alreadyStarted.add(project.getName());
+        }
     }
-    
 }
