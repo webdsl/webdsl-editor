@@ -16,7 +16,21 @@
             icon="icons/webdsl.gif"
             id="webdsl.NewEditorWizard"
             name="WebDSL project"
-            project="true">
+            project="true"
+            >
+            <description>This wizard creates a new WebDSL project.</description>
+      </wizard>
+      <wizard
+            class="webdsl.ConvertProjectWizard"
+            icon="icons/webdsl.gif"
+            id="webdsl.ConvertWizard"
+            name="Convert to a WebDSL project"
+            project="true"
+            >
+         <description>This wizard generates the WebDSL project structure in an existing project.</description>
+         <selection
+            class="org.eclipse.core.resources.IProject">
+         </selection>
       </wizard>
     </extension>
     <extension point="org.eclipse.ant.core.antProperties">

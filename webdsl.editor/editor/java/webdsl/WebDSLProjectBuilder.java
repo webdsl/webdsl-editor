@@ -23,6 +23,7 @@ import org.eclipse.ant.internal.ui.model.AntProjectNodeProxy;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -69,6 +70,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             
             String buildid = getBuildIdCompleted(project);
             
+            //check that last build completed, sometimes this builder is started when compiler is still running
             if(buildid != null){
               setPublishListener(project, monitor, buildid);
               project.refreshLocal(IProject.DEPTH_INFINITE, monitor);
@@ -286,11 +288,37 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     public static List<String> alreadyStarted = new ArrayList<String>();
     
     public static void tryStartServer(IProject project,IProgressMonitor monitor) throws CoreException{
+        //open 'Servers' project if closed, otherwise tomcat will not start
+        IProject servers = ResourcesPlugin.getWorkspace().getRoot().getProject("Servers");
+        if(!servers.isOpen()){
+            servers.open(monitor);
+        }
+        
+        final IServer server = getTomcatServer(project,monitor);
+        
+        // invoke publish first, the initial start tends to hang when
+        //   executed before publishing task completes.
+        System.out.println("Publish.");
+        server.publish(IServer.PUBLISH_STATE_INCREMENTAL,monitor);
+        
         System.out.println("Polling server status.");
-        IServer server = getTomcatServer(project,monitor);
         if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
-            System.out.println("Starting server.");
-            server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
+            //add as job to give publish a bit more time
+            Job job = new Job("start server") { 
+                public IStatus run(IProgressMonitor monitor){
+                    try {
+                      //server might have been started in the mean time
+                      if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
+                        System.out.println("Starting server.");
+                        server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
+                      }
+                    } catch (CoreException e) {
+                        e.printStackTrace();
+                    }
+                    return Status.OK_STATUS;
+                }  
+            };
+            job.schedule(3000);
         }
         else{
             System.out.println("Server already started.");

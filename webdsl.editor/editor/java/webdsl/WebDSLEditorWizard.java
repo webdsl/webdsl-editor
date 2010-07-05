@@ -79,7 +79,7 @@ import org.eclipse.wst.server.ui.internal.wizard.page.NewRuntimeComposite;
  */
 public class WebDSLEditorWizard extends Wizard implements INewWizard {
 
-    private final WebDSLEditorWizardPage input = new WebDSLEditorWizardPage();
+    protected WebDSLEditorWizardPage input;
     
     private IProject lastProject;
 
@@ -87,6 +87,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             
     public WebDSLEditorWizard() {
         setNeedsProgressMonitor(true);
+        input = new WebDSLEditorWizardPage();
     }
 
     public void init(IWorkbench workbench, IStructuredSelection selection) {
@@ -162,12 +163,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         lastProject = null;
         monitor.beginTask("Creating " + appName + " application", TASK_COUNT);
         
-        monitor.setTaskName("Creating Eclipse project");
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        IProject project = lastProject = workspace.getRoot().getProject(projectName);
-        project.create(null);
-        project.open(null);
-        monitor.worked(1);
+        IProject project = createNewProject(projectName, monitor);
         
         monitor.setTaskName("Copying example application files");
 
@@ -230,17 +226,30 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         writeProjectFile(project);
         refreshProject(project);
         
-        writeTomcatConfigFile(workspace, plugindir);
-        
-        monitor.setTaskName("Opening editor tabs");
+        writeTomcatConfigFile(plugindir);
 
-        Display display = getShell().getDisplay();
-        EditorState.asyncOpenEditor(display, project.getFile("templates.app"), true);
-        EditorState.asyncOpenEditor(display, project.getFile(appName+".app"), true);
-        monitor.worked(1);
+        openEditorsForExampleApp(appName, project,monitor);
     }
      
-     public static void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{
+     protected void openEditorsForExampleApp(String appName, IProject project, IProgressMonitor monitor){
+         monitor.setTaskName("Opening editor tabs");
+         Display display = getShell().getDisplay();
+         EditorState.asyncOpenEditor(display, project.getFile("templates.app"), true);
+         EditorState.asyncOpenEditor(display, project.getFile(appName+".app"), true);
+         monitor.worked(1);    	 
+     }
+     
+     protected IProject createNewProject(String projectName, IProgressMonitor monitor) throws CoreException{
+         monitor.setTaskName("Creating Eclipse project");
+         IWorkspace workspace = ResourcesPlugin.getWorkspace();
+         IProject project = lastProject = workspace.getRoot().getProject(projectName);
+         project.create(null);
+         project.open(null);
+         monitor.worked(1);
+         return project;
+     }
+     
+     public void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{
          copyFile(plugindir+"webdsl-template/new_project/templates.app", project.getLocation()+"/templates.app");
          copyFile(plugindir+"webdsl-template/new_project/APPLICATION_NAME.app", project.getLocation()+"/"+appName+".app");
          createDirs(project.getLocation()+"/images");
@@ -411,7 +420,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          writeStringToFile(wstfacetFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.project.facet.core.xml");
      }
      
-     public static void writeTomcatConfigFile(IWorkspace workspace, String plugindir) throws IOException{
+     public static void writeTomcatConfigFile(String plugindir) throws IOException{
+         IWorkspace workspace = ResourcesPlugin.getWorkspace();
          String tomcatdir = plugindir+"webdsl-template/tomcat/apache-tomcat-6.0.26";
          String jre = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6";
          String workspacedir = workspace.getRoot().getRawLocation().toString();
@@ -422,10 +432,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;"+jre+"&quot; path=&quot;1&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
          tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+tomcatdir+"/bin/bootstrap.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
          tomcatconfigFile.append("\t</listAttribute>\n");
-         //tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
+         tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
          tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.JRE_CONTAINER\" value=\""+jre+"\"/>\n");
          tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROGRAM_ARGUMENTS\" value=\"start\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0&quot; -Dcatalina.home=&quot;"+tomcatdir+"&quot; -Dwtp.deploy=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;"+tomcatdir+"/endorsed&quot; -Xss8m -Xms256m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0&quot; -Dcatalina.home=&quot;"+tomcatdir+"&quot; -Dwtp.deploy=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;"+tomcatdir+"/endorsed&quot; -Xss8m -Xms48m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
          tomcatconfigFile.append("\t<stringAttribute key=\"server-id\" value=\"webdsl_tomcat6server\"/>\n");
          tomcatconfigFile.append("</launchConfiguration>\n");
          IProject project = workspace.getRoot().getProject("Servers");
