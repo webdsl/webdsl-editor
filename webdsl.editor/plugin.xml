@@ -33,6 +33,52 @@
          </selection>
       </wizard>
     </extension>
+    <extension point="org.eclipse.ui.popupMenus">
+      <objectContribution
+        objectClass="org.eclipse.core.resources.IProject"
+        id="convertwizardpopup"
+        >
+        <action
+          label="Convert to a WebDSL project"
+          icon="icons/webdsl.gif"
+          class="webdsl.StartConvertWizardAction"
+          id="convertwizardstartaction">
+        </action>
+      </objectContribution>
+      <objectContribution
+        objectClass="org.eclipse.jdt.core.IJavaProject"
+        id="convertwizardpopupjavaproject"
+        >
+        <action
+          label="Convert to a WebDSL project"
+          icon="icons/webdsl.gif"
+          class="webdsl.StartConvertWizardAction"
+          id="convertwizardstartactionjavaproject">
+        </action>
+      </objectContribution>
+      <objectContribution
+        objectClass="org.eclipse.core.resources.IProject"
+        id="newwizardpopup"
+        >
+        <action
+          label="New WebDSL project"
+          icon="icons/webdsl.gif"
+          class="webdsl.StartNewWizardAction"
+          id="newwizardstartaction">
+        </action>
+      </objectContribution>
+      <objectContribution
+        objectClass="org.eclipse.jdt.core.IJavaProject"
+        id="newwizardpopupjavaproject"
+        >
+        <action
+          label="New WebDSL project"
+          icon="icons/webdsl.gif"
+          class="webdsl.StartNewWizardAction"
+          id="newwizardstartactionjavaproject">
+        </action>
+      </objectContribution>
+    </extension>
     <extension point="org.eclipse.ant.core.antProperties">
       <antProperty
             class="webdsl.WebDSLJarAntPropertyProvider"
