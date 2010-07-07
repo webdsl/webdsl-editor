@@ -2,13 +2,14 @@
 <?eclipse version="3.0"?>
 
 <plugin>
-       <extension point="org.eclipse.imp.runtime.languageDescription">
+     <extension point="org.eclipse.imp.runtime.languageDescription">
           <language extensions="app" description="WebDSL" language="WebDSL" derivedFrom="DynamicRoot" validator="webdsl.WebDSLValidator" validatorClass="webdsl.WebDSLValidator"></language>
-       </extension>
-       <extension id="webdsl.parser" name="WebDSL Parser" point="org.eclipse.imp.runtime.parser">
+     </extension>
+     <extension id="webdsl.parser" name="WebDSL Parser" point="org.eclipse.imp.runtime.parser">
           <parser class="webdsl.WebDSLParseController" language="WebDSL">
           </parser>
-       </extension>
+     </extension>
+       
     <extension point="org.eclipse.ui.newWizards">
       <primaryWizard id="webdsl.NewEditorWizard" />
       <wizard
@@ -33,6 +34,7 @@
          </selection>
       </wizard>
     </extension>
+    
     <extension point="org.eclipse.ui.popupMenus">
       <objectContribution
         objectClass="org.eclipse.core.resources.IProject"
@@ -56,41 +58,49 @@
           id="convertwizardstartactionjavaproject">
         </action>
       </objectContribution>
-      <objectContribution
-        objectClass="org.eclipse.core.resources.IProject"
-        id="newwizardpopup"
-        >
-        <action
-          label="New WebDSL project"
-          icon="icons/webdsl.gif"
-          class="webdsl.StartNewWizardAction"
-          id="newwizardstartaction">
-        </action>
-      </objectContribution>
-      <objectContribution
-        objectClass="org.eclipse.jdt.core.IJavaProject"
-        id="newwizardpopupjavaproject"
-        >
-        <action
-          label="New WebDSL project"
-          icon="icons/webdsl.gif"
-          class="webdsl.StartNewWizardAction"
-          id="newwizardstartactionjavaproject">
-        </action>
-      </objectContribution>
+      <viewerContribution
+       id="webdsl.projectexplorer.newwizard"
+       targetID="org.eclipse.ui.navigator.ProjectExplorer#PopupMenu">
+           <action id="webdsl.projectexplorer.newwizard.action"
+              label="New WebDSL Project"
+              menubarPath="additions"
+               icon="icons/webdsl.gif"
+              class="webdsl.StartNewWizardAction">
+           </action>
+      </viewerContribution>
+      <viewerContribution
+       id="webdsl.resourcenavigator.newwizard"
+       targetID="org.eclipse.ui.views.ResourceNavigator">
+           <action id="webdsl.resourcenavigator.newwizard.action"
+              label="New WebDSL Project"
+              menubarPath="additions"
+               icon="icons/webdsl.gif"
+              class="webdsl.StartNewWizardAction">
+           </action>
+      </viewerContribution>
+      <viewerContribution
+       id="webdsl.packageexplorer.newwizard"
+       targetID="org.eclipse.jdt.ui.PackageExplorer">
+           <action id="webdsl.packageexplorer.newwizard.action"
+              label="New WebDSL Project"
+              menubarPath="additions"
+               icon="icons/webdsl.gif"
+              class="webdsl.StartNewWizardAction">
+           </action>
+      </viewerContribution>
     </extension>
+
     <extension point="org.eclipse.ant.core.antProperties">
       <antProperty
             class="webdsl.WebDSLJarAntPropertyProvider"
             name="plugindir">
       </antProperty>
-    </extension>
-    <extension point="org.eclipse.ant.core.antProperties">
        <antProperty
              class="webdsl.WebDSLVersionPropertyProvider"
              name="webdsl.plugin.version">
        </antProperty>
     </extension>
+    
     <!-- in .project use: <buildCommand><name>webdsl.editor.builder</name></buildCommand> -->
     <extension id="builder"
     name="WebDSL Project Builder"
@@ -99,4 +109,5 @@
         <run class="webdsl.WebDSLProjectBuilder"/>
       </builder>
     </extension>
+    
 </plugin>

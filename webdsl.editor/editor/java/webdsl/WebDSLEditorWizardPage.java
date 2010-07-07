@@ -143,7 +143,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
         bMysql.setText("MySQL database");
 
         Button bSqlite = new Button(container, SWT.RADIO);
-        bSqlite.setText("Sqlite database");
+        bSqlite.setText("Sqlite database (recommended for first-time users, \nlimitations: no concurrent request, no File/Image support)");
 
         mysqlGroup = new Group(container, SWT.NULL);
         

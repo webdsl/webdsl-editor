@@ -296,10 +296,12 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         
         final IServer server = getTomcatServer(project,monitor);
         
-        // invoke publish first, the initial start tends to hang when
+        // invoke publish first time, the initial start tends to hang when
         //   executed before publishing task completes.
-        System.out.println("Publish.");
-        server.publish(IServer.PUBLISH_STATE_INCREMENTAL,monitor);
+        if(!alreadyStarted.contains(project.getName())){
+          System.out.println("Publish.");
+          server.publish(IServer.PUBLISH_STATE_INCREMENTAL,monitor);
+        }
         
         System.out.println("Polling server status.");
         if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
