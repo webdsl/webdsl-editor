@@ -2,62 +2,37 @@ package webdsl;
 
 import java.util.List;
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Properties;
 
-import org.apache.tools.ant.DefaultLogger;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.ProjectHelper;
-import org.eclipse.ant.core.AntRunner;
-import org.eclipse.ant.internal.ui.launchConfigurations.AntLaunchDelegate;
-import org.eclipse.ant.internal.ui.launchConfigurations.AntLaunchShortcut;
-import org.eclipse.ant.internal.ui.model.AntElementNode;
-import org.eclipse.ant.internal.ui.model.AntProjectNode;
-import org.eclipse.ant.internal.ui.model.AntProjectNodeProxy;
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.debug.core.DebugPlugin;
-import org.eclipse.debug.core.ILaunch;
-import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.debug.core.ILaunchConfigurationType;
-import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
-import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.browser.IWebBrowser;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
-import org.eclipse.ui.externaltools.internal.model.IExternalToolConstants;
-import org.eclipse.wst.server.core.IModule;
 import org.eclipse.wst.server.core.IPublishListener;
-import org.eclipse.wst.server.core.IRuntime;
-import org.eclipse.wst.server.core.IRuntimeType;
 import org.eclipse.wst.server.core.IServer;
-import org.eclipse.wst.server.core.IServerType;
-import org.eclipse.wst.server.core.IServerWorkingCopy;
 import org.eclipse.wst.server.core.ServerUtil;
-import org.eclipse.wst.server.core.internal.Server;
-import org.eclipse.wst.server.core.internal.ServerWorkingCopy;
 import org.eclipse.wst.server.core.util.PublishAdapter;
 import org.eclipse.wst.server.ui.internal.ServerUIPlugin;
-import org.strategoxt.lang.terms.StrategoAppl;
-
+@SuppressWarnings("restriction")
 public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     
+    @SuppressWarnings("unchecked")
     protected IProject[] build( final int kind, 
                                 final Map args, 
                                 final IProgressMonitor monitor ) throws CoreException {
@@ -111,6 +86,25 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         return buildid;
     }
     
+    public static boolean isRootApp(IProject project){
+      if(getProperty(project, "rootapp").equals("true")){
+        return true;   
+      }
+      return false;
+    }
+
+    public static String getProperty(IProject project, String p){
+        Properties properties = new Properties();
+        try { 
+            properties.load(new FileInputStream(project.getLocation().toString()+"/application.ini"));
+            return (String) properties.get(p);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
     private static void worked( final IProgressMonitor monitor,
                                 final int ticks ){
         if( monitor != null ){
@@ -125,6 +119,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     /*
      * tried several ways of calling ant, but none of them is working as needed, ant is now called from .project builder directly instead
      */
+    /*
     public static void runAntBuild(IProject project, IProgressMonitor monitor, String buildid) throws CoreException{
         
         File buildFile = new File(project.getLocation().toString()+"/build.xml");
@@ -134,7 +129,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         System.out.println(p);
         launcher.setShowDialog(false);
         launcher.launch(new AntProjectNodeProxy(buildFile.toString()),org.eclipse.debug.core.ILaunchManager.RUN_MODE);
-        
+      */  
         /*
         AntLaunchShortcut launcher = new AntLaunchShortcut();
         IPath p = Path.fromPortableString(buildFile.toString());
@@ -175,7 +170,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         p.addBuildListener(consoleLogger);
         
         p.executeTarget("plugin-eclipse-build");*/
-    }
+   // }
     
     
     public static IServer getTomcatServer(IProject project, IProgressMonitor monitor){
@@ -217,7 +212,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                             try {
                                 IWorkbenchBrowserSupport browserSupport = ServerUIPlugin.getInstance().getWorkbench().getBrowserSupport();
                                 IWebBrowser browser = browserSupport.createBrowser(IWorkbenchBrowserSupport.LOCATION_BAR | IWorkbenchBrowserSupport.NAVIGATION_BAR, null, null, null);
-                                browser.openURL(new URL("http://localhost:8080/"+project.getName()));
+                                browser.openURL(new URL(getAppUrl(project)));
                             } catch (MalformedURLException e) {
                                 e.printStackTrace();
                             } catch (PartInitException e) {
@@ -240,11 +235,19 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         previouslyAddedPublishListener = publishListener;
     }
     
+    public static String getAppUrl(IProject project){
+        if(isRootApp(project)){
+            return "http://localhost:8080/";
+        }
+        else{
+            return "http://localhost:8080/"+project.getName()+"/";
+        }
+    }
 
     public static boolean pollDeployedAppForNewBuildId(IProject project, String buildid){
         URL url = null;
         try {
-            url = new URL("http://localhost:8080/"+project.getName()+"/?show_build_id=true");
+            url = new URL(getAppUrl(project)+"?show_build_id=true");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

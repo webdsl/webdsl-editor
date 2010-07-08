@@ -2,7 +2,7 @@
 <feature
       id="webdsl.editor.feature"
       label="WebDSL Editor"
-      version="1.1.4"
+      version="1.1.5"
       plugin="webdsl.editor">
 
    <description url="http://webdsl.org">
@@ -14,7 +14,7 @@
    </license>
 
    <url>
-      <update label="webdsl.org" url="http://www.webdsl.org/update"/>
+      <update label="webdsl.org" url="http://webdsl.org/update/"/>
       <discovery label="Spoofax/IMP" url="http://www.lclnet.nl/update"/>
    </url>
 

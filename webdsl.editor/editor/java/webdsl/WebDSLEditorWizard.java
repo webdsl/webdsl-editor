@@ -2,38 +2,26 @@ package webdsl;
 
 import static org.eclipse.core.resources.IResource.*;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -41,42 +29,24 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.browser.IWebBrowser;
-import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
-import org.spoofax.interpreter.core.Interpreter;
 import org.strategoxt.imp.runtime.EditorState;
 import org.strategoxt.imp.runtime.Environment;
-import org.strategoxt.imp.runtime.stratego.EditorIOAgent;
-import org.strategoxt.lang.Context;
-import org.strategoxt.lang.StrategoErrorExit;
-import org.strategoxt.lang.StrategoException;
-import org.strategoxt.lang.StrategoExit;
-import org.eclipse.wst.server.*;
 import org.eclipse.wst.server.core.IModule;
-import org.eclipse.wst.server.core.IPublishListener;
 import org.eclipse.wst.server.core.IRuntime;
 import org.eclipse.wst.server.core.IRuntimeType;
 import org.eclipse.wst.server.core.IRuntimeWorkingCopy;
 import org.eclipse.wst.server.core.IServer;
-import org.eclipse.wst.server.core.IServerListener;
 import org.eclipse.wst.server.core.IServerType;
 import org.eclipse.wst.server.core.IServerWorkingCopy;
 import org.eclipse.wst.server.core.ServerCore;
-import org.eclipse.wst.server.core.ServerEvent;
 import org.eclipse.wst.server.core.ServerUtil;
-import org.eclipse.wst.server.core.TaskModel;
-import org.eclipse.wst.server.core.internal.Module;
-import org.eclipse.wst.server.core.internal.RuntimeWorkingCopy;
 import org.eclipse.wst.server.core.internal.Server;
 import org.eclipse.wst.server.core.internal.ServerWorkingCopy;
-import org.eclipse.wst.server.core.util.PublishAdapter;
-import org.eclipse.wst.server.ui.internal.ServerUIPlugin;
-import org.eclipse.wst.server.ui.internal.wizard.page.NewRuntimeComposite;
 
 /**
  * A wizard for creating new WebDSL projects.
  */
+@SuppressWarnings("restriction")
 public class WebDSLEditorWizard extends Wizard implements INewWizard {
 
     protected WebDSLEditorWizardPage input;
@@ -120,12 +90,13 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         final String smtpport = input.getInputSmtpPort();
         final String smtpuser = input.getInputSmtpUser();
         final String smtppass = input.getInputSmtpPass();
+        final boolean isRootApp = input.isRootApp();
         System.out.println(appName+projectName);
         
         IRunnableWithProgress op = new IRunnableWithProgress() {
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
                 try {
-                    doFinish(appName, projectName, isMysqlSelected, host, user, pass, name, mode, file, tomcatpath, smtphost, smtpport, smtpuser, smtppass, monitor);
+                    doFinish(appName, projectName, isMysqlSelected, host, user, pass, name, mode, file, tomcatpath, smtphost, smtpport, smtpuser, smtppass, isRootApp, monitor);
                 } catch (Exception e) {
                     throw new InvocationTargetException(e);
                 } finally {
@@ -158,7 +129,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         }
     }
     
-     private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, IProgressMonitor monitor) throws IOException, CoreException {
+     private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, boolean isRootApp, IProgressMonitor monitor) throws IOException, CoreException {
         final int TASK_COUNT = 3;
         lastProject = null;
         monitor.beginTask("Creating " + appName + " application", TASK_COUNT);
@@ -197,6 +168,9 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
                 out.write("dbfile="+file+"\n");
                 out.write("dbmode="+mode+"\n");
             }
+            if(isRootApp){
+                out.write("rootapp=true\n");
+            }
             out.close(); 
         } 
         catch (IOException e) { 
@@ -216,7 +190,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         //write .settings/* files
         createDirs(project.getLocation()+"/.settings");
         writeJdtPrefsFile(project);
-        writeWstComponentFile(project);
+        writeWstComponentFile(project, isRootApp);
         writeWstFacetFile(project);
         
         writeProjectFileWithoutWebDSLBuilder(project);
@@ -395,7 +369,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          jdtprefsFile.append("org.eclipse.jdt.core.compiler.source=1.6\n");
          writeStringToFile(jdtprefsFile.toString(), project.getLocation()+"/.settings/org.eclipse.jdt.core.prefs");
      }
-     public static void writeWstComponentFile(IProject project) throws IOException{
+     public static void writeWstComponentFile(IProject project, boolean isRootApp) throws IOException{
          String projectName = project.getName();
          StringBuffer wstcomponentFile = new StringBuffer();
          wstcomponentFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -403,7 +377,11 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          wstcomponentFile.append("\t<wb-module deploy-name=\""+projectName+"\">\n");
          wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/\" source-path=\"/WebContent\"/>\n");
          wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src\"/>\n");
-         wstcomponentFile.append("\t\t<property name=\"context-root\" value=\""+projectName+"\"/>\n");
+         if(isRootApp){
+           wstcomponentFile.append("\t\t<property name=\"context-root\" value=\"\"/>\n");
+         }else{
+           wstcomponentFile.append("\t\t<property name=\"context-root\" value=\""+projectName+"\"/>\n");
+         }
          wstcomponentFile.append("\t\t<property name=\"java-output-path\"/>\n");
          wstcomponentFile.append("\t</wb-module>\n");
          wstcomponentFile.append("</project-modules>\n");
@@ -615,7 +593,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          return plugintomcat6server;
      }
      
-     public static void addProjectModuleToServer(IProject project, IServer plugintomcat6server, IProgressMonitor monitor) throws CoreException{
+    public static void addProjectModuleToServer(IProject project, IServer plugintomcat6server, IProgressMonitor monitor) throws CoreException{
          IServerWorkingCopy serveraddmodule = new ServerWorkingCopy((Server) plugintomcat6server);
          // attach the project module to the server config
          IModule[] modules = {ServerUtil.getModule(project)};

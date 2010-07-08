@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: WebDSL Plug-in
 Bundle-SymbolicName: webdsl.editor;singleton:=true
-Bundle-Version: 1.1.4
+Bundle-Version: 1.1.5
 Bundle-Activator: webdsl.Activator
 Import-Package: org.eclipse.ant.core,
  org.eclipse.wst.server.ui.internal,
@@ -16,22 +16,20 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jface.text,
  org.eclipse.ui.editors,
  org.eclipse.ui.workbench.texteditor,
- org.strategoxt.imp.runtime;bundle-version="0.1.1",
+ org.strategoxt.imp.runtime,
  org.spoofax.aterm,
  org.spoofax.jsglr,
- org.eclipse.ant.core;bundle-version="3.2.100",
- org.spoofax.interpreter.core;bundle-version="0.3.13",
- org.strategoxt.strj;bundle-version="0.17.9",
- org.eclipse.wst.server.core;bundle-version="1.1.202",
- org.eclipse.wst.server.ui;bundle-version="1.1.203",
- org.eclipse.debug.core;bundle-version="3.5.0",
- org.apache.ant;bundle-version="1.7.1",
- org.eclipse.ant.ui;bundle-version="3.4.1",
- org.eclipse.ui.console;bundle-version="3.4.0",
- org.eclipse.ui.externaltools;bundle-version="3.2.0",
- org.eclipse.debug.ui;bundle-version="3.5.1",
- org.eclipse.ui.ide;bundle-version="3.5.1",
- org.eclipse.jdt.core;bundle-version="3.5.1"
+ org.spoofax.interpreter.core,
+ org.strategoxt.strj,
+ org.eclipse.wst.server.core,
+ org.eclipse.wst.server.ui,
+ org.eclipse.debug.core,
+ org.eclipse.ui.console,
+ org.eclipse.ui.externaltools,
+ org.eclipse.debug.ui,
+ org.eclipse.ui.ide,
+ org.eclipse.jdt.core,
+ org.apache.ant
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: webdsl
 Bundle-ClassPath: include/webdsl_editor.jar,

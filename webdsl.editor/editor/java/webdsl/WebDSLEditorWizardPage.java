@@ -1,5 +1,7 @@
 package webdsl;
 
+import java.awt.Checkbox;
+
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.imp.preferences.fields.RadioGroupFieldEditor;
@@ -63,6 +65,10 @@ public class WebDSLEditorWizardPage extends WizardPage {
     public String getInputSmtpUser() { return inputSmtpUser.getText().trim(); }
     protected Text inputSmtpPass;
     public String getInputSmtpPass() { return inputSmtpPass.getText().trim(); }
+    
+    protected Button isRootApp;
+    public boolean isRootApp() { return isRootApp.getSelection(); }
+    protected Label rootAppLabel;
     
     protected boolean selectedDbMode = false;
     
@@ -340,6 +346,11 @@ public class WebDSLEditorWizardPage extends WizardPage {
         inputDBName.setEnabled(false);
         inputDBPass.setEnabled(false);
         inputDBUser.setEnabled(false);
+        
+        isRootApp = new Button(container, SWT.CHECK);
+        isRootApp.setText("&Root Application");
+        rootAppLabel = new Label(container, SWT.NULL);
+        rootAppLabel.setText("A root application does not include the application name in the URL.");
         
         setControl(container);
         setPageComplete(false);
