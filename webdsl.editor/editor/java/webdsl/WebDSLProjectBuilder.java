@@ -31,25 +31,25 @@ import org.eclipse.wst.server.core.util.PublishAdapter;
 import org.eclipse.wst.server.ui.internal.ServerUIPlugin;
 @SuppressWarnings("restriction")
 public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
-    
+
     @SuppressWarnings("unchecked")
-    protected IProject[] build( final int kind, 
-                                final Map args, 
+    protected IProject[] build( final int kind,
+                                final Map args,
                                 final IProgressMonitor monitor ) throws CoreException {
         if( monitor != null ){
             monitor.beginTask( "Building WebDSL project", 1 );
         }
-        
+
         try{
             final IProject project = getProject();
-            
+
             String buildid = getBuildIdCompleted(project);
-            
+
             //check that last build completed, sometimes this builder is started when compiler is still running
             if(buildid != null){
+              //addRefreshJob(project,defaultDelay);
               setPublishListener(project, monitor, buildid);
-              project.refreshLocal(IProject.DEPTH_INFINITE, monitor);
-              tryStartServer(project,monitor);
+              tryStartServer(project, monitor);
             }
             worked( monitor, 1 );
             //System.out.println("build done");
@@ -64,7 +64,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
         return new IProject[0];
     }
-    
+
     public static String getBuildId(IProject project){
         return getIdFromFile(project,".last-build-id");
     }
@@ -82,20 +82,20 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
         catch(Exception e){
             System.out.println("Could not find a build id in .servletapp/"+fileName);
-        }	
+        }
         return buildid;
     }
-    
+
     public static boolean isRootApp(IProject project){
-      if(getProperty(project, "rootapp").equals("true")){
-        return true;   
+      if("true".equals(getProperty(project, "rootapp"))){
+        return true;
       }
       return false;
     }
 
     public static String getProperty(IProject project, String p){
         Properties properties = new Properties();
-        try { 
+        try {
             properties.load(new FileInputStream(project.getLocation().toString()+"/application.ini"));
             return (String) properties.get(p);
         }
@@ -104,39 +104,39 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
         return null;
     }
-    
+
     private static void worked( final IProgressMonitor monitor,
                                 final int ticks ){
         if( monitor != null ){
             monitor.worked( ticks );
-            
+
             if( monitor.isCanceled() ){
                 throw new OperationCanceledException();
             }
         }
     }
-    
+
     /*
      * tried several ways of calling ant, but none of them is working as needed, ant is now called from .project builder directly instead
      */
     /*
     public static void runAntBuild(IProject project, IProgressMonitor monitor, String buildid) throws CoreException{
-        
+
         File buildFile = new File(project.getLocation().toString()+"/build.xml");
-        
+
         AntLaunchShortcut launcher = new AntLaunchShortcut();
         IPath p = Path.fromPortableString(buildFile.toString());
         System.out.println(p);
         launcher.setShowDialog(false);
         launcher.launch(new AntProjectNodeProxy(buildFile.toString()),org.eclipse.debug.core.ILaunchManager.RUN_MODE);
-      */  
+      */
         /*
         AntLaunchShortcut launcher = new AntLaunchShortcut();
         IPath p = Path.fromPortableString(buildFile.toString());
         System.out.println(p);
         launcher.launch(p, project, org.eclipse.debug.core.ILaunchManager.RUN_MODE, "plugin-eclipse-build");
         */
-        
+
         /*
         AntRunner builder = new AntRunner();
         builder.setBuildFileLocation(buildFile.toString());
@@ -145,19 +145,19 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         builder.addBuildLogger(new webdsl.AntConsoleLogger().getClass().getName());
         builder.run(monitor);
         */
-        
+
         //non-eclipse ant runner, log will not show up in user console, eclipse tasks will not be available
-        /*   
+        /*
         Project p = new Project();
         p.setUserProperty("ant.file", buildFile.getAbsolutePath());
-        
+
         String plugindir = new WebDSLJarAntPropertyProvider().getAntPropertyValue("plugindir");
         String strjdir = StrategoAppl.class.getProtectionDomain().getCodeSource().getLocation().getFile();
         System.out.println(strjdir);
         p.setUserProperty("plugindir", plugindir);
         p.setUserProperty("stratego-jar-cp",strjdir);
         p.setUserProperty("build-id",buildid);
-        
+
         p.init();
         ProjectHelper helper = ProjectHelper.getProjectHelper();
         p.addReference("ant.projectHelper", helper);
@@ -168,11 +168,11 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         consoleLogger.setOutputPrintStream(System.out);
         consoleLogger.setMessageOutputLevel(Project.MSG_INFO);
         p.addBuildListener(consoleLogger);
-        
+
         p.executeTarget("plugin-eclipse-build");*/
    // }
-    
-    
+
+
     public static IServer getTomcatServer(IProject project, IProgressMonitor monitor){
         IServer[] servers = ServerUtil.getServersByModule(ServerUtil.getModule(project), monitor);
         for(IServer s :  servers){
@@ -180,7 +180,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
         return null;
     }
-    
+
 
     //quick hack, missing a removeAllPublishListeners method in Server
     public static IPublishListener previouslyAddedPublishListener = null;
@@ -190,10 +190,13 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             previouslyAddedPublishListener = null;
           }
     }
+
+    public static int defaultDelay = 1000;
+
     public static void setPublishListener(final IProject project,IProgressMonitor monitor, final String buildid) throws CoreException{
          final IServer tomcatserver = getTomcatServer(project,monitor);
          tryRemovePreviousListener(tomcatserver);
-        
+
         IPublishListener publishListener = null;
         if(buildid != null){
           publishListener = new PublishAdapter() {
@@ -204,11 +207,11 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             public void publishFinished(IServer server, IStatus status) {
                 //showServersView(false);
                 System.out.println("status: " + status);
-                Job job = new Job("start server") { 
+                Job job = new Job("start server") {
                     public IStatus run(IProgressMonitor monitor){
                         boolean deployed = pollDeployedAppForNewBuildId(project,buildid);
                         if(deployed){
-                            //opens default external browser     
+                            //opens default external browser
                             try {
                                 IWorkbenchBrowserSupport browserSupport = ServerUIPlugin.getInstance().getWorkbench().getBrowserSupport();
                                 IWebBrowser browser = browserSupport.createBrowser(IWorkbenchBrowserSupport.LOCATION_BAR | IWorkbenchBrowserSupport.NAVIGATION_BAR, null, null, null);
@@ -221,20 +224,20 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                             // after succesful open, remove listener to avoid having the browser popup each time a change is made in servers publish state
                             tryRemovePreviousListener(tomcatserver);
                         }
-                        
+
                         return Status.OK_STATUS;
-                    }  
+                    }
                 };
-                job.schedule(3000);
+                job.schedule(defaultDelay);
             }
           };
           System.out.println("Adding publish listener.");
           tomcatserver.addPublishListener(publishListener);
         }
-       
+
         previouslyAddedPublishListener = publishListener;
     }
-    
+
     public static String getAppUrl(IProject project){
         if(isRootApp(project)){
             return "http://localhost:8080/";
@@ -262,8 +265,8 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             BufferedReader inreader = new BufferedReader(instream);
             String inputLine = inreader.readLine();
             while (inputLine != null) {
-              if(inputLine.contains(searchfor)){ 
-                  found = true; 
+              if(inputLine.contains(searchfor)){
+                  found = true;
               }
               inputLine = inreader.readLine();
             }
@@ -286,56 +289,114 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
         return found;
     }
-    
+
     //restart once for a new project
     public static List<String> alreadyStarted = new ArrayList<String>();
-    
-    public static void tryStartServer(IProject project,IProgressMonitor monitor) throws CoreException{
+
+    public static void tryStartServer(IProject project, IProgressMonitor monitor) throws CoreException{
         //open 'Servers' project if closed, otherwise tomcat will not start
         IProject servers = ResourcesPlugin.getWorkspace().getRoot().getProject("Servers");
         if(!servers.isOpen()){
             servers.open(monitor);
         }
-        
+
         final IServer server = getTomcatServer(project,monitor);
-        
+
         // invoke publish first time, the initial start tends to hang when
         //   executed before publishing task completes.
         if(!alreadyStarted.contains(project.getName())){
-          System.out.println("Publish.");
-          server.publish(IServer.PUBLISH_STATE_INCREMENTAL,monitor);
+            //addPublishJob(server, project, defaultDelay);
+        	publish(server, monitor);
         }
-        
-        System.out.println("Polling server status.");
-        if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
-            //add as job to give publish a bit more time
-            Job job = new Job("start server") { 
-                public IStatus run(IProgressMonitor monitor){
-                    try {
-                      //server might have been started in the mean time
-                      if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
-                        System.out.println("Starting server.");
-                        server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
-                      }
-                    } catch (CoreException e) {
-                        e.printStackTrace();
-                    }
-                    return Status.OK_STATUS;
-                }  
-            };
-            job.schedule(3000);
-        }
-        else{
-            System.out.println("Server already started.");
-            if(!alreadyStarted.contains(project.getName())){
-                server.stop(true);
-                try { Thread.sleep (2000); } catch (InterruptedException e) { e.printStackTrace(); }
-                server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);  	
-                System.out.println("Restart server for new project.");
+        //else{
+        addCheckServerStartedJob(server,project,defaultDelay);
+        //}
+    }
+
+    /*
+     * if server start/restart is not executed asynchronously from a job it tends to hang
+     */
+    public static void addCheckServerStartedJob(final IServer server, final IProject project, int delay){
+    	Job job = new Job("check server status") {
+    		public IStatus run(IProgressMonitor monitor){
+                checkServerStarted(server,project);
+    			return Status.OK_STATUS;
+    		}
+    	};
+    	job.schedule(delay);
+    }
+    public static void checkServerStarted(IServer server, IProject project){
+    	   System.out.println("Polling server status.");
+	        if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
+	        	addStartServerJob(server,defaultDelay);
+	        }
+	        else{
+	            System.out.println("Server already started.");
+	            if(!alreadyStarted.contains(project.getName())){
+	            	addRestartServerJob(server, defaultDelay);
+	            }
+	        }
+	        if(!alreadyStarted.contains(project.getName())){
+	            alreadyStarted.add(project.getName());
+	        }
+    }
+    public static void addStartServerJob(final IServer server, int delay){
+    	Job job = new Job("start server") {
+            public IStatus run(IProgressMonitor monitor){
+                try {
+                  //server might have been started in the mean time
+                  if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
+                    System.out.println("Starting server.");
+                    server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
+                  }
+                } catch (CoreException e) {
+                    e.printStackTrace();
+                }
+                return Status.OK_STATUS;
             }
-        }
-        if(!alreadyStarted.contains(project.getName())){
-            alreadyStarted.add(project.getName());
-        }
+        };
+        job.schedule(delay);
+    }
+    /* stopping and starting seems to work better than calling restart */
+    public static void addRestartServerJob(final IServer server, final int delay){
+    	Job job = new Job("stop server") {
+    		public IStatus run(IProgressMonitor monitor){
+    			System.out.println("Stopping server.");
+    			server.stop(true);
+    			addStartServerJob(server, delay);
+    			return Status.OK_STATUS;
+    		}
+    	};
+    	job.schedule(delay);
+    }
+    public static void addPublishJob(final IServer server,final IProject project, int delay){
+    	Job job = new Job("publish server") {
+    		public IStatus run(IProgressMonitor monitor){
+    			publish(server, monitor);
+    		  	addCheckServerStartedJob(server,project,defaultDelay);
+    			return Status.OK_STATUS;
+    		}
+    	};
+    	job.schedule(delay);
+    }
+    public static void publish(IServer server, IProgressMonitor monitor){
+       System.out.println("Publishing server.");
+       server.publish(IServer.PUBLISH_STATE_INCREMENTAL,monitor);
+    }
+    public static void addRefreshJob(final IProject project, int delay){
+    	Job job = new Job("refresh project") {
+    		public IStatus run(IProgressMonitor monitor){
+    			refresh(project, monitor);
+    			return Status.OK_STATUS;
+    		}
+    	};
+    	job.schedule(delay);
+    }
+    public static void refresh(IProject project, IProgressMonitor monitor){
+    	try {
+			project.refreshLocal(IProject.DEPTH_INFINITE, monitor);
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
     }
 }

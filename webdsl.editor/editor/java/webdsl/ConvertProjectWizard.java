@@ -5,9 +5,9 @@ import java.io.IOException;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
- 
+
 public class ConvertProjectWizard extends WebDSLEditorWizard {
-  
+
     public ConvertProjectWizard() {
         setNeedsProgressMonitor(true);
         input = new ConvertProjectWizardPage();
@@ -22,9 +22,14 @@ public class ConvertProjectWizard extends WebDSLEditorWizard {
     }
     /**
      *  Don't generate example app files
-     */		
+     */
     @Override
-    public void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{}
+    public void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{
+    	StringBuffer file = new StringBuffer();
+    	file.append("file to let the ant builder know that the project needs to be cleaned");
+    	WebDSLEditorWizard.createDirs(project.getLocation()+"/.servletapp/");
+        writeStringToFile(file.toString(), project.getLocation()+"/.servletapp/.clean-project-required");
+    }
     @Override
     protected void openEditorsForExampleApp(String appName, IProject project, IProgressMonitor monitor){}
 }
