@@ -19,12 +19,12 @@ strategies // editor service interface
   
   editor-check(|fullpath): ast -> (ast-renamed, errs, warns, notes)
     with
-        {| Rename:
-          dbg-time(rename-top => ast-renamed | "rename")
-        |}
         // Typecheck local
-      ; {| DynamicRulesUsed, ExtraWarnings:
-	          enable-dr-usage-tracking
+        {| DynamicRulesUsed, ExtraWarnings:
+        	  enable-dr-usage-tracking
+        	; {| Rename:
+              dbg-time(rename-top => ast-renamed | "rename")
+            |}
 	        ; not(find-extra-errors)       // collected in dr
 	        ; warn3 := <bagof-ExtraWarnings>
           ; (err1, warn1) := 
@@ -97,6 +97,13 @@ strategies // editor service interface
         // Set up built-in types before doing any declares
 	      typecheck-init
 	      
+	      // Get built-in imports
+	    ; where({| ExtraModulesToImport:
+            try(import-extra-modules-hook; debug(!"INTERNAL ERROR: import-extra-modules-hook strategies must fail");<exit>1)
+          ; extramodules := <bagof-ExtraModulesToImport>
+          ; debug(!"Importing: ")
+          ; map(get-imports)
+        |})
 	      // Declare this module (processes transitive imports)
 	    ; get-main-import
 	    ; {| CurrentFile:

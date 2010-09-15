@@ -35,7 +35,8 @@ rules
   make-list = ?list; <flatten-list; concat-strings> ["<ul>",<map(make-item)> list,"</ul>"]
   make-item = ?str; <concat-strings> ["<li>",str,"</li>"]
   
-  // AST mapping
+rules   // AST mapping
+
   preserve(s) =
     if has-ast-mapping then
         origin-track-forced(s)
@@ -50,31 +51,11 @@ rules
     <+ id
 
   has-ast-mapping = where(origin-term)
-  //has-ast-mapping = id
 
-  check-ast(|msg) = 
-    alltd((?Module(_,_) <+ ?ModuleDefs(_,_,_)); ensure-ast(|msg))
+rules   // Dummies
   
-  // Apply s along the AST, starting at the root and ending at the given position and return first succeeded application
-  walk-ast(s | pos) = s 
-  walk-ast(s | pos) =
-      where([x|xs] := pos)
-    ; subterm-at(|x)
-    ; walk-ast(s | xs)
-
-  // Dummies
   strip-bodies = fail
+
+rules   // Versioning
   
   editor-timestamp = import-term(include/editor.timestamp.aterm)
-  
-  // TODO: move to editor-common.generated
-  queue-analysis = 
-  	   (is-list; list-loop(queue-analysis))
-  	<+ prim("SSL_EXT_queue_analysis")
-  	
-  set-total-work-units = prim("SSL_EXT_set_total_work_units")
-  complete-work-unit = prim("SSL_EXT_complete_work_unit")
-  queue-strategy(|s,description) = prim("SSL_EXT_queue_strategy", s, description)
-  set-markers(|ast) = prim("SSL_EXT_set_markers", ast)
-  set-analysis-backgrounded = !"BACKGROUNDED"
-  

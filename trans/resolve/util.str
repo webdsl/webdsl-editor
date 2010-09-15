@@ -2,6 +2,7 @@ module resolve/util
 
 imports
   libwebdsl-front
+  lib/editor-common.generated
   resolve/-
   trans/-
 
@@ -66,6 +67,15 @@ rules   // Rules to store hover info between resolve and hover
   remove-hover-info = try(dr-end-scope(|"HoverInfo")); dr-begin-scope(|"HoverInfo")
   set-hover-info = ?info; rules(HoverInfo := info)
   get-hover-info = HoverInfo
+
+rules   // Helper to find context information 
+  
+  // Apply s along the AST, starting at the root and ending at the given position and return first succeeded application
+  walk-ast(s | pos) = s 
+  walk-ast(s | pos) =
+      where([x|xs] := pos)
+    ; subterm-at(|x)
+    ; walk-ast(s | xs)
   
 rules   // Context sensitive resolving
   

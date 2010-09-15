@@ -1,9 +1,8 @@
 module dr
 
 imports
-  parse
-  webdsl_editor
-
+  trans/-
+  
 strategies  
   
   record-dr-internals = !["RecordDR_ExistingRules","RecordDR_NewRuleSets"]
@@ -80,7 +79,8 @@ strategies
   store-dr-module: a@(rulename, key) -> a
     with  file := <CurrentFile>
         ; rules(RuleToModule : a -> file)
-          
+   
+  /*
   set-module-for-rule-closure: rulelist -> rulelist
     with  CurrentFile => file
         ; <map(\(name, keyvals) ->
@@ -89,6 +89,7 @@ strategies
               with ruleid := (name, key) \})> 
             keyvals \)>
           rulelist
+  */
 
 rules // helpers for dynamic rule set traversal
   

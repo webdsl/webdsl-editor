@@ -5,6 +5,6 @@
 
 # export LOCALCLASSPATH=~/.nix-profile/share/strc-java/strategoxt.jar
 # export LOCALCLASSPATH=/usr/local/share/strc-java/strategoxt.jar
-export LOCALCLASSPATH=~/strc-java/java/strategoxt.jar
+export LOCALCLASSPATH=`which strategoxt.jar`
 export ANT_OPTS=-Xmx1024m
 ant -f build.main.xml
