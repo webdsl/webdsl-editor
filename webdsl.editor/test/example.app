@@ -57,6 +57,10 @@ session SomeSession {
   }
   
   function findUtil(s : String) : Util {
+    
+    var p : DateTime;
+    p.format("x");
+    
     return null;
   }
   

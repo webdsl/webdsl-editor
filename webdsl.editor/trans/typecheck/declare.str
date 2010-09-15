@@ -20,7 +20,7 @@ rules // global declares
     <+?DeriveCrud(_)
     <+?Imports(_)
     <+?RequestScope(_)
-  
+    
 rules // template with subelements (placeholders)
 
 	declare-global =
@@ -42,6 +42,12 @@ rules // global declares with subelements
       ?ExtendEntity(ent, body)
     ; declare
     ; where(<map(store-def-to-mod-desugar(|ent))> body)
+    ; store-def; store-def-to-mod-desugar
+      
+  declare-global =
+      ?TypeDef(type,body)
+    ; declare
+    ; where(<map(try(?NativeClassFunctionFromStatic(_,<id>)); store-def-to-mod-desugar(|type))> body)
     ; store-def; store-def-to-mod-desugar
       
 rules // only global if defined on top level

@@ -89,7 +89,14 @@ strategies // editor service interface
                 ; ?Module(_,_); import-main-file
               )
             ; alltd(get-imports)
-	      |}
+            ; where(
+                {| ExtraModulesToImport:
+                  try(import-extra-modules-hook; debug(!"INTERNAL ERROR: import-extra-modules-hook strategies must fail");<exit>1)
+                ; extramodules := <bagof-ExtraModulesToImport>
+                ; filter(get-imports) // fails will be reported as errors
+                |}
+             )
+        |}
  
   get-imports: 
     imp@Imports(x) -> imp
