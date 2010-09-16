@@ -25,7 +25,7 @@
 	</fail>
 	<property name="externaljarflags" value="-la org.webdsl.webdsl_generator -la org.webdsl.webdsl_front" />
 	<property name="externaljarflags.set" value="true" />
-				
+			
 	<!-- WEBDSL: for spoofax.output.type (ctree/jar) -->
 	<loadproperties srcFile="build.properties" />
 	
@@ -59,8 +59,8 @@
 
 	<!-- WEBDSL: custom main target, don't use spoofaximp.default -->
 	<target name="all" depends="check.editor-ts.present, all.release" />
-	<target name="all.release" depends="update.editor-ts, utils-files, sdf2table, import-webdsl-template, import-rtrees-for-editor-checks, ppgen, pppack, create-dr-term, stratego.compile, refresh, sdf2imp" />
-
+	<target name="all.release" depends="update.editor-ts, sdf2table, import-webdsl-template, import-rtrees-for-editor-checks, ppgen, pppack, stratego.compile, sdf2imp, refresh" />
+	
 	<!-- WEBDSL: Custom targets .................................................................... -->
 
 	<target name="stratego.compile">
@@ -70,8 +70,8 @@
 		<replace file="editor/${esvmodule}-Builders.esv"
       token="@spoofax.output.type@" value="${spoofax.output.type}" />
 
-		<antcall target="${stratego.compile.target}" />
-   <jar update="true" destfile="${include}/${strmodule}.jar">
+	  <antcall target="${stratego.compile.target}" />
+	  <jar update="true" destfile="${include}/${strmodule}.jar">
 	   <fileset dir="${src-gen}" excludes="**/*.java" />
 	  </jar>
 	</target>
@@ -91,6 +91,7 @@
 				<exclude name="**/.webdsl-fragment-cache/**" />
 			</fileset>
 		</sync>
+		<untar overwrite="false" src="webdsl-template/template-java-servlet/tomcat/apache-tomcat-6.0.26.tar.gz" dest="webdsl-template/tomcat" compression="gzip"/>
 	</target>
 
 	<!--  copy rtrees of webdsl for stratego editor -->

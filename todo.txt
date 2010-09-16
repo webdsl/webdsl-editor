@@ -1,0 +1,2 @@
+* Resolving for HQL query parts
+  

@@ -20,6 +20,10 @@ strategies
       	 get-app-ini-dir-from-module-name; try-app-ini
       <+ get-app-ini-dir-from-app-name; try-app-ini
       <+ project-path; try-app-ini
+      <+ rules(
+          ApplicationIniPath  := "application.ini"
+          ApplicationIniDir   := "."
+        ); fail 
       )
     ; ApplicationIniPath
     ; debug(!"Got app ini path: ")
