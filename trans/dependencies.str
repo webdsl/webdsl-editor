@@ -9,11 +9,24 @@ strategies
   dependencies-file = !$[[<ApplicationIniDir>]/.dependencies.webdsl]
   
   update-dependency-graph =
-      dependencies-file; (file-exists; ReadFromFile <+ ![])
-    ; filter(read-old-dependencies)   // stores old deps in DR's
-    ; all-keys-RulesUsedBy
-    ; map(\fullpath -> (fullpath, <RulesUsedBy> fullpath)\)
-    ; <WriteToBinaryFile> (<dependencies-file>, <id>)
+      dependencies-file; (file-exists; dbg-time(ReadFromFile|"read dep file") <+ ![])
+    ; if dependencies-changed then
+		      filter(read-old-dependencies)   // stores old deps in DR's
+		    ; all-keys-RulesUsedBy
+		    ; map(\fullpath -> (fullpath, <RulesUsedBy> fullpath)\)
+		    ; <dbg-time(WriteToBinaryFile|"write dep file")> (<dependencies-file>, <id>)
+		  else
+		      <debug> "No dependencies changed."
+		  end
+		  
+  dependencies-changed =
+    // Keep modules with changed rulesets
+    filter({
+        ?(fullpath, usedrules)
+      ; <not(eq); debug(!"Rules changed:" )> (usedrules, <RulesUsedBy> fullpath)
+    })
+    // Any modules changed?
+    ; not(?[])
       
   read-old-dependencies: (fullpath, usedrules) -> (fullpath, usedrules)
     where not(<RulesUsedBy> fullpath)   // not updated in this analyze run

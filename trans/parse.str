@@ -29,8 +29,7 @@ rules
   			
   editor-parse-webdsl-module: x -> x
   	where(
-    		full-path := <import-to-fullpath> x
-   	; <file-exists <+ report-import-failed(|"Imported file not found")> full-path
+    		full-path := <get-fixed-import-path <+ report-import-failed(|"Imported file not found")> x
    	)
   ; (open-import-sig(
     		!full-path
@@ -40,7 +39,14 @@ rules
       <+
     	 <report-import-failed(|"Could not import file")> full-path
     )
-    
+  
+  get-fixed-import-path = import-to-fullpath; file-exists
+  // FIXME: before the first build, src-webdsl-template files are not copied to .servletapp
+  get-fixed-import-path =
+      <split-after; Snd> (<id>, ".servletapp/src-webdsl-template/")
+    ; <concat-strings> [<plugin-path>, "/webdsl-template/template-webdsl/", <id>, ".app"]
+    ; file-exists
+  
   all-used-drs = !<import-term(include/webdsl-typechecker-rules.aterm)>
   is-used-dr = ?"ModuleDecl"
  

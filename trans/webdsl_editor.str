@@ -101,8 +101,7 @@ strategies // editor service interface
 	    ; where({| ExtraModulesToImport:
             try(import-extra-modules-hook; debug(!"INTERNAL ERROR: import-extra-modules-hook strategies must fail");<exit>1)
           ; extramodules := <bagof-ExtraModulesToImport>
-          ; debug(!"Importing: ")
-          ; map(get-imports)
+          ; filter(get-imports)     // errors are reported
         |})
 	      // Declare this module (processes transitive imports)
 	    ; get-main-import
