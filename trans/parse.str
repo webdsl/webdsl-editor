@@ -52,9 +52,6 @@ rules
  
   is-used-dr = ?x; where(all-used-drs; fetch-elem(?x))
   
-  get-transitive-import: imp@Imports(x) -> imp
-  	with <get-imports> imp
-  
   read-import(|fullpath) =
       desugar-compat  // simplify module/app constructor
     ; preserve(try(fix-module-name(|fullpath)))
@@ -89,7 +86,7 @@ rules
 		  
   read-import-sigs: (ruleset, imports) -> (ruleset, imports)
     with <log-time-helper(load-dynamic-rule-closure | "load drs")> ruleset
-       ; <map(get-imports)> imports
+       ; <filter(get-imports)> imports
        
   // Try subnodes before stripping the node
   find-node(|sig): node -> res
