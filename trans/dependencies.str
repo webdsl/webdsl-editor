@@ -10,23 +10,21 @@ strategies
   
   update-dependency-graph =
       dependencies-file; (file-exists; dbg-time(ReadFromFile|"read dep file") <+ ![])
-    ; if dependencies-changed then
+    ; if dependencies-unchanged then
+          <debug> "No dependencies changed."
+          // TODO: touch dep file (no stratego strategy for touching files?)
+      else
 		      filter(read-old-dependencies)   // stores old deps in DR's
 		    ; all-keys-RulesUsedBy
 		    ; map(\fullpath -> (fullpath, <RulesUsedBy> fullpath)\)
 		    ; <dbg-time(WriteToBinaryFile|"write dep file")> (<dependencies-file>, <id>)
-		  else
-		      <debug> "No dependencies changed."
 		  end
 		  
-  dependencies-changed =
-    // Keep modules with changed rulesets
-    filter({
-        ?(fullpath, usedrules)
-      ; <not(eq); debug(!"Rules changed:" )> (usedrules, <RulesUsedBy> fullpath)
-    })
-    // Any modules changed?
-    ; not(?[])
+  dependencies-unchanged = {| PrevRules:
+      map(\ (fullpath, usedrules) -> <rules(PrevRules : fullpath -> usedrules)> \)
+    ; all-keys-RulesUsedBy
+    ; map(<eq> (<debug;PrevRules>, <debug;RulesUsedBy>))
+  |}
       
   read-old-dependencies: (fullpath, usedrules) -> (fullpath, usedrules)
     where not(<RulesUsedBy> fullpath)   // not updated in this analyze run
