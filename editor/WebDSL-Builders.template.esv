@@ -25,6 +25,8 @@ builders
   
   provider  : include/webdsl_editor.@spoofax.output.type@
   
+  on save   : on-save
+  
   provider  : include/webdsl.jar
   
   provider	: lib/acoda.jar

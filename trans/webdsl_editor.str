@@ -8,7 +8,7 @@ imports
   typecheck/import		// for ExtraWarnings
 	lib/editor-common.generated
 	trans/-
-  
+	
 signature constructors
   FILE : Term -> Term
   
@@ -62,22 +62,24 @@ strategies // editor service interface
   // Path is relative to project, without leading slash
   // Projectpath is an absolute path to the project root, without trailing slash
   webdsl-editor-init =
-      ?(path, projectpath)
+      ?(path, projectpath, ast)
     ; editor-init     // cleanup dynamic rules
     ; fullpath := <concat-strings> [projectpath, "/", path]
     ; rules( FullPath := fullpath )
-    ; get-main-file-name      // set ApplicationIniDir
+    ; <get-main-file-name> ast      // set ApplicationIniDir
   
   editor-analyze: input@(ast, path, projectpath) -> result
     with  disable-dr-usage-tracking     // avoid overhead
         ; !""; debug
         ; !path; debug(!"Analyzing: ")
-        ; <webdsl-editor-init> (path, projectpath)
-        ; not(PerformingUpdate); is-editor-updated; with(
+        ; <webdsl-editor-init> (path, projectpath, <desugar-compat> ast)
+        ; if not(PerformingUpdate); is-editor-updated then
               <schedule-background-update> input
             ; set-analysis-backgrounded => result
-          )
-          <+ <editor-analyze-work> ast => result
+          else
+              <editor-analyze-work> ast => result
+          end
+        ; enable-dr-usage-tracking      // for dr -> module resolving
   
   read-old-signature: filename -> sig
     with  path := <import-cache-path> filename
@@ -87,11 +89,7 @@ strategies // editor service interface
   editor-analyze-work:
     ast -> (ast-desugared, errors, warnings, notes)
     with
-      // save old cached version to calculate difference
-      old-ruleset := <FullPath; dbg-time(read-old-signature | "read old sig") <+ ![]>
-    ; rules(RulesCreatedPrev := old-ruleset)
-    
-    ; <desugar-compat> ast
+      <desugar-compat> ast
     ; in-typechecking-phase(
         
         // Set up built-in types before doing any declares
@@ -119,36 +117,43 @@ strategies // editor service interface
 	    ; editor-check(|<FullPath>) => (ast-renamed, err1, warnings, notes)
     )
     ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
-    
     ; errors := <concat> [err1, <bagof-ImportErrors>]
-    
-    ; log-time-helper(update-dependency-graph | "update dependency graph")
-      
     ; print-total-log-time
-    ; where(
-        dbg-time(
-            // Modules that depend on rules that are changed by this update
-            find-dependent-modules => dependent-mods1
-          ; try(not(?[]); debug(!"Dependent modules to check: "))
-            // Modules that are not yet checked; no dependencies calculated
-          ; bagof-ModulesToCheck; map(Fst) => dependent-mods2
-          ; try(not(?[]); debug(!"Unchecked modules to check: "))
-          ; <concat; uniq> [dependent-mods1, dependent-mods2]
-            
-          ; try(where(ModulesEnqueued => enqueued); <diff> (<id>, enqueued))
-          ; debug(!"... all modules to check: ")
-          ; try(
-            	 not(?[])
-            ; if PerformingUpdate then
-              	// with progress meter
-              	queue-strategy(|"editor-analyze-update-modules", "Performing complete typecheck")
-              else
-                queue-analysis     // without ui
-              end
-            )
-        | "finding dependent mods")
-     )
-    ; enable-dr-usage-tracking      // for dr -> module resolving
+    
+  
+  on-save: p@(selected, position, ast, path, project-path) -> ast
+  with 
+    disable-dr-usage-tracking;     // avoid overhead
+    <webdsl-editor-init> (path, project-path, ast);
+    // save old cached version to calculate difference
+    old-ruleset := <FullPath; dbg-time(read-old-signature | "read old sig") <+ ![]>;
+    rules(RulesCreatedPrev := old-ruleset);
+    
+    <editor-analyze-work> ast => result;
+    
+    log-time-helper(update-dependency-graph | "update dependency graph");
+    dbg-time(
+        // Modules that depend on rules that are changed by this update
+        find-dependent-modules => dependent-mods1
+      ; try(not(?[]); debug(!"Dependent modules to check: "))
+        // Modules that are not yet checked; no dependencies calculated
+      ; bagof-ModulesToCheck; map(Fst) => dependent-mods2
+      ; try(not(?[]); debug(!"Unchecked modules to check: "))
+      ; <concat; uniq> [dependent-mods1, dependent-mods2]
+        
+      ; try(where(ModulesEnqueued => enqueued); <diff> (<id>, enqueued))
+      ; debug(!"... all modules to check: ")
+      ; try(
+           not(?[])
+        ; if PerformingUpdate then
+            // with progress meter
+            queue-strategy(|"editor-analyze-update-modules", "Performing complete typecheck")
+          else
+            queue-analysis     // without ui
+          end
+        )
+      | "finding dependent mods");
+    enable-dr-usage-tracking
   
   update-other-modules =
       bagof-ModulesToCheck    // pairs of (fullpath, ast)

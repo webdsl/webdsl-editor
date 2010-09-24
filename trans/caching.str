@@ -35,23 +35,27 @@ strategies
             // Check whether we've already imported this file
             if not(<IsImported> path) then
 	            rules( IsImported : path );
-	            if <is-newer> (cache-path, path); <check-editor-version> cache-path then
-		            <log-time-helper(ReadFromFile | "read")> cache-path;
-		            record-sigs
-		          else
-		            where(!cache-path; debug(!"Updating cache: "));
-		            file := <parse-file> path;
-		            sigs := <record-declarations> file;
-		            if <file-exists> path then
-		              // Only cache if on filesystem (e.g., ignore libstratego-lib)
-		              <WriteToBinaryFile> (cache-path, sigs)
-		            end
-		          end
+	            <open-import-sig-cached(record-declarations,record-sigs)> (path, cache-path)
 		        end
 	        end
         |}
       end
-        
+
+  open-import-sig-cached(record-declarations,record-sigs): (path, cache-path) -> (path, cache-path)
+    where <is-newer> (cache-path, path);
+          <check-editor-version> cache-path;
+          <log-time-helper(ReadFromFile | "read")> cache-path;
+          record-sigs
+          
+  open-import-sig-cached(record-declarations,record-sigs): (path, cache-path) -> (path, cache-path)
+    with  <debug(!"Updating cache: ")> cache-path;
+          file := <parse-file> path;
+          sigs := <record-declarations> file;
+          if <file-exists> path then
+            // Only cache if on filesystem (e.g., ignore libstratego-lib)
+            <WriteToBinaryFile> (cache-path, sigs)
+          end
+       
 strategies // bench
   
    dbg-time(s|msg) =
