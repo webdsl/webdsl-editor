@@ -53,8 +53,13 @@ rules // global declares with subelements
   declare-global =
       ?NativeClass(class,as,super,elems)
     ; declare
-    ; where(<map(store-def-to-mod-desugar(|as))> elems)
-    ; store-def; store-def-to-mod-desugar
+    ; store-def
+    ; NativeClass(_,_,_,newelems) := <store-def-to-mod-desugar>
+    ; where(<?NativeClassAlias(realname)> as <+ realname := as)
+      // functions
+    ; where(<map(store-def-to-mod-desugar(|realname))> newelems)
+      // constructors
+    ; where(<filter(?Function(_,_,_,_); store-def-to-mod-desugar)> newelems)
       
 rules // only global if defined on top level
   
