@@ -23,11 +23,11 @@ rules // global declares
     
 rules // template with subelements (placeholders)
 
-	declare-global =
-			?Define(_,_,_,_,body)
-		; where(store-def; store-def-to-mod-desugar)
-		; declare
-		; <map(store-def-to-mod-desugar)> body		// body is a list of stripped elements
+  declare-global =
+      ?Define(_,_,_,_,body)
+    ; where(store-def; store-def-to-mod-desugar)
+    ; declare
+    ; <map(store-def-to-mod-desugar)> body		// body is a list of stripped elements
 
 rules // global declares with subelements
 
@@ -50,6 +50,12 @@ rules // global declares with subelements
     ; where(<map(try(?NativeClassFunctionFromStatic(_,<id>)); store-def-to-mod-desugar(|type))> body)
     ; store-def; store-def-to-mod-desugar
       
+  declare-global =
+      ?NativeClass(class,as,super,elems)
+    ; declare
+    ; where(<map(store-def-to-mod-desugar(|as))> elems)
+    ; store-def; store-def-to-mod-desugar
+      
 rules // only global if defined on top level
   
   declare-global =
@@ -62,7 +68,7 @@ rules // only global if defined on top level
     ; fail // allow further traversal (like imports)
   
   is-global-toplevel =
-  	 ?VarDeclInit(_,_,_)
+     ?VarDeclInit(_,_,_)
    <+?VarDeclInitInferred(_,_)
    <+?Function(_,_,_,_)
    <+?FunctionNoReturn(_,_,_)
