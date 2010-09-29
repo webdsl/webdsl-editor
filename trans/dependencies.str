@@ -19,12 +19,17 @@ strategies
 		    ; map(\fullpath -> (fullpath, <RulesUsedBy> fullpath)\)
 		    ; <dbg-time(WriteToBinaryFile|"write dep file")> (<dependencies-file>, <id>)
 		  end
-		  
-  dependencies-unchanged = {| PrevRules:
+	
+	// Overwrite unchanged dependencies for now; we don't have a way to touch the timestamp of the dependencies file
+	dependencies-unchanged = fail
+	
+	/*
+	dependencies-unchanged = {| PrevRules:
       map(\ (fullpath, usedrules) -> <rules(PrevRules : fullpath -> usedrules)> \)
     ; all-keys-RulesUsedBy
     ; map(<eq> (<debug;PrevRules>, <debug;RulesUsedBy>))
   |}
+  */
       
   read-old-dependencies: (fullpath, usedrules) -> (fullpath, usedrules)
     where not(<RulesUsedBy> fullpath)   // not updated in this analyze run
