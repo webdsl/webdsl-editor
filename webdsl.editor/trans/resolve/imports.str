@@ -3,6 +3,7 @@ module resolve/imports
 imports
   libwebdsl-front
   application-ini
+  trans/-
 
 rules   // resolve
             

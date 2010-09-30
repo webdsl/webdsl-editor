@@ -5,7 +5,7 @@ imports
   libwebdsl-generator
   typechecker
   resolve/-
-  util
+  trans/util
   typecheck/entities
  
 rules // actual lookup

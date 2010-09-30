@@ -1,42 +1,41 @@
-module caching
+module trans/caching
 
 imports
-    parse
     lib/editor-common.generated
     libwebdsl-front
-    util
-    webdsl_editor
-    application-ini
+    trans/-
+    lib/dependencies
     
-strategies  
-  
-  store-def-to-mod-desugar = preserve(desugar-all; store-def-to-mod)
-  store-def-to-mod-desugar(|ent) = desugar-all; add-anno(|FromEntity(ent)); store-def-to-mod
-        
-  store-def-to-mod: def -> def
-    where mod := <CurrentFile>
-        ; rules(DefToModule :+ def -> mod)
-    
-strategies // storing for compiler typechecker
-  
-  // Already stored
-  store-def: def -> def
-    where mod := <CurrentFile>
-        ; <ReadingFromCache> mod
- 
-  store-def: def -> def
-    where mod := <CurrentFile>
-        ; rules(ModuleDefs :+ mod -> def)
-  
-  // If CurrentFile is not set, we're parsing the main file
-  store-def = id
-
 strategies
 
+  dependencies-file = !$[[<ApplicationIniDir>]/.dependencies.webdsl]
+   
+  get-created-rules = FileSignature; Fst
+  get-imported-modules = FileSignature; Snd
+  
+  update-dependency-graph =
+    where(dependencies-file => file);
+    <update-dependency-graph(RulesUsedBy | <all-keys-RulesUsedBy>)> file
+
+  find-dependent-modules =
+    dependencies-file => file; 
+    all-keys-IsImported => all-mods;
+    <find-dependent-modules(RulesUsedBy | <get-created-rules>, <RulesCreatedPrev>, all-mods)> file
+
+  read-old-signature: filename -> sig
+    with  path := <import-cache-path> filename
+    where <gt> (<file-exists; modification-time> path, <editor-timestamp>)
+        ; (sig, _) := <ReadFromFile> path
+          
   check-editor-version: cache-path -> cache-path
     with  editor-ts := <editor-timestamp>
     where <gt <+ editor-new-version-once; fail> (<modification-time> cache-path, editor-ts)
-    
+  
+  is-editor-updated = 
+      dependencies-file => filename
+    ; (   not(<file-exists> filename)
+        <+ <gt> (<editor-timestamp>, <modification-time> filename))
+  
   editor-new-version-once =
     try(
         where(not(EditorNewVersionShowed))
@@ -60,23 +59,27 @@ strategies
             // Check whether we've already imported this file
             if not(<IsImported> path) then
 	            rules( IsImported : path );
-	            if <is-newer> (cache-path, path); <check-editor-version> cache-path then
-		            <log-time-helper(ReadFromFile | "read")> cache-path;
-		            record-sigs
-		          else
-		            where(!cache-path; debug(!"Updating cache: "));
-		            file := <parse-file> path;
-		            sigs := <record-declarations> file;
-		            if <file-exists> path then
-		              // Only cache if on filesystem (e.g., ignore libstratego-lib)
-		              <WriteToBinaryFile> (cache-path, sigs)
-		            end
-		          end
+	            <open-import-sig-cached(record-declarations,record-sigs)> (path, cache-path)
 		        end
 	        end
         |}
       end
-        
+
+  open-import-sig-cached(record-declarations,record-sigs): (path, cache-path) -> (path, cache-path)
+    where <is-newer> (cache-path, path);
+          <check-editor-version> cache-path;
+          <log-time-helper(ReadFromFile | "read")> cache-path;
+          record-sigs
+          
+  open-import-sig-cached(record-declarations,record-sigs): (path, cache-path) -> (path, cache-path)
+    with  <debug(!"Updating cache: ")> cache-path;
+          file := <parse-file> path;
+          sigs := <record-declarations> file;
+          if <file-exists> path then
+            // Only cache if on filesystem (e.g., ignore libstratego-lib)
+            <WriteToBinaryFile> (cache-path, sigs)
+          end
+       
 strategies // bench
   
    dbg-time(s|msg) =

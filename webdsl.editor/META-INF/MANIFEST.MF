@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: WebDSL Plug-in
 Bundle-SymbolicName: webdsl.editor;singleton:=true
-Bundle-Version: 1.1.5
+Bundle-Version: 1.1.6
 Bundle-Activator: webdsl.Activator
 Import-Package: org.eclipse.ant.core,
  org.eclipse.wst.server.ui.internal,
@@ -16,7 +16,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jface.text,
  org.eclipse.ui.editors,
  org.eclipse.ui.workbench.texteditor,
- org.strategoxt.imp.runtime,
+ org.strategoxt.imp.runtime;bundle-version="0.1.1",
  org.spoofax.aterm,
  org.spoofax.jsglr,
  org.spoofax.interpreter.core,

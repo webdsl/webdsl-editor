@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="dr-analysis" default="create-dr-term" basedir="..">
+	
+	<loadproperties srcfile="import.webdsl.properties" />
+	<property name="out" location="include/webdsl-typechecker-rules.aterm" />
+	
+	<property name="dir" value="dr-analysis" />
+	<property name="src.dranalysis" value="dranalysis" />
+	<property name="src.packstratego" value="packstratego" />
+	
+	<path id="strj">
+		<pathelement location="${eclipse.strategoxt.strategojar}" />
+	</path>
+	
+	<target name="create-dr-term" depends="pack-stratego, dranalysis">
+	  <dependset>
+	  	<srcfileset file="${webdsl.home}/libwebdsl-generator.rtree" />
+	  	<srcfileset dir="${dir}" includes="*.str" />
+	  	<targetfileset file="${out}" />
+	  </dependset>
+	  <available file="${out}" property="outfile.available" />
+		<antcall target="create-dr-term.helper" />
+	</target>
+		
+	<target name="create-dr-term.helper" unless="outfile.available">
+		<echo>Packing stratego sources of typechecker...</echo>
+		<java classname="packstratego" failonerror="true">
+		  <classpath>
+		  	<path path="${dir}/bin" />
+		  	<path refid="strj" />
+		  </classpath>
+			<arg line="-i ${webdsl.home}/org/webdsl/dsl/generation/webdsl-generator.str" />
+			<arg line="-I ${webdsl.home}" />
+			<arg line="-I ${webdsl.home}/org/webdsl/dsl/syntax" />
+			<arg line="-I ${user.home}/.nix-profile/share/java-front" /> <!-- TODO; remove -->
+			<arg value="-o"/>
+			<arg file="${dir}/bin/webdsl-generator-packed.str" />
+		</java>
+		
+		<echo>Analyzing dynamic rule dependencies...</echo>
+		<java classname="dranalysis" failonerror="true">
+		  <classpath>
+		    <path path="${dir}/bin" />
+		    <path refid="strj" />
+		    </classpath>
+		  <arg value="-i"/>
+		  <arg file="${dir}/bin/webdsl-generator-packed.str" />
+			<arg value="-o"/>
+			<arg file="${out}" />
+		</java>
+  </target>
+	
+	<!-- BUILD STRATEGO PROGRAMS -->
+	
+	<target name="dranalysis">
+	  <antcall target="-compile-str">
+	    <param name="file" value="${src.dranalysis}" />
+	  </antcall>
+	</target>
+
+	<target name="pack-stratego">
+	  <antcall target="-compile-str">
+	    <param name="file" value="${src.packstratego}" />
+	  </antcall>
+	</target>
+	
+  <target name="-compile-str" if="file">
+  	<dependset>
+  	  <srcfileset file="${dir}/{$file}.str" />
+  	  <targetfileset file="${dir}/bin/${file}.java" />
+  	</dependset>
+  	<available file="${dir}/bin/${file}.java" property="compile-str.${file}.available" />
+  	<antcall target="-compile-str-helper" />
+  	<javac srcdir="${dir}/bin" destdir="${dir}/bin" classpathref="strj" source="1.5" target="1.5"/>
+  	
+  </target>
+  	
+	<target name="-compile-str-helper" if="file" unless="compile-str.${file}.available">
+	  <java classname="org.strategoxt.strj.Main" failonerror="true">
+	    <classpath>
+	      <pathelement location="${eclipse.strategoxt.strategojar}" />
+	    </classpath>
+	    <arg value="-i" />
+	    <arg path="${dir}/${file}.str" />
+	    <arg value="-o" />
+	    <arg path="${dir}/bin/${file}.java" />
+	  	<arg value="-la" />
+	    <arg value="stratego-lib" />
+	  	<arg value="-la" />
+	    <arg value="stratego-xtc" />
+	  	<arg value="-la" />
+	    <arg value="strc" />
+	  </java>
+	</target>  
+
+</project>

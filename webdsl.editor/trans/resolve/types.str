@@ -3,7 +3,6 @@ module resolve/types
 imports
     libwebdsl-front
     libwebdsl-generator
-    parse
     lib/editor-common.generated
     
 strategies

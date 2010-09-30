@@ -1,18 +1,14 @@
-module webdsl_editor
+module trans/webdsl_editor
 
 imports
   libstratego-lib
   libwebdsl-generator
   libwebdsl-front
-  parse
-  application-ini
-  util
-  caching
-  typechecker
-  typecheck/import		// for ExtraWarnings
-	resolve
-	lib/editor-common.generated
   
+  typecheck/import		// for ExtraWarnings
+	trans/-
+	lib/-
+	
 signature constructors
   FILE : Term -> Term
   
@@ -21,82 +17,182 @@ strategies // editor service interface
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
   
-  fix-path: path -> <string-replace(|"\\","/")> path
+  editor-check(|fullpath): ast -> (ast-renamed, errs, warns, notes)
+    with
+        // Typecheck local
+        {| DynamicRulesUsed, ExtraWarnings:
+        	  enable-dr-usage-tracking
+        	; {| Rename:
+              dbg-time(rename-top => ast-renamed | "rename")
+            |}
+          ; not(find-extra-errors)       // collected in dr
+	        ; warn3 := <bagof-ExtraWarnings>
+          ; (err1, warn1) := 
+	            <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")> ast-renamed
+	        ; disable-dr-usage-tracking
+	          
+	          // remove {DR_DUMMY()}
+	        ; all-keys-DynamicRulesUsed; remove-dr-dummies => drs
+	        ; rules(RulesUsedBy : fullpath -> drs)
+        |}
+        // Typecheck global
+      ; dbg-time(
+          (err2, warn2) := <catch-errors-editor(not(<constraint-error-global> ""))>
+        | "constraint-global")
+      ; errs := <concat> [err1,err2]
+      ; warns := <concat> [warn1,warn2,warn3]
+      ; notes := []
   
   // Path is relative to project, without leading slash
   // Projectpath is an absolute path to the project root, without trailing slash
-  editor-analyze:
-    (ast, path, projectpath) -> (ast-desugared, errors, warnings, notes)
-    with
-      where(!""; debug)
-    ; editor-init
-    ; fullpath1 := <concat-strings> [projectpath,"/",path] //$[[projectpath]/[path]]
-    ; fullpath := <try(fix-path)> fullpath1
-    ; rules(
-        AnalyzeFile := path     // path within project
-        FullPath := fullpath    // full filename
-      )
-    ; typecheck-init    // set up built-in types before doing any declares
-    ; ast-simplified := <desugar-compat> ast
-    ; <dbg-time(get-all-imports | "get imports")> ast-simplified
-    ; (errors-ast, warnings-ast, ast-renamed) := 
-         <dbg-time(typecheck-editor | "typecheck")> ast-simplified
-    ; <try(find-extra-errors)> ast-simplified  // collect in dr
-    ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
-    ; notes := []
-    ; errors := <concat> [errors-ast, <bagof-ImportErrors>]
-    ; warnings := <concat> [warnings-ast, <bagof-ExtraWarnings>]
-    ; print-total-log-time
-      
-  find-extra-errors = fail
+  webdsl-editor-init =
+      ?(path, projectpath, ast)
+    ; editor-init     // cleanup dynamic rules
+    ; fullpath := <concat-strings> [projectpath, "/", path]
+    ; rules( FullPath := fullpath )
+    ; <desugar-compat; get-main-file-name> ast      // set ApplicationIniDir
   
-  typecheck-editor =
-  	in-typechecking-phase(
-  			typecheck-declare
-  		; typechecker-after-declare
-      ; rename-top => ast-renamed
-      ; catch-errors-editor(
-      		constraint-error-all
-      	; not(constraint-error-global)
-     	) => (err, warn)
+  // Normal analysis entry point
+  editor-analyze: input@(ast, path, projectpath) -> result
+    with  disable-dr-usage-tracking     // avoid overhead
+        ; !""; debug
+        ; !path; debug(!"Analyzing: ")
+        ; <webdsl-editor-init> (path, projectpath, ast)
+        ; <editor-analyze-work> ast => result
+        ; if is-editor-updated then
+              // If editor is updated, we need to reparse and recheck all files to create a new dependency graph.
+              // This might take a while; we'll schedule a background job for this.
+              rules(PerformingUpdate := True())
+              // Queue other files to be analyzed
+            ; dependencies-file
+            ; try(remove-file)         // marks all files as changed
+            ; editor-analyze-multifile
+            ; ?dependent-mods
+              // with progress meter.
+            ; <debug> "Editor updated; scheduling background update.\n"
+            ; <queue-strategy(|"editor-update-modules", "Complete typecheck...")> dependent-mods
+          end
+        ; enable-dr-usage-tracking      // for dr -> module resolving
+  
+  editor-analyze-work:
+    ast -> (ast-desugared, errors, warnings, notes)
+    with
+      <desugar-compat> ast
+    ; in-typechecking-phase(
+        
+        // Set up built-in types before doing any declares
+	      typecheck-init
+	      
+	      // Get built-in imports
+	    ; where({| ExtraModulesToImport:
+            try(import-extra-modules-hook; debug(!"INTERNAL ERROR: import-extra-modules-hook strategies must fail");<exit>1)
+          ; extramodules := <bagof-ExtraModulesToImport>
+          ; filter(get-imports)     // errors are reported
+        |})
+	      // Declare this module (processes transitive imports)
+	    ; get-main-import
+	    ; {| CurrentFile:
+		       rules(CurrentFile := <FullPath>)
+	        ; where(
+	            declare-globals => sig
+	          ; rules(FileSignature := sig)
+	        )
+	      |}
+	    ; typechecker-after-declare
+	    ; editor-check(|<FullPath>) => (ast-renamed, err1, warnings, notes)
     )
-    ; !(err, warn, ast-renamed)
+    ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
+    ; errors := <concat> [err1, <bagof-ImportErrors>]
+    ; print-total-log-time
+  
+  // Call this after editor-analyze-work to calculate dependencies.
+  // Returns a list of modules that need to be updated.
+  editor-analyze-multifile =
+  with( 
+    // load old cached version to calculate difference
+    update-dependency-graph;
+    FullPath => fullpath;
+    old-ruleset := <dbg-time(read-old-signature | "read old sig") <+ ![]> fullpath;
+    rules(RulesCreatedPrev := old-ruleset);
+    dbg-time(
+        // Modules that depend on rules that are changed by this update
+        find-dependent-modules
+      ; where(cleanup-dependency-rules)     // release memory
+      ; filter(not(?fullpath))
+      ; ?dependent-mods
+      ; debug(!"... dependent modules to check: ")
+      | "finding dependent mods")  
+  )
+  ; !dependent-mods
+  
+  // Analyze a given set of modules.
+  // The modules can queue another set to modules to be checked.
+  editor-update-modules =
+    rules(Queued := 0); 
+    repeat(
+      not(?[]);
+      {n,updated:
+	      where(
+	        n := <add> (<length>, <Queued>);
+	        set-total-work-units;
+	        all-keys-UpdatedModules => updated
+	      );
+	      map(update-module); concat; uniq;   // returns a list of dependent modules
+	      // all dynamic rules have been cleared by editor-init
+	      where(<concat; map(\mod -> <rules(UpdatedModules : mod)> \)> [updated, <id>]);
+	      filter(not(UpdatedModules));
+	      rules(Queued := n)
+	    }
+   )
+  
+  // Parse and analyze a module for errors.
+  // * clears all dynamic rules ! *
+  update-module: fullpath -> deps
+    with  <debug(!"Checking import: ")> fullpath
+        ; ast := <parse-file> fullpath
+        ; (path, project-path) := <split-fullpath> fullpath
+        ; <webdsl-editor-init> (path, project-path, ast)
+        ; errors := <editor-analyze-work> ast
+        ; deps := <editor-analyze-multifile>
+        ; complete-work-unit
+        ; <set-markers(|ast)> errors
+  
+  // Expect that editor-analyze has analyzed the file.
+  // Find dependent modules, and queue them for analysis.
+  // Also save a cache of our new signature.
+  on-save: (selected, position, ast, path, project-path) -> None()
+    with
+      mods := <editor-analyze-multifile>
+    ; <queue-analysis> mods
+    ; cache-path := <FullPath; import-cache-path>
+    ; sig := <FileSignature>
+    ; <WriteToBinaryFile> (cache-path, sig)
+    
+  find-extra-errors = fail
   
   desugar-all =
       preserve(innermost(desugar-def))
   
   import-main-file: ast -> ast
     with  appname := <AppName>
-        ; mainapp := <concat-strings> [<ApplicationIniDir>, "/", appname, ".app"]
-          // TODO: does this work on windows too ? (/ vs. \)
         ; where(!appname; debug(!"Explicitely importing main file: ")) 
         ; <get-imports> Imports(appname)
           
   add-app-ini-error: ast -> ast
     with rules(ImportErrors :+= (ast, "Cannot find application.ini"))
              
-  get-all-imports: ast -> ast
+  get-main-import: ast -> ast
     with  FullPath => fullpath
-        ; rules(IsImported : fullpath) // do not transitively import the analyzed file
         ; {| ParsingModule:
               rules(ParsingModule := fullpath)
               // try to import main file if we're parsing a module
             ; !ast
             ; try(
-              	 // get-main-file-name also sets ApplicationIniDir
-                  where(get-main-file-name <+ add-app-ini-error; fail)
+              	  where(ApplicationIniDir <+ add-app-ini-error; fail)
                   // if checking a module, import main app file
                 ; ?Module(_,_); import-main-file
               )
-            ; alltd(get-imports)
-            ; where(
-                {| ExtraModulesToImport:
-                  try(import-extra-modules-hook; debug(!"INTERNAL ERROR: import-extra-modules-hook strategies must fail");<exit>1)
-                ; extramodules := <bagof-ExtraModulesToImport>
-                ; filter(get-imports) // fails will be reported as errors
-                |}
-             )
-        |}
+	      |}
  
   get-imports: 
     imp@Imports(x) -> imp

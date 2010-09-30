@@ -3,26 +3,24 @@ module typecheck/import
 imports 
   libwebdsl-front
   libwebdsl-generator
+  
   lib/editor-common.generated
-  caching
-  util
+  trans/-
   typecheck/-
-  application-ini
-  webdsl_editor
-
+  
 rules
   
   declaration-of: Imports(x) -> <ModuleDecl> x
   
-  // Special declare case for modules 
-  declare-global =
+  strip-mod: Module(x,_) -> Module(x,None())
+  
+  store-module =
       ?Module(name,_)
-    ; strip-mod => stripped-mod
-    ; store-def
-    ; store-def-to-mod-desugar
+    ; preserve(strip-mod) => stripped-mod
     ; rules(ModuleDecl : name -> stripped-mod)
-    ; fail // to continue traversal
-
+      
+  is-used-dr = ?"ModuleDecl"
+    
   // When resolving an import, the destination file is parsed but not desugared
   // Constructor will be desugared by hover-1 
   desugar-def = simplify-module-constructor
@@ -50,3 +48,4 @@ rules
     where not(CurrentModuleImported)
     with  msg := (mod, $[Module is not directly or transitively imported from main application file.])
         ; rules(ExtraWarnings :+= msg)
+                  

@@ -1,18 +1,20 @@
 module resolve/util
 
 imports
-	libwebdsl-front
+  libwebdsl-front
+  lib/editor-common.generated
   resolve/-
-  parse
-  webdsl_editor
-  util
-  caching
+  trans/-
+
+signature constructors
+
+  FromModule : Term -> Term
 
 strategies
   
   editor-resolve-internal =
   		remove-hover-info
-  	; if editor-resolve => tgt then
+    ; if editor-resolve => tgt then
   	  		<find-declaration> tgt
   	  	; try(where(get-anno(?FromEntity(_)); set-hover-info))
     		; try(where(get-hover-info; debug(!"Got hover info: ")))
@@ -22,6 +24,8 @@ strategies
     		; debug(!"No resolve for: ")
     		; fail
     	end
+  
+  remove-module-info = try(dr-end-scope(|"LookupFromModule")); dr-begin-scope(|"LookupFromModule")
     
   // Default resolve
   editor-resolve: (node, position, ast, path, project-path) -> <declaration-of> node
@@ -39,29 +43,23 @@ strategies
   declaration-of = fail
   hover = fail
   hover-with-info = fail
-  
+    
 rules // lookup definition across modules
 // If the given declaration is in another module, reparse that file and return node with position information
   
-  // in entity
-  find-declaration: decl1{anno*} -> decl
-    where anno := <fetch-elem(?FromEntity(_))> anno*
-        ; decl := <find-declaration(\x -> <DefToModule> x{anno}\)> decl1
-
-  find-declaration = find-declaration(DefToModule)
+  // 1. Local ast, non-generated: has ast mapping
+  // 2. Local ast, generated: LookupFromModule is unset, rule fails
+  // 3. Module ast, non-generated: find-declaration looks up the node
+  // 4. Module ast, generated: has IsGeneratedAnno(), rule fails
+  find-declaration = 
+      has-ast-mapping
+   <+ not(get-anno(?IsGeneratedAnno())); find-declaration(LookupFromModule)
   
   find-declaration(def-to-mod): decl1 -> decl
     where FullPath => mainmod
-          // desugar-all adds FromEntity anno's, which are not preserved by strip-bodies
-        ; decl2 := <preserve(alltd(strip-bodies); desugar-all)> decl1
-        ; if mod := <def-to-mod; debug(!"Got module source: "); not(?mainmod); debug(!".. loading def from: ")> decl2 then
-              decl := <strip-annos; get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
-          else
-              debug(!"... def is from local ast. ")
-            ; decl := decl1
-          end
-        ; (has-ast-mapping
-           <+ debug(!"No ast mapping, is built-in: "); fail)
+        ; decl2 := <desugar-all; alltd(strip-bodies)> decl1
+        ; mod := <def-to-mod; debug(!".. loading def from: ")> decl2
+        ; decl := <get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
   
 rules   // Rules to store hover info between resolve and hover
   
@@ -69,10 +67,19 @@ rules   // Rules to store hover info between resolve and hover
   remove-hover-info = try(dr-end-scope(|"HoverInfo")); dr-begin-scope(|"HoverInfo")
   set-hover-info = ?info; rules(HoverInfo := info)
   get-hover-info = HoverInfo
+
+rules   // Helper to find context information 
+  
+  // Apply s along the AST, starting at the root and ending at the given position and return first succeeded application
+  walk-ast(s | pos) = s 
+  walk-ast(s | pos) =
+      where([x|xs] := pos)
+    ; subterm-at(|x)
+    ; walk-ast(s | xs)
   
 rules   // Context sensitive resolving
   
-  in-context(find-context, s : ATerm * ATerm -> ATerm):
+  in-context(find-context, s):
     a@(node, position, ast, path, project-path) -> res
     where context := <walk-ast(find-context | position)> ast
         ; debug(!"Got context: ")

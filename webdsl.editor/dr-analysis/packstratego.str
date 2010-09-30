@@ -1,0 +1,30 @@
+module packstratego
+
+imports
+  libstratego-lib
+  libstratego-xtc
+  libstratego-tool-doc
+  libstrc
+
+strategies
+  
+  include-option =
+    ArgOption("-I" + "--Include"
+    , where(<post-extend-config>("-I", [IncludeDir(<pack-ensure-directory>)]))
+    , !"-I|--Include <dir>   Include modules from directory <dir>"
+    )
+  
+  main = 
+    xtc-io-wrap(
+        include-option
+      , id
+      , id
+      , ![]
+      , pack-process-options; main-work
+    )
+    
+  main-work =
+        where(pack-include-dirs)
+      ; pack-stratego(|<get-config> "-I") => (files, spec)
+      ; <write-to> spec
+    

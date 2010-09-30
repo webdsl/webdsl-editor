@@ -21,11 +21,12 @@ rules
 signature constructors
   
   FromEntity : Term -> Term
+  IsGeneratedAnno : Term
 
 rules
 
   // Re-use compiler normalization
-  desugar-def = normalize-declare
+  desugar-def = normalize-declare; try(desugar-def)
 
   // Desugar, but remain compatible with compiler typechecker
   desugar-compat = try(preserve(simplify-application-constructor <+ simplify-module-constructor))
@@ -34,14 +35,15 @@ rules
   make-list = ?list; <flatten-list; concat-strings> ["<ul>",<map(make-item)> list,"</ul>"]
   make-item = ?str; <concat-strings> ["<li>",str,"</li>"]
   
-  // AST mapping
-  preserve(s) = where(not(has-ast-mapping)); s
+rules   // AST mapping
+
   preserve(s) =
-      ensure-ast(|"in preserve")
-   // ; try(where(origin-term; debug(!"Origin is: ")))
-    ; origin-track-forced(s)
-   // ; try(where(origin-term; debug(!"Origin is: ")))
-    ; ensure-ast(|"after preserve")
+    if has-ast-mapping then
+        origin-track-forced(s)
+      ; ensure-ast(|"after preserve")
+    else
+        s
+    end
   
   ensure-ast(|msg) = 
        is-list  // lists don't always have an ast association
@@ -49,20 +51,11 @@ rules
     <+ id
 
   has-ast-mapping = where(origin-term)
-  //has-ast-mapping = id
 
-  check-ast(|msg) = 
-    alltd((?Module(_,_) <+ ?ModuleDefs(_,_,_)); ensure-ast(|msg))
+rules   // Dummies
   
-  // Apply s along the AST, starting at the root and ending at the given position and return first succeeded application
-  walk-ast(s | pos) = s 
-  walk-ast(s | pos) =
-      where([x|xs] := pos)
-    ; subterm-at(|x)
-    ; walk-ast(s | xs)
-
-  // Dummies
   strip-bodies = fail
+
+rules   // Versioning
   
   editor-timestamp = import-term(include/editor.timestamp.aterm)
-  

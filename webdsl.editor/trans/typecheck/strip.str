@@ -2,7 +2,6 @@ module typecheck/strip
 
 imports
     libwebdsl-front
-    util
     
 rules
 
@@ -27,29 +26,9 @@ rules
   // need expression for typechecker
   //strip-bodies: VarDeclInitInferred(x, _) -> VarDeclInitInferred(x, None())
   
-  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, <strip-template-body> body)
+  strip-bodies: Define(mod*, name, args, targs, body) -> Define(mod*, name, args, targs, TemplateBody([]))
   
 rules // entities
   
-  strip-ent-body = map(try(strip-ent-decl))
+  strip-ent-body = ![]
   
-  strip-ent-decl = strip-bodies // re-use function stripping
-  strip-ent-decl: ExtendFunction(f) -> ExtendFunction(<strip-bodies> f)
-  
-rules // modules
-
-  // Using strip-bodies here would strip all definitions and declare nothing.
-  strip-mod: Module(x,_) -> Module(x,None())
-        
-rules // template
-	
-	strip-template-body = collect(preserve(strip-in-template-body))
-
-	strip-in-template-body: Placeholder(name, _) -> Placeholder(name, None())
-	
-	// Preserve template call, could be a container with ID which is needed to resolve ajax targets
-	strip-in-template-body: TemplateCallPropsNoBody(_,_,passign*) -> TemplateCallPropsNoBody(None(),None(),passign*)
-	strip-in-template-body: TemplateCallProps(_, passign*) -> TemplateCallProps(None(), passign*)
-	strip-in-template-body: TemplateCallPropsNoArgs(_, passign*, _) -> TemplateCallPropsNoArgs(None(), passign*, None())
-	strip-in-template-body: TemplateCall(_, _, passign*, _) -> TemplateCall(None(), None(), passign*, None())
-	
