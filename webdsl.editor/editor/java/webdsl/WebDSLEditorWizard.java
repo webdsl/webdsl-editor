@@ -230,6 +230,11 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
          createDirs(project.getLocation()+"/stylesheets");
          copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
+         //create other special dirs, to avoid seeing red warnings in build, also helps to see what you can modify/extend
+         createDirs(project.getLocation()+"/html");
+         createDirs(project.getLocation()+"/javascript");
+         createDirs(project.getLocation()+"/lib");
+         createDirs(project.getLocation()+"/nativejava");
      }
      
      public static void writeBuildXmlFile(IProject project) throws IOException{
