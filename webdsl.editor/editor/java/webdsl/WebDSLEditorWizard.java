@@ -230,11 +230,14 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
          createDirs(project.getLocation()+"/stylesheets");
          copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
+      
          //create other special dirs, to avoid seeing red warnings in build, also helps to see what you can modify/extend
          createDirs(project.getLocation()+"/html");
          createDirs(project.getLocation()+"/javascript");
          createDirs(project.getLocation()+"/lib");
          createDirs(project.getLocation()+"/nativejava");
+         
+         writeStringToFile("needed to start initial build", project.getLocation()+"/.saved-but-not-built");
      }
      
      public static void writeBuildXmlFile(IProject project) throws IOException{
@@ -479,9 +482,9 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          projectFile.append("\t\t<buildCommand>\n");
          projectFile.append("\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n");
          projectFile.append("\t\t</buildCommand>\n");
-         projectFile.append("\t\t<buildCommand>\n");
-         projectFile.append("\t\t\t<name>org.eclipse.wst.common.project.facet.core.builder</name>\n");
-         projectFile.append("\t\t</buildCommand>\n");
+         //projectFile.append("\t\t<buildCommand>\n");
+         //projectFile.append("\t\t\t<name>org.eclipse.wst.common.project.facet.core.builder</name>\n");
+         //projectFile.append("\t\t</buildCommand>\n");
          //projectFile.append("\t\t<buildCommand>\n");
          //projectFile.append("\t\t\t<name>org.eclipse.wst.validation.validationbuilder</name>\n");
          //projectFile.append("\t\t</buildCommand>\n");

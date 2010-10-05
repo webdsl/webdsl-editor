@@ -4,11 +4,12 @@ imports
   libstratego-lib
   libwebdsl-generator
   libwebdsl-front
+  libwrite-files
   
   typecheck/import		// for ExtraWarnings
-	trans/-
-	lib/-
-	
+  trans/-
+  lib/-
+  
 signature constructors
   FILE : Term -> Term
   
@@ -21,19 +22,19 @@ strategies // editor service interface
     with
         // Typecheck local
         {| DynamicRulesUsed, ExtraWarnings:
-        	  enable-dr-usage-tracking
-        	; {| Rename:
+            enable-dr-usage-tracking
+          ; {| Rename:
               dbg-time(rename-top => ast-renamed | "rename")
             |}
           ; not(find-extra-errors)       // collected in dr
-	        ; warn3 := <bagof-ExtraWarnings>
+          ; warn3 := <bagof-ExtraWarnings>
           ; (err1, warn1) := 
-	            <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")> ast-renamed
-	        ; disable-dr-usage-tracking
-	          
-	          // remove {DR_DUMMY()}
-	        ; all-keys-DynamicRulesUsed; remove-dr-dummies => drs
-	        ; rules(RulesUsedBy : fullpath -> drs)
+              <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")> ast-renamed
+          ; disable-dr-usage-tracking
+            
+            // remove {DR_DUMMY()}
+          ; all-keys-DynamicRulesUsed; remove-dr-dummies => drs
+          ; rules(RulesUsedBy : fullpath -> drs)
         |}
         // Typecheck global
       ; dbg-time(
@@ -81,25 +82,25 @@ strategies // editor service interface
     ; in-typechecking-phase(
         
         // Set up built-in types before doing any declares
-	      typecheck-init
-	      
-	      // Get built-in imports
-	    ; where({| ExtraModulesToImport:
+        typecheck-init
+        
+        // Get built-in imports
+      ; where({| ExtraModulesToImport:
             try(import-extra-modules-hook; debug(!"INTERNAL ERROR: import-extra-modules-hook strategies must fail");<exit>1)
           ; extramodules := <bagof-ExtraModulesToImport>
           ; filter(get-imports)     // errors are reported
         |})
-	      // Declare this module (processes transitive imports)
-	    ; get-main-import
-	    ; {| CurrentFile:
-		       rules(CurrentFile := <FullPath>)
-	        ; where(
-	            declare-globals => sig
-	          ; rules(FileSignature := sig)
-	        )
-	      |}
-	    ; typechecker-after-declare
-	    ; editor-check(|<FullPath>) => (ast-renamed, err1, warnings, notes)
+        // Declare this module (processes transitive imports)
+      ; get-main-import
+      ; {| CurrentFile:
+           rules(CurrentFile := <FullPath>)
+          ; where(
+              declare-globals => sig
+            ; rules(FileSignature := sig)
+          )
+        |}
+      ; typechecker-after-declare
+      ; editor-check(|<FullPath>) => (ast-renamed, err1, warnings, notes)
     )
     ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
     ; errors := <concat> [err1, <bagof-ImportErrors>]
@@ -132,17 +133,17 @@ strategies // editor service interface
     repeat(
       not(?[]);
       {n,updated:
-	      where(
-	        n := <add> (<length>, <Queued>);
-	        set-total-work-units;
-	        all-keys-UpdatedModules => updated
-	      );
-	      map(update-module); concat; uniq;   // returns a list of dependent modules
-	      // all dynamic rules have been cleared by editor-init
-	      where(<concat; map(\mod -> <rules(UpdatedModules : mod)> \)> [updated, <id>]);
-	      filter(not(UpdatedModules));
-	      rules(Queued := n)
-	    }
+        where(
+          n := <add> (<length>, <Queued>);
+          set-total-work-units;
+          all-keys-UpdatedModules => updated
+        );
+        map(update-module); concat; uniq;   // returns a list of dependent modules
+        // all dynamic rules have been cleared by editor-init
+        where(<concat; map(\mod -> <rules(UpdatedModules : mod)> \)> [updated, <id>]);
+        filter(not(UpdatedModules));
+        rules(Queued := n)
+      }
    )
   
   // Parse and analyze a module for errors.
@@ -167,6 +168,10 @@ strategies // editor service interface
     ; cache-path := <FullPath; import-cache-path>
     ; sig := <FileSignature>
     ; <WriteToBinaryFile> (cache-path, sig)
+    ; write-saved-but-not-built-file
+      
+  write-saved-but-not-built-file =
+    <WriteToTextFile> (<concat-strings>[<project-path>,"/.saved-but-not-built"], "saved")    
     
   find-extra-errors = fail
   
@@ -188,15 +193,15 @@ strategies // editor service interface
               // try to import main file if we're parsing a module
             ; !ast
             ; try(
-              	  where(ApplicationIniDir <+ add-app-ini-error; fail)
+                  where(ApplicationIniDir <+ add-app-ini-error; fail)
                   // if checking a module, import main app file
                 ; ?Module(_,_); import-main-file
               )
-	      |}
+        |}
  
   get-imports: 
     imp@Imports(x) -> imp
     where {| TopImport: 
-     		where(try(not(TopImport); rules(TopImport := imp)))
+         where(try(not(TopImport); rules(TopImport := imp)))
       ; <editor-parse-webdsl-module> x
-   	|}
+     |}
