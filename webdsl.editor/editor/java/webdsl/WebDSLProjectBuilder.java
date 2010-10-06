@@ -332,6 +332,8 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
         return found;
     }
+    
+    public static boolean forcePublish = true;
 
     //restart once for a new project
     public static List<String> alreadyStarted = new ArrayList<String>();
@@ -345,18 +347,18 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
         final IServer server = getTomcatServer(project,monitor);
 
-        // invoke publish first time, the initial start tends to hang when
-        //   executed before publishing task completes.
-        if(!alreadyStarted.contains(project.getName())){
-            //addPublishJob(server, project, defaultDelay);
-            publish(server, monitor);
+        if(forcePublish){
+            // invoke publish first time, the initial start tends to hang when
+            //   executed before publishing task completes.
+            if(!alreadyStarted.contains(project.getName())){
+                //addPublishJob(server, project, defaultDelay);
+                publish(server, monitor);
+            }
         }
-        //else{
         addCheckServerStartedJob(server,project,cj,delay);
-        //}
     }
     
-    public static boolean restartWhenNewAppIsAdded = true;
+    public static boolean restartWhenNewAppIsBuildFirstTime = true;
 
     /*
      * if server start/restart is not executed asynchronously from a job it tends to hang
@@ -378,10 +380,11 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             }
             else{
                 System.out.println("Server already started.");
-                if(restartWhenNewAppIsAdded){
-                    if(!alreadyStarted.contains(project.getName())){
-                        addRestartServerJob(server,cj,defaultDelay);
-                    }
+                if(restartWhenNewAppIsBuildFirstTime && !alreadyStarted.contains(project.getName())){
+                    addRestartServerJob(server,cj,defaultDelay);
+                }
+                else{
+                    if(cj!=null){cj.run();}
                 }
             }
             if(!alreadyStarted.contains(project.getName())){
@@ -410,7 +413,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     }
    
     public static void addRestartServerJob(final IServer server, final ChainedJob cj, final int delay){
-        Job job = new Job("stop server") {
+        Job job = new Job("Restarting server.") {
             public IStatus run(IProgressMonitor monitor){
                 System.out.println("Stopping server.");
                 /* stop and start or restart */
