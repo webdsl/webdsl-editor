@@ -454,6 +454,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
     }
 
     private static boolean isValidProjectName(String name) {
+        if(!Character.isLetter(name.charAt(0))){
+            return false;
+        }
         for (char c : name.toCharArray()) {
             if (!(Character.isLetterOrDigit(c) || c == '_' || c == ' ' || c == '-' || c == '.'
                 || c == '(' || c == ')' || c == '#' || c == '+' || c =='[' || c == ']' || c == '@'))

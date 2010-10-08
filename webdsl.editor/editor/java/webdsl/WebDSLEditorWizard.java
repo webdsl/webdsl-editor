@@ -231,6 +231,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          createDirs(project.getLocation()+"/stylesheets");
          copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
       
+         copyWebDSLSrcLibrary(project, appName, plugindir);
+         
          //create other special dirs, to avoid seeing red warnings in build, also helps to see what you can modify/extend
          createDirs(project.getLocation()+"/html");
          createDirs(project.getLocation()+"/javascript");
@@ -238,6 +240,12 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          createDirs(project.getLocation()+"/nativejava");
          
          writeStringToFile("needed to start initial build", project.getLocation()+"/.saved-but-not-built");
+     }
+     
+     public static void copyWebDSLSrcLibrary(IProject project, String appName, String plugindir) throws IOException{
+         //copy the webdsl src library for the first time, this will also be performed for clean builds
+         createDirs(project.getLocation()+"/.servletapp/src-webdsl-template");
+         copyFile(plugindir+"webdsl-template/template-webdsl/built-in.app", project.getLocation()+"/.servletapp/src-webdsl-template/built-in.app");
      }
      
      public static void writeBuildXmlFile(IProject project) throws IOException{

@@ -11,15 +11,24 @@
      </extension>
        
     <extension point="org.eclipse.ui.newWizards">
-      <primaryWizard id="webdsl.NewEditorWizard" />
+      <primaryWizard id="webdsl.NewEmptyWizard" />
+      <wizard
+            class="webdsl.NewEmptyProjectWizard"
+            icon="icons/webdsl.gif"
+            id="webdsl.NewEmptyWizard"
+            name="New WebDSL project"
+            project="true"
+            >
+            <description>This wizard creates a new WebDSL project.</description>
+      </wizard>
       <wizard
             class="webdsl.WebDSLEditorWizard"
             icon="icons/webdsl.gif"
             id="webdsl.NewEditorWizard"
-            name="WebDSL project"
+            name="Example WebDSL project"
             project="true"
             >
-            <description>This wizard creates a new WebDSL project.</description>
+            <description>This wizard creates a new WebDSL project with an example application.</description>
       </wizard>
       <wizard
             class="webdsl.ConvertProjectWizard"
@@ -58,11 +67,12 @@
           id="convertwizardstartactionjavaproject">
         </action>
       </objectContribution>
+      
       <viewerContribution
        id="webdsl.projectexplorer.newwizard"
        targetID="org.eclipse.ui.navigator.ProjectExplorer#PopupMenu">
            <action id="webdsl.projectexplorer.newwizard.action"
-              label="New WebDSL Project"
+              label="Example WebDSL Project"
               menubarPath="additions"
                icon="icons/webdsl.gif"
               class="webdsl.StartNewWizardAction">
@@ -72,7 +82,7 @@
        id="webdsl.resourcenavigator.newwizard"
        targetID="org.eclipse.ui.views.ResourceNavigator">
            <action id="webdsl.resourcenavigator.newwizard.action"
-              label="New WebDSL Project"
+              label="Example WebDSL Project"
               menubarPath="additions"
                icon="icons/webdsl.gif"
               class="webdsl.StartNewWizardAction">
@@ -82,10 +92,41 @@
        id="webdsl.packageexplorer.newwizard"
        targetID="org.eclipse.jdt.ui.PackageExplorer">
            <action id="webdsl.packageexplorer.newwizard.action"
-              label="New WebDSL Project"
+              label="Example WebDSL Project"
               menubarPath="additions"
                icon="icons/webdsl.gif"
               class="webdsl.StartNewWizardAction">
+           </action>
+      </viewerContribution>
+      
+      <viewerContribution
+       id="webdsl.projectexplorer.newwizard"
+       targetID="org.eclipse.ui.navigator.ProjectExplorer#PopupMenu">
+           <action id="webdsl.projectexplorer.newemptywizard.action"
+              label="New WebDSL Project"
+              menubarPath="additions"
+               icon="icons/webdsl.gif"
+              class="webdsl.StartNewEmptyProjectWizardAction">
+           </action>
+      </viewerContribution>
+      <viewerContribution
+       id="webdsl.resourcenavigator.newwizard"
+       targetID="org.eclipse.ui.views.ResourceNavigator">
+           <action id="webdsl.resourcenavigator.newemptywizard.action"
+              label="New WebDSL Project"
+              menubarPath="additions"
+               icon="icons/webdsl.gif"
+              class="webdsl.StartNewEmptyProjectWizardAction">
+           </action>
+      </viewerContribution>
+      <viewerContribution
+       id="webdsl.packageexplorer.newwizard"
+       targetID="org.eclipse.jdt.ui.PackageExplorer">
+           <action id="webdsl.packageexplorer.newemptywizard.action"
+              label="New WebDSL Project"
+              menubarPath="additions"
+               icon="icons/webdsl.gif"
+              class="webdsl.StartNewEmptyProjectWizardAction">
            </action>
       </viewerContribution>
     </extension>
