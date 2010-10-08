@@ -12,8 +12,7 @@ rules		// resolve
   declaration-of: tc@TemplateCall(nm, arg*, _, _) -> f
     where f := <CallToDefinedTemplate; TemplateDecl> nm
   
-  declaration-of: tc@ThisCall(name, args) -> decl
-    where is-email-call
+  declaration-of: tc@EmailCall(name, args) -> decl
     with  decl := <EmailDefinition> name 
 
 rules		// hover

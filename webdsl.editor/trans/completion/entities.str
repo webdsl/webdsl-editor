@@ -1,9 +1,0 @@
-module completion/entities
-
-imports
-  libwebdsl-front
-    
-strategies  
-  
-	editor-complete: (node, position, ast, path, project-path) -> <fail>
-	

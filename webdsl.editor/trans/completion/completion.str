@@ -1,0 +1,71 @@
+module completion/entities
+
+imports
+  libwebdsl-front
+    
+strategies  
+  
+  editor-complete :
+    a@(node, position, ast, path, project-path) -> result
+    with  <editor-analyze> (ast, path, project-path) 
+        ; result := <collect-all(editor-complete-proposal); flatten-list>
+
+rules  //FieldAccess
+  
+  editor-complete-proposal :
+    FieldAccess(e, COMPLETION(_)) -> [prop*, func*]
+    where SimpleSort(typename) := <type-of> e
+        ; prop* := <all-properties; map(fieldaccess-proposal-prop)> typename
+        ; func* := <all-functions;  map(fieldaccess-proposal-func)> typename
+
+  fieldaccess-proposal-prop :
+    p -> ([name],$[[name] : [type]])
+    with  name := <get-property-name> p
+        ; type := <get-property-type;pp-webdsl-to-string> p
+
+  fieldaccess-proposal-func:
+    f -> result
+    with  result := <get-function-sig-full; func-sig-to-complete-proposal> f
+          
+  func-sig-to-complete-proposal:
+    tup@(x,farg,return) -> ([sig-no-return],full-sig)
+    with  sig-no-return := <pp-func-sig/*-tokens*/> (x,<map(?Arg(<id>,_))>farg)
+        ; full-sig := <pp-func-sig> tup
+     
+  //returning list of tokens doesn't seem to work    
+  //pp-func-sig-tokens = ?(x,argtypes); <flatten-list> [x,"(",<map(pp-webdsl-to-string);separate-by(|", ")> argtypes,")"]
+  
+rules //TemplateCallNoArgs
+  
+  //not triggered?
+  editor-complete-proposal :
+    TemplateCallNoArgs(COMPLETION(_)) -> []
+    where debug(!"-------");all-keys-TopLevelTemplateDecl;debug 
+    
+rules //Var    
+   
+  editor-complete-proposal :
+    v@Var(COMPLETION(_)) -> [var*,fun*]
+    with  var* := <var-proposal-vars <+ ![]> v
+        ; fun* := <var-proposal-funs <+ ![]> v
+   
+  rules // vars in scope (unfortunately doesn't include globally visible vars, since put-closure-in-anno is used internally for lifting)
+  
+  extend rename :
+    Var(COMPLETION(x)){anno*} -> Var(COMPLETION(x)){anno1*}
+    with  anno1* := <put-closure-in-anno> anno*
+  
+  var-proposal-vars :
+    Var(COMPLETION(_)){ClosureInAnno(varlist)} -> result
+    with  result := <map(\v@Var(x) -> ([x{}],$[[x] : [<type-of;pp-webdsl-to-string> v]])\)> varlist
+
+  //global, session, request vars
+
+  rules //global functions
+  
+  //mainly shows internal, generated functions for simple apps, need option to sort completions
+  var-proposal-funs :
+    Var(COMPLETION(x)) -> result
+    where <gt> (<string-length> x, 0) //don't show when there is nothing typed, too slow for that and occludes syntax completions
+    with result := <all-keys-IsGlobalFunction;filter(not(is-string);where(?(<id>,_,_);string-starts-with(|x)));map(func-sig-to-complete-proposal)>
+    
