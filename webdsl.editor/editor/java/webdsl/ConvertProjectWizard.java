@@ -25,10 +25,12 @@ public class ConvertProjectWizard extends WebDSLEditorWizard {
      */
     @Override
     public void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{
-    	StringBuffer file = new StringBuffer();
-    	file.append("file to let the ant builder know that the project needs to be cleaned");
-    	WebDSLEditorWizard.createDirs(project.getLocation()+"/.servletapp/");
+        StringBuffer file = new StringBuffer();
+        file.append("file to let the ant builder know that the project needs to be cleaned");
+        WebDSLEditorWizard.createDirs(project.getLocation()+"/.servletapp/");
         writeStringToFile(file.toString(), project.getLocation()+"/.servletapp/.clean-project-required");
+        writeStringToFile("needed to start initial build", project.getLocation()+"/.saved-but-not-built");
+        createDirs(project.getLocation()+"/nativejava");
     }
     @Override
     protected void openEditorsForExampleApp(String appName, IProject project, IProgressMonitor monitor){}

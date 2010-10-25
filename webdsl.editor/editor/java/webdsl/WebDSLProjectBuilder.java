@@ -355,10 +355,12 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                 publish(server, monitor);
             }
         }
+        
         addCheckServerStartedJob(server,project,cj,delay);
     }
     
-    public static boolean restartWhenNewAppIsBuildFirstTime = true;
+    //disabled for now http://yellowgrass.org/issue/WebDSL/228
+    public static boolean restartWhenNewAppIsBuildFirstTime = false;
 
     /*
      * if server start/restart is not executed asynchronously from a job it tends to hang
