@@ -108,23 +108,22 @@ strategies // editor service interface
   
   // Call this after editor-analyze-work to calculate dependencies.
   // Returns a list of modules that need to be updated.
-  editor-analyze-multifile =
-  with( 
-    // load old cached version to calculate difference
-    update-dependency-graph;
-    FullPath => fullpath;
-    old-ruleset := <dbg-time(read-old-signature | "read old sig") <+ ![]> fullpath;
-    rules(RulesCreatedPrev := old-ruleset);
-    dbg-time(
-        // Modules that depend on rules that are changed by this update
-        find-dependent-modules
-      ; where(cleanup-dependency-rules)     // release memory
-      ; filter(not(?fullpath))
-      ; ?dependent-mods
-      ; debug(!"... dependent modules to check: ")
-      | "finding dependent mods")  
-  )
-  ; !dependent-mods
+  editor-analyze-multifile :
+    _ -> dependent-mods
+    with  // load old cached version to calculate difference
+          update-dependency-graph;
+          FullPath => fullpath;
+          old-ruleset := <dbg-time(read-old-signature | "read old sig") <+ ![]> fullpath;
+          rules(RulesCreatedPrev := old-ruleset);
+          dbg-time(
+              // Modules that depend on rules that are changed by this update
+              find-dependent-modules
+            ; where(cleanup-dependency-rules)     // release memory
+            ; filter(not(?fullpath))
+            ; ?dependent-mods
+            ; debug(!"... dependent modules to check: ")
+            | "finding dependent mods")  
+
   
   // Analyze a given set of modules.
   // The modules can queue another set to modules to be checked.
@@ -162,13 +161,18 @@ strategies // editor service interface
   // Find dependent modules, and queue them for analysis.
   // Also save a cache of our new signature.
   on-save: (selected, position, ast, path, project-path) -> None()
-    with
-      mods := <editor-analyze-multifile>
-    ; <queue-analysis> mods
-    ; cache-path := <FullPath; import-cache-path>
-    ; sig := <FileSignature>
-    ; <WriteToBinaryFile> (cache-path, sig)
-    ; write-saved-but-not-built-file
+    with on-save-generate-file-to-enable-build
+    with on-save-analyze-other-files
+      
+  on-save-analyze-other-files :
+    (selected, position, ast, path, project-path) -> None()
+    with  mods := <editor-analyze-multifile>
+        ; <queue-analysis> mods
+        ; cache-path := <FullPath; import-cache-path>
+        ; sig := <FileSignature>
+        ; <WriteToBinaryFile> (cache-path, sig)    
+      
+  on-save-generate-file-to-enable-build = write-saved-but-not-built-file
       
   write-saved-but-not-built-file =
     <WriteToTextFile> (<concat-strings>[<project-path>,"/.saved-but-not-built"], "saved")    
