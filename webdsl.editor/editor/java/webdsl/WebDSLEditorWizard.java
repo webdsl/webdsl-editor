@@ -156,6 +156,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             out.write("smtpuser="+smtpuser+"\n");
             out.write("smtppass="+smtppass+"\n");
             out.write("tomcatpath="+tomcatpath+"\n");
+            out.write("httpport=8080\n");
+            out.write("httpsport=8443\n");
             if(isMysqlSelected){
                 out.write("dbserver="+host+"\n"); 
                 out.write("dbuser="+user+"\n"); 
@@ -417,7 +419,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      
      public static void writeTomcatConfigFile(String plugindir) throws IOException{
          IWorkspace workspace = ResourcesPlugin.getWorkspace();
-         String tomcatdir = plugindir+"webdsl-template/tomcat/apache-tomcat-6.0.26";
+         String tomcatdir = plugindir+"webdsl-template/tomcat/tomcat";
          String jre = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6";
          String workspacedir = workspace.getRoot().getRawLocation().toString();
          StringBuffer tomcatconfigFile = new StringBuffer();
@@ -550,7 +552,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      public static IRuntime createWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
              IRuntimeType tomcat6runtimetype = getTomcatRuntimeType();
              IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(tomcatruntimeid, monitor);
-             rwc.setLocation(Path.fromOSString(plugindir+"/webdsl-template/tomcat/apache-tomcat-6.0.26"));
+             rwc.setLocation(Path.fromOSString(plugindir+"/webdsl-template/tomcat/tomcat"));
              //System.out.println("Location of Tomcat 6 runtime: "+rwc.getLocation());
              IRuntime rt = rwc.save(true, monitor);
              System.out.println("created runtime: "+rt);
@@ -592,7 +594,15 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          IServerWorkingCopy server = st.createServer(tomcatserverid, null, plugintomcat6runtime, monitor);
          plugintomcat6server = server.saveAll(true, monitor); //saveAll will also save ServerConfiguration and Runtime if they were still WorkingCopy
          System.out.println("created server: "+plugintomcat6server);
+         copyKeystoreFile(project, plugindir);         
          return plugintomcat6server;
+     }
+     public static void copyKeystoreFile(IProject project, String plugindir){
+        try {
+            copyFile(plugindir+"/webdsl-template/template-java-servlet/tomcat/.keystore",project.getWorkspace().getRoot().getLocation()+"/Servers/.keystore");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }   
      }
      /**
       * add tomcat 6 server for webdsl plugin of not created yet

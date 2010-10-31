@@ -24,15 +24,16 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.browser.IWebBrowser;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
-import org.eclipse.wst.server.core.IPublishListener;
+//import org.eclipse.wst.server.core.IPublishListener;
 import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.ServerUtil;
-import org.eclipse.wst.server.core.util.PublishAdapter;
+//import org.eclipse.wst.server.core.util.PublishAdapter;
 import org.eclipse.wst.server.ui.internal.ServerUIPlugin;
 @SuppressWarnings("restriction")
 public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
-    @SuppressWarnings("unchecked")
+    //@SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     protected IProject[] build( final int kind,
                                 final Map args,
                                 final IProgressMonitor monitor ) throws CoreException {
@@ -200,13 +201,13 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
 
     //quick hack, missing a removeAllPublishListeners method in Server
-    public static IPublishListener previouslyAddedPublishListener = null;
+    /*public static IPublishListener previouslyAddedPublishListener = null;
     public static void tryRemovePreviousListener(IServer server){
         if(previouslyAddedPublishListener != null){
             server.removePublishListener(previouslyAddedPublishListener);
             previouslyAddedPublishListener = null;
           }
-    }
+    }*/
     
     
     public static void pollDeployedAppAndOpenBrowser(final IProject project, final String buildid, int delay){
@@ -235,7 +236,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     
 
     public static int defaultDelay = 1000;
-
+/*
     public static void setPublishListener(final IProject project,IProgressMonitor monitor, final String buildid) throws CoreException{
          final IServer tomcatserver = getTomcatServer(project,monitor);
          tryRemovePreviousListener(tomcatserver);
@@ -280,7 +281,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
         previouslyAddedPublishListener = publishListener;
     }
-
+*/
     public static String getAppUrl(IProject project){
         if(isRootApp(project)){
             return "http://localhost:8080/";
