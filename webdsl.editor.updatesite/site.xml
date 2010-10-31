@@ -4,10 +4,10 @@
    <description name="webdsl" url="http://webdsl.org/update/">
       WebDSL editor update site
    </description>
-   <feature url="features/org.strategoxt.imp_0.5.2.4.jar" id="org.strategoxt.imp" version="0.5.2.4">
+   <feature url="features/org.strategoxt.imp_0.5.3.9.jar" id="org.strategoxt.imp" version="0.5.3.9">
       <category name="dependencies"/>
    </feature>
-   <feature url="features/webdsl.editor.feature_1.1.5.jar" id="webdsl.editor.feature" version="1.1.5">
+   <feature url="features/webdsl.editor.feature_1.2.2.jar" id="webdsl.editor.feature" version="1.2.2">
       <category name="org.webdsl.editor"/>
    </feature>
    <category-def name="org.webdsl.editor" label="WebDSL Editor Plugin"/>
