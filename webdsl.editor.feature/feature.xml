@@ -2,7 +2,7 @@
 <feature
       id="webdsl.editor.feature"
       label="WebDSL Editor"
-      version="1.1.5"
+      version="1.2.2"
       plugin="webdsl.editor">
 
    <description url="http://webdsl.org">
