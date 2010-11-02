@@ -14,42 +14,47 @@ imports
 rules
   
   format-trace(|prefix) =
-  		map(\name -> <concat-strings> [prefix, name]\)
-  	; separate-by(|"<br/>")
-  	; concat-strings
-  	; try(not(?""); <concat-strings> ["<br/>", <id>])
+      map(\name -> <concat-strings> [prefix, name]\)
+    ; separate-by(|"<br/>")
+    ; concat-strings
+    ; try(not(?""); <concat-strings> ["<br/>", <id>])
   
   report-import-failed(|txt): mod -> <fail>
-  	with 	trace-entries := <bigbagof-CurrentFile>
-  	    ; trace := <format-trace(|"... imported from: ")> trace-entries
-  	    ; msg := <concat-strings> [txt, ": ", mod, trace]
-  		  ; import := <TopImport <+ !"DummyImport(main-app)">
-  		  ; rules(ImportErrors :+= (import, msg))
+    with 	trace-entries := <bigbagof-CurrentFile>
+        ; trace := <format-trace(|"... imported from: ")> trace-entries
+        ; msg := <concat-strings> [txt, ": ", mod, trace]
+        ; import := <TopImport <+ !"DummyImport(main-app)">
+        ; rules(ImportErrors :+= (import, msg))
 
   import-to-fullpath: x -> $[[<ApplicationIniDir>]/[x].app]
-  			
+        
   editor-parse-webdsl-module: x -> x
-  	where(
-    		full-path := <get-fixed-import-path <+ report-import-failed(|"Imported file not found")> x
-   	)
+    where(
+        full-path := <get-fixed-import-path <+ report-import-failed(|"Imported file not found")> x
+     )
   ; (open-import-sig(
-    		!full-path
-    	, log-time-helper(parse-file | "parse")
-    	, read-import(|full-path)
-    	, read-import-sigs)
+        !full-path
+      , log-time-helper(parse-file | "parse")
+      , read-import(|full-path)
+      , read-import-sigs)
       <+
-    	 <report-import-failed(|"Could not import file")> full-path
+       <report-import-failed(|"Could not import file")> full-path
     )
   
-  get-fixed-import-path = import-to-fullpath; file-exists
+  get-fixed-import-path = get-fixed-import-path-1 <+ get-fixed-import-path-2
+  
+  get-fixed-import-path-1 = import-to-fullpath; file-exists
   // FIXME: before the first build, src-webdsl-template files are not copied to .servletapp
-  get-fixed-import-path =
+  get-fixed-import-path-2 =
       dst := <import-to-fullpath>
-    ; <split-after; Snd> (<id>, ".servletapp/src-webdsl-template/")
-    ; <concat-strings> [<plugin-path>, "webdsl-template/template-webdsl/", <id>]
+    ; <split-after; ?(servletappdir,_)> (dst, ".servletapp/") 
+    ; <split-after; Snd; ?libappfilename> (dst, ".servletapp/src-webdsl-template/") //current term becomes app file name, e.g. built-in.app
+    ; <concat-strings> [<plugin-path>, "/webdsl-template/template-webdsl/", libappfilename]
     ; ?src
     ; file-exists
-      // TODO: create directory (cannot use create-dirs, we have an absolute dirname)
+      // create directory (cannot use create-dirs, we have an absolute dirname)
+    ; <file-exists <+ mkdir(|"w")> servletappdir
+    ; <concat-strings; (file-exists <+ mkdir(|"w"))> [servletappdir,"src-webdsl-template/"]
     ; <copy-file> (src, dst)
     ; <refresh-workspace-file> dst // TODO: need relative path?
     ; !dst
@@ -84,15 +89,15 @@ rules
       ; filter(get-imports)
     )
     ; start-record-dynamic-rules
-		;	desugar-compat
-	  ; try(where(store-module))
-		; typecheck-declare
-		; end-record-dynamic-rules
-		; filter(where(Fst; is-used-dr))
-		  // strip bodies of generated definitions
-		; map-dr-values(strip-and-annotate-dr-value)
-		; !(<id>, imports)
-		  
+    ;	desugar-compat
+    ; try(where(store-module))
+    ; typecheck-declare
+    ; end-record-dynamic-rules
+    ; filter(where(Fst; is-used-dr))
+      // strip bodies of generated definitions
+    ; map-dr-values(strip-and-annotate-dr-value)
+    ; !(<id>, imports)
+      
   read-import-sigs: (ruleset, imports) -> (ruleset, imports)
     with <log-time-helper(load-dynamic-rule-closure(|<CurrentFile>) | "load drs")> ruleset
        ; <filter(get-imports)> imports
