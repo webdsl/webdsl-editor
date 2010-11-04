@@ -98,3 +98,10 @@ rules //Var
     where <gt> (<string-length> x, 0) //don't show when there is nothing typed, occludes syntax completions, some internals need to be hidden
     with dbg-time(result := <all-keys-FunctionDecl; map(FunctionDecl;\Function(name,fargs,ret,_)->(name,fargs,ret)\);filter(where(?(<id>,_,_);string-starts-with(|x))); map(func-sig-to-complete-proposal)>|"global function completion")
     
+  rules //Types
+    
+  editor-complete-proposal :
+    srt@SimpleSort(COMPLETION(_))-> [primtype*,enttype*]
+    with  primtype* := ["Bool","List<Type>","Set<Type>","Date","Time","DateTime","Email","File","Float","Image","Int"/*,"Long"*/,"Patch","Secret","WikiText","Text","URL","UUID"]
+    with  enttype* := <all-keys-EntDecl>
+   

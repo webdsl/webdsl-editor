@@ -81,10 +81,10 @@ completions
   completion template : Statement = "if" "(" <bool> ") {\n\t\n}" (blank)
   completion template : Statement = "for" "(" <name> " : " <Type> " in " <ListOrSetExp> ") {\n\t\n}" (blank)
   completion template : Statement = "for" "(" <name> " : " <Type> ") {\n\t\n}" (blank)
-  completion template : Statement = "for" "(" <name> " : " <type> " in " <ListOrSetExp> " where " <bool> " order by " <name.prop> ") {\n\t\n}" (blank)
+  completion template : Statement = "for" "(" <name> " : " <Type> " in " <ListOrSetExp> " where " <bool> " order by " <name.prop> ") {\n\t\n}" (blank)
   completion template : Statement = "for" "(" <name> " : Int from " <int> " to " <int> ") {\n\t\n}" (blank)
   completion template : Statement = "var " <name> " := " <exp> ";" (blank)
-  completion template : Statement = "var " <name> " : " <type> " := " <exp> ";" (blank)
+  completion template : Statement = "var " <name> " : " <Type> " := " <exp> ";" (blank)
   completion template : Statement = "return " <exp> ";" (blank)
   completion template : Statement = "validate ("<bool> ", " <string> ");" (blank)
   completion template : Statement = "case ("  <exp> "){\n\t" <exp> " { } \ndefault { }\n}" (blank)
@@ -97,7 +97,7 @@ completions
   completion template : TemplateElement = "if" "(" <bool> ") {\n\t\n}" (blank)
   completion template : TemplateElement = "for" "(" <name> " : " <Type> " in " <ListOrSetExp> ") {\n\t\n}" (blank)
   completion template : TemplateElement = "for" "(" <name> " : " <Type> ") {\n\t\n}" (blank)
-  completion template : TemplateElement = "for" "(" <name> " : " <type> " in " <ListOrSetExp> " where " <bool> " order by " <name.prop> ") {\n\t\n}" (blank)   
+  completion template : TemplateElement = "for" "(" <name> " : " <Type> " in " <ListOrSetExp> " where " <bool> " order by " <name.prop> ") {\n\t\n}" (blank)   
   completion template : TemplateElement = "submit action{" <> "} { \"save\" }" (blank) 
   completion template : TemplateElement = "submitlink action{" <> "} { \"save\" }" (blank)
   completion template : TemplateElement = "output(" <exp> ")" (blank)
@@ -114,12 +114,16 @@ completions
   completion template : Definition = "imports " <file> (blank)
   completion template : Definition = "invoke " <myfunc()> " every " <5 minutes> (blank) 
   completion template : Definition = "derive crud  " <Entity> (blank)
-  completion template : Definition = "extend entity "  <Entity> " {\n\t\n}" (blank) 
-  completion template : Definition = "principal is "  <Entity> " with credentials " <properties> (blank)
-  completion template : Definition = "predicate "  <name> "(){\n\t\n}" (blank) 
+  completion template : Definition = "extend entity " <Entity> " {\n\t\n}" (blank) 
+  completion template : Definition = "principal is " <Entity> " with credentials " <name, password> (blank)
+  completion template : Definition = "function " <name> "(x : Type, y : Type) : ReturnType {\n\t\n}" (blank) 
+  completion template : Definition = "function " <name> "() {\n\t\n}" (blank) 
+  completion template : Definition = "predicate " <name> "(x : Type){\n\ttrue\n}" (blank) 
   completion template : Definition = "type " <primtype> " {\n\t\n}" (blank)
   completion template : Definition = "test "  <name> " " " {\n\t\n}" (blank)
-  completion template : Definition = "service "  <name> "(){\n\t\n}" (blank) 
+  completion template : Definition = "service " <name> "(){\n\t\n}" (blank) 
+  completion template : Definition = "var " <name> " : " <Type> " := " <exp> (blank)
+  completion template : Definition = "var " <name> " := " <exp> (blank)
   completion template : Definition = "request var " <name> " : " <Type> (blank)
   completion template : Definition = "enum " <Name> " {\n\t\n}" (blank) 
 
@@ -127,4 +131,12 @@ completions
 
   completion template: Section = "access control rules" "\n\n\t"
   completion template: Section = "section " <name> "\n\n\t"
+  
+completions
+
+  completion template : EntityBodyDeclaration = <name> " :: " <PrimType>
+  completion template : EntityBodyDeclaration = <name> " -> " <Entity>
+  completion template : EntityBodyDeclaration = "function " <name> "(x : Type, y : Type) : ReturnType {\n\t\n}" (blank) 
+  completion template : EntityBodyDeclaration = "function " <name> "() {\n\t\n}" (blank)
+  
    
