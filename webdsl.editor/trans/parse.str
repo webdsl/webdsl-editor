@@ -47,6 +47,7 @@ rules
   // FIXME: before the first build, src-webdsl-template files are not copied to .servletapp
   get-fixed-import-path-2 =
       dst := <import-to-fullpath>
+    ; is-substring(!".servletapp/src-webdsl-template/") // must be an import of src libary in .servletapp/src-webdsl-template
     ; <split-after; ?(servletappdir,_)> (dst, ".servletapp/") 
     ; <split-after; Snd; ?libappfilename> (dst, ".servletapp/src-webdsl-template/") //current term becomes app file name, e.g. built-in.app
     ; <concat-strings> [<plugin-path>, "/webdsl-template/template-webdsl/", libappfilename]
