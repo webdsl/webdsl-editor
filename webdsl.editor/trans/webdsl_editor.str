@@ -193,7 +193,8 @@ strategies // editor service interface
   import-main-file: ast -> ast
     with  appname := <AppName>
         ; where(!appname; debug(!"Explicitely importing main file: ")) 
-        ; <get-imports> Imports(appname)
+          // TODO: add specific warning referencing application.ini if the main file is not found
+        ; <try(get-imports)> Imports(appname) // try: import error is added if failed.
           
   add-app-ini-error: ast -> ast
     with rules(ImportErrors :+= (ast, "Cannot find application.ini"))
