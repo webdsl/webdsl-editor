@@ -18,7 +18,7 @@ strategies // editor service interface
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
   
-  editor-check(|fullpath): ast -> (ast-renamed, errs, warns, notes)
+  editor-check(|fullpath): ast -> (ast-renamed, errors, warns, notes)
     with
         // Typecheck local
         {| DynamicRulesUsed, ExtraWarnings:
@@ -40,9 +40,17 @@ strategies // editor service interface
       ; dbg-time(
           (err2, warn2) := <catch-errors-editor(not(<constraint-error-global> ""))>
         | "constraint-global")
-      ; errs := <concat> [err1,err2]
-      ; warns := <concat> [warn1,warn2,warn3]
-      ; notes := []
+      ; if exclusivewarn := <ExclusiveWarning>
+        then errors := []
+           ; warns  := [exclusivewarn]
+           ; notes  := []
+        else errors := <concat> [err1,err2]
+           ; warns  := <concat> [warn1,warn2,warn3]
+           ; notes  := []
+        end
+  
+  //show only this warning, remove all other errors and warnings
+  add-exclusive-warning = ?x; rules( ExclusiveWarning := x )
   
   // Path is relative to project, without leading slash
   // Projectpath is an absolute path to the project root, without trailing slash

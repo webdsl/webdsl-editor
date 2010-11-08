@@ -38,7 +38,7 @@ rules
 
 rules
 
-	find-extra-errors: mod@Module(name, _) -> <fail>
+  find-extra-errors: mod@Module(name, _) -> <fail>
     with  fullpath := <FullPath>
     where Module(newname, _) := <fix-module-name(|fullpath)> mod
         ; msg := (mod, <concat-strings> ["Module name does not match file name; should be '", newname, "'"])
@@ -47,5 +47,5 @@ rules
   find-extra-errors: mod@Module(name, _) -> <fail>
     where not(CurrentModuleImported)
     with  msg := (mod, $[Module is not directly or transitively imported from main application file.])
-        ; rules(ExtraWarnings :+= msg)
+        ; <add-exclusive-warning> msg
                   
