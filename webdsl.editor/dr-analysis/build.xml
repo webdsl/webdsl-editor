@@ -29,10 +29,10 @@
 		  	<path path="${dir}/bin" />
 		  	<path refid="strj" />
 		  </classpath>
-			<arg line="-i ${webdsl.home}/org/webdsl/dsl/generation/webdsl-generator.str" />
-			<arg line="-I ${webdsl.home}" />
-			<arg line="-I ${webdsl.home}/org/webdsl/dsl/syntax" />
-			<arg line="-I ${user.home}/.nix-profile/share/java-front" /> <!-- TODO; remove -->
+			<arg line="-i &quot;${webdsl.home}/org/webdsl/dsl/generation/webdsl-generator.str&quot;" />
+			<arg line="-I &quot;${webdsl.home}&quot;" />
+			<arg line="-I &quot;${webdsl.home}/org/webdsl/dsl/syntax&quot;" />
+			<arg line="-I &quot;${user.home}/.nix-profile/share/java-front&quot;" /> <!-- TODO; remove -->
 			<arg value="-o"/>
 			<arg file="${dir}/bin/webdsl-generator-packed.str" />
 		</java>
