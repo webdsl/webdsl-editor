@@ -52,12 +52,14 @@ strategies // editor service interface
   //show only this warning, remove all other errors and warnings
   add-exclusive-warning = ?x; rules( ExclusiveWarning := x )
   
+  normalize-windows-path = string-replace(|"\\\\", "/"); string-replace(|"\\", "/")
+  
   // Path is relative to project, without leading slash
   // Projectpath is an absolute path to the project root, without trailing slash
   webdsl-editor-init =
       ?(path, projectpath, ast)
     ; editor-init     // cleanup dynamic rules
-    ; fullpath := <concat-strings> [projectpath, "/", path]
+    ; fullpath := <concat-strings; normalize-windows-path> [projectpath, "/", path]
     ; rules( FullPath := fullpath )
     ; <desugar-compat; get-main-file-name> ast      // set ApplicationIniDir
   
