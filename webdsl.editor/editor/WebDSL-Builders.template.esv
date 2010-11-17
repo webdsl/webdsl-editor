@@ -35,6 +35,7 @@ builders
   builder		: "Create Database Schema"		= editor-createdatabase
   builder		: "Show Database Schema"		= editor-wdl2schema (openeditor) (realtime)
   builder 		: "Visualize Data Model"		= editor-wdl2dot (openeditor) (persistent)
+  builder		: "Visualize Database Schema"   = editor-wdlschema2dot (openeditor) (persistent)
   builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
   builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
