@@ -17,7 +17,7 @@ strategies
    */
   get-main-file-name =
       (
-      	 get-app-ini-dir-from-module-name; try-app-ini
+         get-app-ini-dir-from-module-name; try-app-ini
       <+ get-app-ini-dir-from-app-name; try-app-ini
       <+ get-first-ini-dir; try-app-ini 
       <+ project-path; try-app-ini
@@ -25,14 +25,14 @@ strategies
           ApplicationIniPath  := "application.ini"
           ApplicationIniDir   := "."
         );
-        <set-appname> FILE("unknown.app");
+        <set-appname-and-dirs> FILE("unknown.app");
         fail 
       )
     ; ApplicationIniPath
     ; debug(!"Got app ini path: ")
     ; application-ini-to-app-name
     ; <add-extension> (<id>,"app")
-    ; <set-appname> FILE(<id>)       // set AppName and DirName
+    ; <set-appname-and-dirs> FILE(<id>)       // set AppName and DirName
     
   get-app-ini-dir-from-module-name =
       ?Module(<id>, _) 
@@ -70,7 +70,7 @@ strategies
     where filename := <concat-strings> [dir, "/", <ApplicationIniName>]
         ; file-exists
         ; rules(
-          	ApplicationIniPath  := filename
+            ApplicationIniPath  := filename
             ApplicationIniDir   := dir
           )
     
@@ -91,7 +91,7 @@ strategies
         ; in-project-path := <ltrim-chars(?'/')> in-project-path-with-slash
  
 rules  // string utils
-	
+  
   explode-string'(|sep) =
       split-at(?sep); \(a,b) -> [ a | <explode-string'(|sep)> b]\
     <+ ![<id>]
