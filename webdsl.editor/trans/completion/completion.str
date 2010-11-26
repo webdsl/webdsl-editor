@@ -20,8 +20,9 @@ rules  //FieldAccess
 
   fieldaccess-proposal-prop :
     p -> result
-    with  name := <get-property-name> p
-        ; type := <get-property-type> p
+    with  p1 := <normalize-declare> p
+        ; name := <get-property-name> p1
+        ; type := <get-property-type> p1
         ; result := <prop-to-complete-proposal> (name,type)
 
   fieldaccess-proposal-func:
