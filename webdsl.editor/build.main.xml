@@ -111,6 +111,10 @@
       preservelastmodified="true" todir="lib" />
     <copy file="${webdsl.home}/libwrite-files.rtree"
       preservelastmodified="true" todir="lib" />
+    <copy file="${acoda.home}/bin/org/acoda/editor/editor.rtree"
+      preservelastmodified="true" todir="lib" />
+    <copy file="${acoda.home}/bin/dist/acoda.jar"		
+      preservelastmodified="true" todir="include" />  <!-- FIXME: I am putting a jar import here, which is ugly and temporary. Spoofax currently supports a single external jar, we need two. I posted a feature reqeust on YellowGrass. -->
   </target>
 
   <property name="path.timestamp.term" value="${include}/editor.timestamp.aterm" />
