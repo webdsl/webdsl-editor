@@ -153,7 +153,7 @@
     
     <!-- make loaded jar available to ant build, see invoke-webdslc-compile task in webdsl-build.xml -->
     <extension point="org.eclipse.ant.core.extraClasspathEntries">
-      <extraClasspathEntry library="include/dummy.jar"/>
+      <extraClasspathEntry library="lib/dummy.jar"/>
     </extension>
     
 </plugin>
