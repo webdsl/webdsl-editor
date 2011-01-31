@@ -38,6 +38,6 @@ builders
   builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
   builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
-  
+  builder   : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)
   
 //  !!!!     WebDSL-Builders.esv is generated from WebDSL-Builders.template.esv in this project     !!!!

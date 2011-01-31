@@ -95,6 +95,9 @@
     <unzip overwrite="false" src="webdsl-template/template-java-servlet/tomcat/tomcat.zip" dest="webdsl-template/tomcat/"/>
     <!-- untar task used previously created ._filename copies, even in lib/, which tomcat will then compain about when starting up -->
   
+    <move overwrite="true" file="webdsl-template/webdsl-eclipseplugin" tofile="webdsl-template/webdsl"/>
+    <move overwrite="true" file="webdsl-template/webdsl-eclipseplugin.bat" tofile="webdsl-template/webdsl.bat"/>
+    
   </target>
 
   <!--  copy rtrees of webdsl for stratego editor -->

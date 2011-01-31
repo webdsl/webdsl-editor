@@ -59,3 +59,11 @@ rules   // Dummies
 rules   // Versioning
   
   editor-timestamp = import-term(include/editor.timestamp.aterm)
+  
+rules
+  
+  generate-aterm:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    with
+      filename := <guarantee-extension(|"aterm")> path;
+      result   := selected // we just return the input term
