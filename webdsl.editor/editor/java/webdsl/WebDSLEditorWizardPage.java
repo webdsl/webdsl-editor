@@ -72,6 +72,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     
     protected boolean selectedDbMode = false;
     
+    protected Group dbselectGroup;
     protected Group sqliteGroup;
     protected Group mysqlGroup;
     protected Group dbmodeGroup;
@@ -145,11 +146,23 @@ public class WebDSLEditorWizardPage extends WizardPage {
         });
         inputTomcatPath.setText("/opt/tomcat");*/
         
-        Button bMysql = new Button(container, SWT.RADIO);
-        bMysql.setText("MySQL database");
+        
+        dbselectGroup = new Group(container, SWT.NULL);
+        GridData dbselectGridData = new GridData();
+        dbselectGridData.horizontalAlignment = GridData.FILL;
+        dbselectGridData.horizontalSpan = 2;
+        dbselectGroup.setLayoutData(dbselectGridData);
+        dbselectGroup.setText("Select Database (may be changed later by editing application.ini or running the 'Convert to a WebDSL project' wizard)");
+        GridLayout dbselectGroupLayout = new GridLayout();
+        dbselectGroup.setLayout(dbselectGroupLayout);
+        dbselectGroupLayout.numColumns = 1;
+        dbselectGroupLayout.verticalSpacing = 9;
+        
+        Button bMysql = new Button(dbselectGroup, SWT.RADIO);
+        bMysql.setText("MySQL database: recommended for regular users; requires mysql installation and (empty) database created");
 
-        Button bSqlite = new Button(container, SWT.RADIO);
-        bSqlite.setText("Sqlite database (recommended for first-time users, \nlimitations: no concurrent request, no File/Image support)");
+        Button bSqlite = new Button(dbselectGroup, SWT.RADIO);
+        bSqlite.setText("Sqlite database: recommended for first-time users; limitations: no concurrent request, no File/Image support");
 
         mysqlGroup = new Group(container, SWT.NULL);
         
@@ -230,14 +243,14 @@ public class WebDSLEditorWizardPage extends WizardPage {
         dbmodeGridData.horizontalAlignment = GridData.FILL;
         dbmodeGridData.horizontalSpan = 2;
         dbmodeGroup.setLayoutData(dbmodeGridData);
-        dbmodeGroup.setText("Database mode");
+        dbmodeGroup.setText("Database mode (may be changed later by editing application.ini dbmode=create-drop/update/false or running the 'Convert to a WebDSL project' wizard)");
         GridLayout dbmodeGroupLayout = new GridLayout();
         dbmodeGroup.setLayout(dbmodeGroupLayout);
-        dbmodeGroupLayout.numColumns = 2;
+        dbmodeGroupLayout.numColumns = 1;
         dbmodeGroupLayout.verticalSpacing = 9;
         
         Button bCreateDrop1 = new Button(dbmodeGroup, SWT.RADIO);
-        bCreateDrop1.setText("overwrite database when deployed (recommended)");
+        bCreateDrop1.setText("overwrite database when deployed: recommended for first-time users; slow, cleans database and re-creates global vars and re-runs application init blocks each time");
         bCreateDrop1.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
                 inputDBMode = "create-drop";
@@ -251,7 +264,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
         });
         
         Button bUpdate1 = new Button(dbmodeGroup, SWT.RADIO);
-        bUpdate1.setText("update database when deployed");
+        bUpdate1.setText("update database when deployed: recommended for regular users; fast, does not clean database, updates to global vars and application init blocks require a manual database reset");
         bUpdate1.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
                 inputDBMode = "update";
@@ -263,7 +276,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
         });
         
         Button bFalse1 = new Button(dbmodeGroup, SWT.RADIO);
-        bFalse1.setText("don't change the database");
+        bFalse1.setText("do not change the database when deployed: requires manually updating the database");
         bFalse1.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
                 inputDBMode = "false";

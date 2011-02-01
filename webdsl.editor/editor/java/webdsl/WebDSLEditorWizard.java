@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceDescription;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -130,6 +131,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
     }
     
      private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, boolean isRootApp, IProgressMonitor monitor) throws IOException, CoreException {
+        //disableAutoBuild();
+         
         final int TASK_COUNT = 3;
         lastProject = null;
         monitor.beginTask("Creating " + appName + " application", TASK_COUNT);
@@ -186,6 +189,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         
         writeBuildXmlFile(project);
         writeBuildXmlLaunchFile(project, appName, plugindir);
+        writeCleanProjectXmlFile(project);
+        writeCleanProjectXmlLaunchFile(project, appName, plugindir);
         
         writeClassPathFile(project);
         
@@ -206,6 +211,17 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 
         openEditorsForExampleApp(appName, project,monitor);
     }
+     
+     public static void disableAutoBuild() {
+         IWorkspace ws = ResourcesPlugin.getWorkspace();
+         IWorkspaceDescription desc = ws.getDescription();
+         desc.setAutoBuilding(false);
+         try {
+            ws.setDescription(desc);
+        } catch (CoreException e) {
+            e.printStackTrace();
+        }
+     }
      
      protected void openEditorsForExampleApp(String appName, IProject project, IProgressMonitor monitor){
          monitor.setTaskName("Opening editor tabs");
@@ -296,14 +312,56 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          
      }
      
+     public static void writeCleanProjectXmlFile(IProject project) throws IOException{
+         StringBuffer ant = new StringBuffer();
+         ant.append("<project name=\"clean-project\" default=\"clean-project\">\n");
+         ant.append("\t<target name=\"clean-project\">\n");
+         ant.append("\t\t<delete dir=\"${basedir}/.webdsl-parsecache\" />\n");
+         ant.append("\t\t<delete dir=\"${basedir}/.cache\" />\n");
+         ant.append("\t\t<delete dir=\"${basedir}/.servletapp\" />\n");
+         ant.append("\t\t<delete dir=\"${basedir}/.webdsl-fragment-cache\" />\n");
+         ant.append("\t\t<delete file=\"${basedir}/.dependencies.webdsl\" />\n");
+         ant.append("\t\t<delete includeemptydirs=\"true\">\n");
+         ant.append("\t\t\t<fileset dir=\"${basedir}/WebContent\" includes=\"**/*\"/>\n");
+         ant.append("\t\t</delete>\n");
+         ant.append("\t\t<echo file=\".saved-but-not-built\"/>\n");
+         ant.append("\t\t<eclipse.convertPath fileSystemPath=\"${basedir}\" property=\"resourcePath\" />\n");
+         ant.append("\t\t<eclipse.refreshLocal resource=\"${resourcePath}\" depth=\"infinite\" />\n");
+         ant.append("\t</target>\n");
+         ant.append("</project>"); 
+         writeStringToFile(ant.toString(), project.getLocation()+"/clean-project.xml");
+     }
+     
+     public static void writeCleanProjectXmlLaunchFile(IProject project, String appName, String plugindir) throws IOException{
+         //writeAntXmlLaunchFile(project,appName,plugindir,"clean-project.xml","clean-project", "\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
+         String antfile = "clean-project.xml";
+         
+         StringBuffer buildLaunchFile = new StringBuffer();
+         buildLaunchFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+         buildLaunchFile.append("<launchConfiguration type=\"org.eclipse.ant.AntBuilderLaunchConfigurationType\">\n");
+         buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ant.ui.ATTR_TARGETS_UPDATED\" value=\"true\"/>\n");
+         buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ant.ui.DEFAULT_VM_INSTALL\" value=\"false\"/>\n");
+         buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND\" value=\"false\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.CLASSPATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
+         buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"true\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROJECT_ATTR\" value=\""+appName+"\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"${workspace_loc:/"+appName+"/"+antfile+"}\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
+         buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED\" value=\"true\"/>\n");
+         buildLaunchFile.append("</launchConfiguration>\n");
+         writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" "+antfile+".launch");
+     }
      public static void writeBuildXmlLaunchFile(IProject project, String appName, String plugindir) throws IOException{
+         writeAntXmlLaunchFile(project,appName,plugindir,"build.xml","plugin-eclipse-build","");
+     }
+     public static void writeAntXmlLaunchFile(IProject project, String appName, String plugindir, String antfile, String anttarget, String extra) throws IOException{
         //create build launch file to make sure ant uses same jre instance as eclipse, otherwise the plugindir property provider won't work
          StringBuffer buildLaunchFile = new StringBuffer();
          buildLaunchFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
          buildLaunchFile.append("<launchConfiguration type=\"org.eclipse.ant.AntLaunchConfigurationType\">\n");
          buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ant.ui.DEFAULT_VM_INSTALL\" value=\"false\"/>\n");
          buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_PATHS\">\n");
-         buildLaunchFile.append("\t\t<listEntry value=\"/"+appName+"/build.xml\"/>\n");
+         buildLaunchFile.append("\t\t<listEntry value=\"/"+appName+"/"+antfile+"\"/>\n");
          buildLaunchFile.append("\t</listAttribute>\n");
          buildLaunchFile.append("\t<listAttribute key=\"org.eclipse.debug.core.MAPPED_RESOURCE_TYPES\">\n");
          buildLaunchFile.append("\t\t<listEntry value=\"1\"/>\n");
@@ -320,11 +378,14 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROJECT_ATTR\" value=\""+appName+"\"/>\n");
          buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LAUNCH_CONFIGURATION_BUILD_SCOPE\" value=\"${none}\"/>\n");
          buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER\" value=\"org.eclipse.ant.ui.AntClasspathProvider\"/>\n");
-         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_ANT_TARGETS\" value=\"plugin-eclipse-build,\"/>\n");
-         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"${workspace_loc:/"+appName+"/build.xml}\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_ANT_TARGETS\" value=\""+anttarget+",\"/>\n");
+         buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_LOCATION\" value=\"${workspace_loc:/"+appName+"/"+antfile+"}\"/>\n");
+         if(!extra.equals("")){
+             buildLaunchFile.append(extra);
+         }
          buildLaunchFile.append("\t<stringAttribute key=\"process_factory_id\" value=\"org.eclipse.ant.ui.remoteAntProcessFactory\"/>\n");
          buildLaunchFile.append("</launchConfiguration>\n");
-         writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" build.xml.launch");
+         writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" "+antfile+".launch");
      }
      
      public static void writeClassPathFile(IProject project) throws IOException{
@@ -501,7 +562,17 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
 
          projectFile.append("\t\t<buildCommand><name>webdsl.editor.builder</name></buildCommand>\n");
 
+         //clean trigger
+         projectFile.append("\t\t<buildCommand>\n");
+         projectFile.append("\t\t\t<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>\n");
+         projectFile.append("\t\t\t<triggers>clean,</triggers>\n");
+         projectFile.append("\t\t\t<arguments><dictionary>\n");
+         projectFile.append("\t\t\t\t<key>LaunchConfigHandle</key>\n");
+         projectFile.append("\t\t\t\t<value>&lt;project&gt;/"+project.getName()+" clean-project.xml.launch</value>\n");
+         projectFile.append("\t\t\t</dictionary></arguments>\n");
+         projectFile.append("\t\t</buildCommand>\n");
          projectFile.append("\t</buildSpec>\n");
+         
          projectFile.append("\t<natures>\n");
          projectFile.append("\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n");
          projectFile.append("\t\t<nature>org.eclipse.wst.common.project.facet.core.nature</nature>\n");
@@ -516,10 +587,16 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         }
      }
      
-     
-     public static final String tomcatruntimeid = "webdsl_tomcat6runtime"; 
-     public static final String tomcatserverid = "webdsl_tomcat6server";
-     
+     /*
+      * add version to server instance String, otherwise builds break after
+      * updating the plugin, due to stale references in 
+      * -workspace-/.metadata/.plugins/org.eclipse.wst.server.core/
+      * to the tomcat installation of the previous version
+      */
+     public static String tomcatruntimeid = 
+         "webdsl_tomcat6runtime" + Activator.getInstance().getBundle().getVersion().toString(); 
+     public static String tomcatserverid = 
+         "webdsl_tomcat6server" + Activator.getInstance().getBundle().getVersion().toString(); 
      
      public static IRuntimeType getTomcatRuntimeType(){
          IRuntimeType[] runtimeTypes = ServerUtil.getRuntimeTypes(null, null, null);

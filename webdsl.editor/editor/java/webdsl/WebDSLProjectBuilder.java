@@ -301,7 +301,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         String searchfor = "build-id:"+buildid;
         System.out.println("searching for: "+searchfor);
         boolean found = false;
-        int tries = 20;
+        int tries = 8;
         while(tries > 0 && !found){
           tries = tries - 1;
           try {
@@ -319,17 +319,17 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             //e.printStackTrace();
           }
           try {
-            Thread.sleep (2000);
+            Thread.sleep (2500);
           }
           catch (InterruptedException e) {
             e.printStackTrace();
           }
         }
         if(found){
-          System.out.println("Application deployed.");
+          System.out.println("Application deployed, opening browser tab.");
         }
         else{
-          System.out.println("Application not deployed yet.");
+          System.out.println("Application not deployed yet, cancelled opening browser tab.");
         }
         return found;
     }
