@@ -1,6 +1,7 @@
 package webdsl;
 
 import java.awt.Checkbox;
+import java.sql.DriverManager;
 
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -12,13 +13,20 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Dialog;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+
+import java.sql.Connection;
 
 public class WebDSLEditorWizardPage extends WizardPage {
     
@@ -50,6 +58,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
     protected Label labelDBFile;
     protected Text inputDBFile;
     public String getInputDBFile() { return inputDBFile.getText().trim(); }
+    
+    protected Label labelTestConnection;
     
     protected String inputDBMode;
     public String getInputDBMode() { return inputDBMode.trim(); }
@@ -212,6 +222,17 @@ public class WebDSLEditorWizardPage extends WizardPage {
             public void modifyText(ModifyEvent e) {
                 onChange();
             }
+        });
+        
+        Button testconnection;
+        (testconnection = new Button(mysqlGroup, SWT.NULL)).setText("&Test connection settings");
+        labelTestConnection = new Label(mysqlGroup, SWT.NULL);
+        labelTestConnection.setText("                                                                            "); //make label wide enough for messages
+        testconnection.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                testConnection(labelTestConnection);
+            }
+            public void widgetDefaultSelected(SelectionEvent e) {  }
         });
         
         sqliteGroup = new Group(container, SWT.NULL);
@@ -544,4 +565,45 @@ public class WebDSLEditorWizardPage extends WizardPage {
             setErrorMessage(message);
     }
     
+    protected Label red(Label label){
+        Color color = new Color(this.getShell().getDisplay(), new RGB(255,0,0));
+        label.setForeground(color);
+        return label;
+    }
+    protected Label green(Label label){
+        Color color = new Color(this.getShell().getDisplay(), new RGB(0,255,0));
+        label.setForeground(color);
+        return label;
+    }
+    protected void testConnection(Label label) {
+        Connection conn = null;
+        try {
+            String userName = getInputDBUser();
+            String password = getInputDBPass();
+            if(getInputDBHost().length()==0){
+                red(label).setText("Database host not entered");
+                return;
+            }
+            if(getInputDBName().length()==0){
+                red(label).setText("Database name not entered");
+                return;
+            }
+            String url = "jdbc:mysql://"+getInputDBHost()+"/"+getInputDBName();
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+            conn = DriverManager.getConnection(url, userName, password);
+            green(label).setText("Database connection established");
+        }
+        catch (Exception e) {
+            red(label).setText("Cannot connect to database server");
+        }
+        finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                }
+                catch (Exception e) {}
+            }
+        }
+    }
+
 }
