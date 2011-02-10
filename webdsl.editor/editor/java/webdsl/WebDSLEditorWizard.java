@@ -131,7 +131,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
     }
     
      private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, boolean isRootApp, IProgressMonitor monitor) throws IOException, CoreException {
-        //disableAutoBuild();
+        enableAutoBuild();
          
         final int TASK_COUNT = 3;
         lastProject = null;
@@ -186,6 +186,11 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         writeExampleApplicationFiles(project, appName, plugindir);
         
         monitor.worked(1);
+
+        // use .settings directory for clean-project.xml-launch 
+        // for eclipse clean project function, 
+        // since it is needed anyway for WTP settings
+        createDirs(project.getLocation()+"/.settings");
         
         writeBuildXmlFile(project);
         writeBuildXmlLaunchFile(project, appName, plugindir);
@@ -195,7 +200,6 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         writeClassPathFile(project);
         
         //write .settings/* files
-        createDirs(project.getLocation()+"/.settings");
         writeJdtPrefsFile(project);
         writeWstComponentFile(project, isRootApp);
         writeWstFacetFile(project);
@@ -221,6 +225,16 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         } catch (CoreException e) {
             e.printStackTrace();
         }
+     }
+     public static void enableAutoBuild() {
+         IWorkspace ws = ResourcesPlugin.getWorkspace();
+         IWorkspaceDescription desc = ws.getDescription();
+         desc.setAutoBuilding(true);
+         try {
+             ws.setDescription(desc);
+         } catch (CoreException e) {
+             e.printStackTrace();
+         }
      }
      
      protected void openEditorsForExampleApp(String appName, IProject project, IProgressMonitor monitor){
@@ -321,7 +335,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          ant.append("\t\t<delete dir=\"${basedir}/.servletapp\" />\n");
          ant.append("\t\t<delete dir=\"${basedir}/.webdsl-fragment-cache\" />\n");
          ant.append("\t\t<delete file=\"${basedir}/.dependencies.webdsl\" />\n");
-         ant.append("\t\t<delete includeemptydirs=\"true\">\n");
+         ant.append("\t\t<delete includeemptydirs=\"true\" quiet=\"true\">\n");
          ant.append("\t\t\t<fileset dir=\"${basedir}/WebContent\" includes=\"**/*\"/>\n");
          ant.append("\t\t</delete>\n");
          ant.append("\t\t<echo file=\".saved-but-not-built\"/>\n");
@@ -333,9 +347,11 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      }
      
      public static void writeCleanProjectXmlLaunchFile(IProject project, String appName, String plugindir) throws IOException{
-         //writeAntXmlLaunchFile(project,appName,plugindir,"clean-project.xml","clean-project", "\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
-         String antfile = "clean-project.xml";
+    	 //launch file for run as Ant
+    	 writeAntXmlLaunchFile(project,appName,plugindir,"clean-project.xml","clean-project", "\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
          
+    	 //launch file for Eclipse project clean
+         String antfile = "clean-project.xml";
          StringBuffer buildLaunchFile = new StringBuffer();
          buildLaunchFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
          buildLaunchFile.append("<launchConfiguration type=\"org.eclipse.ant.AntBuilderLaunchConfigurationType\">\n");
@@ -349,7 +365,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          buildLaunchFile.append("\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
          buildLaunchFile.append("\t<booleanAttribute key=\"org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED\" value=\"true\"/>\n");
          buildLaunchFile.append("</launchConfiguration>\n");
-         writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" "+antfile+".launch");
+         writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/.settings/"+appName+" "+antfile+".launch");
      }
      public static void writeBuildXmlLaunchFile(IProject project, String appName, String plugindir) throws IOException{
          writeAntXmlLaunchFile(project,appName,plugindir,"build.xml","plugin-eclipse-build","");
@@ -568,7 +584,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          projectFile.append("\t\t\t<triggers>clean,</triggers>\n");
          projectFile.append("\t\t\t<arguments><dictionary>\n");
          projectFile.append("\t\t\t\t<key>LaunchConfigHandle</key>\n");
-         projectFile.append("\t\t\t\t<value>&lt;project&gt;/"+project.getName()+" clean-project.xml.launch</value>\n");
+         projectFile.append("\t\t\t\t<value>&lt;project&gt;/.settings/"+project.getName()+" clean-project.xml.launch</value>\n");
          projectFile.append("\t\t\t</dictionary></arguments>\n");
          projectFile.append("\t\t</buildCommand>\n");
          projectFile.append("\t</buildSpec>\n");
