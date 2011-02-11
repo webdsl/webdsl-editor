@@ -8,12 +8,16 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceDescription;
@@ -130,6 +134,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         }
     }
     
+    public static String getPluginDir(){
+        return webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+    }
+    
      private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, boolean isRootApp, IProgressMonitor monitor) throws IOException, CoreException {
         enableAutoBuild();
          
@@ -141,7 +149,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         
         monitor.setTaskName("Copying example application files");
 
-        String plugindir = webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+        String plugindir = getPluginDir();
         if (Platform.getOS().equals(Platform.OS_WIN32)) {
             plugindir = plugindir.substring(1);
         }
@@ -207,12 +215,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         writeProjectFileWithoutWebDSLBuilder(project);
         
         refreshProject(project);
-        initWtpServerConfig(plugindir,project,projectName,monitor);
+        //initWtpServerConfig(plugindir,project,projectName,monitor);
         writeProjectFile(project);
         refreshProject(project);
         
-        writeTomcatConfigFile(plugindir);
-
         openEditorsForExampleApp(appName, project,monitor);
     }
      
@@ -329,6 +335,11 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      public static void writeCleanProjectXmlFile(IProject project) throws IOException{
          StringBuffer ant = new StringBuffer();
          ant.append("<project name=\"clean-project\" default=\"clean-project\">\n");
+         //ant.append("\t<fail unless=\"plugindir\" message=\"WebDSL plugin is not correctly installed. The 'plugindir' property is not available.\" />\n");
+         //ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
+         //ant.append("\t<target name=\"clean-project\">\n");
+         //ant.append("\t\t<antcall target=\"clean-eclipse-project\" />\n");
+         //ant.append("\t</target>\n");
          ant.append("\t<target name=\"clean-project\">\n");
          ant.append("\t\t<delete dir=\"${basedir}/.webdsl-parsecache\" />\n");
          ant.append("\t\t<delete dir=\"${basedir}/.cache\" />\n");
@@ -347,10 +358,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      }
      
      public static void writeCleanProjectXmlLaunchFile(IProject project, String appName, String plugindir) throws IOException{
-    	 //launch file for run as Ant
-    	 writeAntXmlLaunchFile(project,appName,plugindir,"clean-project.xml","clean-project", "\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
+         //launch file for run as Ant
+         writeAntXmlLaunchFile(project,appName,plugindir,"clean-project.xml","clean-project", "\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
          
-    	 //launch file for Eclipse project clean
+         //launch file for Eclipse project clean
          String antfile = "clean-project.xml";
          StringBuffer buildLaunchFile = new StringBuffer();
          buildLaunchFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
@@ -494,29 +505,6 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          writeStringToFile(wstfacetFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.project.facet.core.xml");
      }
      
-     public static void writeTomcatConfigFile(String plugindir) throws IOException{
-         IWorkspace workspace = ResourcesPlugin.getWorkspace();
-         String tomcatdir = plugindir+"webdsl-template/tomcat/tomcat";
-         String jre = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6";
-         String workspacedir = workspace.getRoot().getRawLocation().toString();
-         StringBuffer tomcatconfigFile = new StringBuffer();
-         tomcatconfigFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-         tomcatconfigFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.tomcat.core.launchConfigurationType\">\n");
-         tomcatconfigFile.append("\t<listAttribute key=\"org.eclipse.jdt.launching.CLASSPATH\">\n");
-         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;"+jre+"&quot; path=&quot;1&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
-         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+tomcatdir+"/bin/bootstrap.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
-         tomcatconfigFile.append("\t</listAttribute>\n");
-         tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.JRE_CONTAINER\" value=\""+jre+"\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROGRAM_ARGUMENTS\" value=\"start\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0&quot; -Dcatalina.home=&quot;"+tomcatdir+"&quot; -Dwtp.deploy=&quot;"+workspacedir+"/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;"+tomcatdir+"/endorsed&quot; -Xss8m -Xms48m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
-         tomcatconfigFile.append("\t<stringAttribute key=\"server-id\" value=\"webdsl_tomcat6server\"/>\n");
-         tomcatconfigFile.append("</launchConfiguration>\n");
-         IProject project = workspace.getRoot().getProject("Servers");
-         writeStringToFile(tomcatconfigFile.toString(), project.getLocation()+"/Tomcat v6.0 Server at localhost.launch");
-         refreshProject(project);
-     }
-     
      /**
       * Using this .project file will prevent the webdsl builder from running if eclipse is set to 'build automatically'.
       * The configuration as server module needs to be created before running an actual build.
@@ -609,10 +597,57 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
       * -workspace-/.metadata/.plugins/org.eclipse.wst.server.core/
       * to the tomcat installation of the previous version
       */
+     public static String webdslversion = 
+         Activator.getInstance().getBundle().getVersion().toString(); 
      public static String tomcatruntimeid = 
-         "webdsl_tomcat6runtime" + Activator.getInstance().getBundle().getVersion().toString(); 
+         "webdsl_tomcat6runtime" + webdslversion; 
+     public static String tomcatruntimename = 
+         "Runtime Tomcat v6.0 WebDSL v" + webdslversion; 
      public static String tomcatserverid = 
-         "webdsl_tomcat6server" + Activator.getInstance().getBundle().getVersion().toString(); 
+         "webdsl_tomcat6server" + webdslversion; 
+     public static String tomcatservername = 
+         "Tomcat v6.0 Server WebDSL v" + webdslversion; 
+     
+     public static boolean fileExists(String file){
+         return new File(file).exists();
+     }
+     
+     public static String writeTomcatConfigFile(String plugindir){
+         IWorkspace workspace = ResourcesPlugin.getWorkspace();
+         String tomcatdir = plugindir+"webdsl-template/tomcat/tomcat";
+         IProject project = workspace.getRoot().getProject("Servers");
+         String fileName = project.getLocation()+"/"+tomcatservername+" at localhost.launch";
+         if(fileExists(fileName)){
+             System.out.println("Tomcat configuration file already exists: "+fileName);
+             return fileName;
+         }
+         String jre = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6";
+         String workspacedir = workspace.getRoot().getRawLocation().toString();
+         
+         String workingDir = workspacedir+"/Servers/workingdir/tomcat/tmp_v"+webdslversion;
+         StringBuffer tomcatconfigFile = new StringBuffer();
+         tomcatconfigFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+         tomcatconfigFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.tomcat.core.launchConfigurationType\">\n");
+         tomcatconfigFile.append("\t<listAttribute key=\"org.eclipse.jdt.launching.CLASSPATH\">\n");
+         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;"+jre+"&quot; path=&quot;1&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
+         tomcatconfigFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry externalArchive=&quot;"+tomcatdir+"/bin/bootstrap.jar&quot; path=&quot;3&quot; type=&quot;2&quot;/&gt;&#10;\"/>\n");
+         tomcatconfigFile.append("\t</listAttribute>\n");
+         tomcatconfigFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"false\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.JRE_CONTAINER\" value=\""+jre+"\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.PROGRAM_ARGUMENTS\" value=\"start\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Dcatalina.base=&quot;"+workingDir+"&quot; -Dcatalina.home=&quot;"+tomcatdir+"&quot; -Dwtp.deploy=&quot;"+workingDir+"/wtpwebapps&quot; -Djava.endorsed.dirs=&quot;"+tomcatdir+"/endorsed&quot; -Xss8m -Xms48m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
+         tomcatconfigFile.append("\t<stringAttribute key=\"server-id\" value=\""+tomcatserverid+"\"/>\n");
+         tomcatconfigFile.append("</launchConfiguration>\n");
+         try {
+            writeStringToFile(tomcatconfigFile.toString(), fileName);
+            System.out.println("created Tomcat configuration file: "+fileName);
+         } catch (IOException e) {
+            e.printStackTrace();
+         }
+         refreshProject(project);
+         return fileName;
+     }
+     
      
      public static IRuntimeType getTomcatRuntimeType(){
          IRuntimeType[] runtimeTypes = ServerUtil.getRuntimeTypes(null, null, null);
@@ -647,6 +682,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
              IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(tomcatruntimeid, monitor);
              rwc.setLocation(Path.fromOSString(plugindir+"/webdsl-template/tomcat/tomcat"));
              //System.out.println("Location of Tomcat 6 runtime: "+rwc.getLocation());
+             rwc.setName(tomcatruntimename);
              IRuntime rt = rwc.save(true, monitor);
              System.out.println("created runtime: "+rt);
              return rt;
@@ -670,11 +706,23 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      
      public static IServer getWebDSLTomcatServer(IProject project,IProgressMonitor monitor){
          IServer plugintomcat6server = null;
-         for(IServer serv : ServerUtil.getAvailableServersForModule(ServerUtil.getModule(project), true, monitor)){
+         IModule module = ServerUtil.getModule(project);
+         System.out.println("Module: "+module);
+         if(module==null){
+             return null;
+         }
+         for(IServer serv : ServerUtil.getServersByModule(module, monitor)){ 
              if(serv.getId().equals(tomcatserverid)){
                  plugintomcat6server = serv;
              }
          } 
+         if(plugintomcat6server==null){
+             for(IServer serv : ServerUtil.getAvailableServersForModule(ServerUtil.getModule(project), true, monitor)){ 
+                 if(serv.getId().equals(tomcatserverid)){
+                     plugintomcat6server = serv;
+                 }
+             } 
+         }
          System.out.println("server: "+plugintomcat6server);
          return plugintomcat6server;
      }
@@ -685,9 +733,15 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          //System.out.println(st);
          IServer plugintomcat6server = null;
          IServerWorkingCopy server = st.createServer(tomcatserverid, null, plugintomcat6runtime, monitor);
+         server.setName(tomcatservername);
          plugintomcat6server = server.saveAll(true, monitor); //saveAll will also save ServerConfiguration and Runtime if they were still WorkingCopy
          System.out.println("created server: "+plugintomcat6server);
+         
          copyKeystoreFile(project, plugindir);         
+
+         writeTomcatConfigFile(plugindir);
+         plugintomcat6server.publish(IServer.PUBLISH_CLEAN, monitor);
+         
          return plugintomcat6server;
      }
      public static void copyKeystoreFile(IProject project, String plugindir){
@@ -714,11 +768,15 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
      }
      
     public static void addProjectModuleToServer(IProject project, IServer plugintomcat6server, IProgressMonitor monitor) throws CoreException{
-         IServerWorkingCopy serveraddmodule = new ServerWorkingCopy((Server) plugintomcat6server);
-         // attach the project module to the server config
-         IModule[] modules = {ServerUtil.getModule(project)};
-         serveraddmodule.modifyModules(modules, null, null);
-         serveraddmodule.saveAll(false,monitor);
+         IModule[] currentModules = plugintomcat6server.getModules();
+         IModule projectModule = ServerUtil.getModule(project);
+         if(!Arrays.asList(currentModules).contains(projectModule)){
+             IServerWorkingCopy serveraddmodule = new ServerWorkingCopy((Server) plugintomcat6server);
+             // attach the project module to the server config
+             IModule[] modules = {projectModule};
+             serveraddmodule.modifyModules(modules, null, null);
+             serveraddmodule.saveAll(false,monitor);
+         }
      }
      
      public static void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{

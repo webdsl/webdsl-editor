@@ -56,6 +56,9 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
               markWebDSLProjectBuilderStarted(project);
               //addRefreshJob(project,defaultDelay);
               //setPublishListener(project, monitor, buildid);
+              
+              WebDSLEditorWizard.initWtpServerConfig(WebDSLEditorWizard.getPluginDir(),project,project.getName(),monitor);
+              
               tryStartServer(project, monitor, new ChainedJob(){ public void run(){ pollDeployedAppAndOpenBrowser(project, buildid, 0); }}, 0);
               //pollDeployedAppAndOpenBrowser(project, buildid, 1000);
             }
@@ -334,7 +337,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         return found;
     }
     
-    public static boolean forcePublish = true;
+    public static boolean forcePublish = false;
 
     //restart once for a new project
     public static List<String> alreadyStarted = new ArrayList<String>();
