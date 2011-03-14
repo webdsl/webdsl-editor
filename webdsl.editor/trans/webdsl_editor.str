@@ -61,21 +61,23 @@ strategies // editor service interface
     ; editor-init     // cleanup dynamic rules
     ; fullpath := <concat-strings; normalize-windows-path> [projectpath, "/", path]
     ; rules( FullPath := fullpath )
-    ; <desugar-compat; get-main-file-name> ast      // set ApplicationIniDir
+    ; <desugar-compat; try(get-main-file-name)> ast      // set ApplicationIniDir
   
   // Normal analysis entry point
   editor-analyze: input@(ast, path, projectpath) -> result
     with  disable-dr-usage-tracking     // avoid overhead
-        ; !""; debug
+        ; <debug> ""
         ; !path; debug(!"Analyzing: ")
         ; <webdsl-editor-init> (path, projectpath, ast)
-        ; <editor-analyze-work> ast => result
         ; if is-editor-updated then
+            // prevents queueing analysis for all modules
+            rules(PerformingUpdate := True())
+          end
+        ; <editor-analyze-work> ast => result
+        ; if PerformingUpdate then
               // If editor is updated, we need to reparse and recheck all files to create a new dependency graph.
               // This might take a while; we'll schedule a background job for this.
-              rules(PerformingUpdate := True())
-              // Queue other files to be analyzed
-            ; dependencies-file
+              dependencies-file
             ; try(remove-file)         // marks all files as changed
             ; editor-analyze-multifile
             ; ?dependent-mods
@@ -84,7 +86,7 @@ strategies // editor service interface
             ; <queue-strategy(|"editor-update-modules", "Complete typecheck...")> dependent-mods
           end
         ; enable-dr-usage-tracking      // for dr -> module resolving
-  
+          
   editor-analyze-work:
     ast -> (ast-desugared, errors, warnings, notes)
     with
@@ -106,6 +108,7 @@ strategies // editor service interface
            rules(CurrentFile := <FullPath>)
           ; where(
               declare-globals => sig
+            ; <write-cache> sig
             ; rules(FileSignature := sig)
           )
         |}
@@ -178,9 +181,12 @@ strategies // editor service interface
     (selected, position, ast, path, project-path) -> None()
     with  mods := <editor-analyze-multifile>
         ; <queue-analysis> mods
-        ; cache-path := <FullPath; import-cache-path>
-        ; sig := <FileSignature>
-        ; <WriteToBinaryFile> (cache-path, sig)    
+        ; FullPath => path
+        ; {| CurrentFile:
+              rules(CurrentFile := path)
+            ; FileSignature
+            ; write-cache
+          |}    
       
   on-save-generate-file-to-enable-build = write-saved-but-not-built-file
       
@@ -199,7 +205,7 @@ strategies // editor service interface
         ; <try(get-imports)> Imports(appname) // try: import error is added if failed.
           
   add-app-ini-error: ast -> ast
-    with rules(ImportErrors :+= (ast, "Cannot find application.ini"))
+    with rules(ExtraWarnings :+= (ast, "Cannot find application.ini"))
              
   get-main-import: ast -> ast
     with  FullPath => fullpath
@@ -208,9 +214,8 @@ strategies // editor service interface
               // try to import main file if we're parsing a module
             ; !ast
             ; try(
-                  where(ApplicationIniDir <+ add-app-ini-error; fail)
-                  // if checking a module, import main app file
-                ; ?Module(_,_); import-main-file
+                // if checking a module, import main app file
+                ?Module(_,_); import-main-file
               )
         |}
  

@@ -74,11 +74,16 @@ strategies
   open-import-sig-cached(record-declarations,record-sigs): (path, cache-path) -> (path, cache-path)
     with  <debug(!"Updating cache: ")> cache-path;
           file := <parse-file> path;
-          sigs := <record-declarations> file;
+          sig := <record-declarations> file;
           if <file-exists> path then
             // Only cache if on filesystem (e.g., ignore libstratego-lib)
-            <WriteToBinaryFile> (cache-path, sigs)
+            <write-cache> sig
           end
+          
+  write-cache: sig -> sig
+    with  path := <CurrentFile>;
+          cachepath := <import-cache-path> path;
+          <WriteToBinaryFile> (cachepath, sig)
        
 strategies // bench
   

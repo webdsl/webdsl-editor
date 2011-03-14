@@ -16,24 +16,29 @@ strategies
    * 3. at the project root
    */
   get-main-file-name =
-      (
-         get-app-ini-dir-from-module-name; try-app-ini
-      <+ get-app-ini-dir-from-app-name; try-app-ini
-      <+ get-first-ini-dir; try-app-ini 
-      <+ project-path; try-app-ini
-      <+ rules(
-          ApplicationIniPath  := "application.ini"
-          ApplicationIniDir   := "."
-        );
-        <set-appname-and-dirs> FILE("unknown.app");
-        fail 
-      )
-    ; ApplicationIniPath
-    ; debug(!"Got app ini path: ")
-    ; application-ini-to-app-name
+      ?ast
+    ; if find-app-ini => inipath then
+          <application-ini-to-app-name> inipath
+      else
+          where(<add-app-ini-error> ast)
+        ; guess-main-appname
+        ; debug(!"Guessed main appname: ")
+      end
     ; <add-extension> (<id>,"app")
     ; <set-appname-and-dirs> FILE(<id>)       // set AppName and DirName
     
+  find-app-ini = 
+       get-app-ini-dir-from-module-name; try-app-ini
+    <+ get-app-ini-dir-from-app-name; try-app-ini
+    <+ get-first-ini-dir; try-app-ini 
+    <+ project-path; try-app-ini
+    
+  guess-main-appname =
+      project-path => path
+    ; explode-string(|'/')
+    ; last
+    ; rules(ApplicationIniDir := path)
+      
   get-app-ini-dir-from-module-name =
       ?Module(<id>, _) 
     ; explode-string
@@ -66,11 +71,10 @@ strategies
     get-first-ini-dir-traverse
         
   // Check if application.ini is in the given dir 
-  try-app-ini: dir -> (dir, filename)
+  try-app-ini: dir -> filename
     where filename := <concat-strings> [dir, "/", <ApplicationIniName>]
         ; file-exists
         ; rules(
-            ApplicationIniPath  := filename
             ApplicationIniDir   := dir
           )
     
