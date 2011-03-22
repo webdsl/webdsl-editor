@@ -59,7 +59,7 @@
 
   <!-- WEBDSL: custom main target, don't use spoofaximp.default -->
   <target name="all" depends="check.editor-ts.present, all.release" />
-	<target name="all.release" depends="update.editor-ts,import-webdsl-template,check-classpath,init,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,create-dr-term,java.jar,stratego.compile,sdf2imp,refresh" />
+  <target name="all.release" depends="update.editor-ts,import-webdsl-template,import-rtrees-for-editor-checks,check-classpath,init,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,create-dr-term,java.jar,stratego.compile,sdf2imp,refresh" />
   
   <!-- WEBDSL: Custom targets .................................................................... -->
 

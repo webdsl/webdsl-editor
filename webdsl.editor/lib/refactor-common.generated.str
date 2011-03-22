@@ -56,9 +56,9 @@ strategies //user-input
 input-dialog:
   (title, label, default-value) -> <prim("SSL_EXT_opendialog", title, label, default-value)>
   
-
+/*
 strategies //pp-table
-	
+  
 get-pp-table=
   import-term(include/EntityRefactorings.generated.pp.af)
-	
+*/
