@@ -10,6 +10,31 @@ strategies
     with  <editor-analyze> (ast, path, project-path)
         ; result := <collect-all(editor-complete-proposal); flatten-list>
 
+rules
+  
+  editor-complete-proposal :
+    IncompleteObjectPropertyAssignment(COMPLETION(_)) -> <all-properties; map(fieldaccess-proposal-prop)> x
+    where get-anno(?ObjectCreationTypeAnno(x))
+    
+  editor-complete-proposal :
+    ObjectPropertyAssignment(COMPLETION(_),_) -> <all-properties; map(fieldaccess-proposal-prop)> x
+    where get-anno(?ObjectCreationTypeAnno(x))
+    
+  //this solution is slow and fragile, add recovery rules instead, e.g. see IncompleteObjectPropertyAssignment for ObjectCreationAssignment
+  //var d := EntA{ i := 4 [ctrl+space]
+  //[VarDeclInitInferred("d",ObjectCreation(SimpleSort("EntA"),[ObjectPropertyAssignment("i",Int("4"))])),NOCONTEXT(COMPLETION(""))]
+  //unfortunately this only works after specifying the first objectpropertyassignment
+  /*editor-complete-proposal(|ast,position) :
+    nc@NOCONTEXT(COMPLETION(_)) -> prop*
+    where candidate-sorts; fetch(?"ObjectPropertyAssignment") 
+        ; parentlist := <parent-at-position(|position)> ast
+        ; index := <get-index> (nc,parentlist)
+        ; precedingindex := <subt> (index,1)
+        ; precedingterm := <index(|precedingindex)> parentlist
+        ; <oncetd(?ObjectCreation(SimpleSort(entname),_))> precedingterm
+        ; prop* := <all-properties; map(fieldaccess-proposal-prop)> entname
+  */
+  
 rules  //FieldAccess
   
   editor-complete-proposal :
