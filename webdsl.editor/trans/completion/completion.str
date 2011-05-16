@@ -10,7 +10,23 @@ strategies
     with  <editor-analyze> (ast, path, project-path)
         ; result := <collect-all(editor-complete-proposal); flatten-list>
 
-rules
+rules // inverse property annotation completion foo -> Foo (inverse=Foo.bar) 
+  
+  // inverse=
+  editor-complete-proposal :
+    IncompleteInverseAnno(COMPLETION(_)) -> result
+    where get-anno(?PropertyTypeAnno(x))
+        ; result := <get-properties-for-completion; map((<concat-strings> [x,".",<id>],id))> x  
+          
+  //inverse=Foo.
+  editor-complete-proposal :
+    InverseAnno(_,COMPLETION(_)) -> result 
+    where get-anno(?PropertyTypeAnno(x))  
+        ; result := <get-properties-for-completion> x
+              
+  get-properties-for-completion = all-properties; map(fieldaccess-proposal-prop)
+    
+rules //completion for property names in object creation expression
   
   editor-complete-proposal :
     IncompleteObjectPropertyAssignment(COMPLETION(_)) -> <all-properties; map(fieldaccess-proposal-prop)> x
@@ -57,7 +73,7 @@ rules  //FieldAccess
 rules
   
   prop-to-complete-proposal :
-    (name,type,desc) -> ([name{}],$[[name] : [<pp-type-fast> type] [<if not(?"") then !$[- [<id>]] end> desc]])     
+    (name,type,desc) -> (name{},$[[name] : [<pp-type-fast> type] [<if not(?"") then !$[- [<id>]] end> desc]])     
   prop-to-complete-proposal :
     (name,type) -> <prop-to-complete-proposal> (name,type,"")     
           
@@ -65,7 +81,7 @@ rules
     (x,farg) -> <func-sig-to-complete-proposal> (x,farg,SimpleSort("Void"))
     
   func-sig-to-complete-proposal :
-    tup@(x,farg,return) -> ([sig-no-return],full-sig)
+    tup@(x,farg,return) -> (sig-no-return,full-sig)
     with  sig-no-return := <pp-func-sig-arg-names-fast/*-tokens*/> (x,<map(?Arg(<id>,_))>farg)
         ; full-sig := <pp-func-sig-fast> tup
           
