@@ -15,16 +15,27 @@ rules // inverse property annotation completion foo -> Foo (inverse=Foo.bar)
   // inverse=
   editor-complete-proposal :
     IncompleteInverseAnno(COMPLETION(_)) -> result
-    where get-anno(?PropertyTypeAnno(x))
-        ; result := <get-properties-for-completion; map((<concat-strings> [x,".",<id>],id))> x  
-          
+    where has-anno(?PropertyTypeAnno(propsrt))
+        ; has-anno(?EntityNameAnno(ent))
+    with typename := <try-strip-generic-sort; ?SimpleSort(<id>)> propsrt 
+       ; result := <get-properties-for-inverse-completion; map((<concat-strings> [typename,".",<id>],id))> (ent,propsrt)  
+         
   //inverse=Foo.
   editor-complete-proposal :
     InverseAnno(_,COMPLETION(_)) -> result 
-    where get-anno(?PropertyTypeAnno(x))  
-        ; result := <get-properties-for-completion> x
+    where has-anno(?PropertyTypeAnno(propsrt))
+        ; has-anno(?EntityNameAnno(ent))
+    with  result := <get-properties-for-inverse-completion> (ent,propsrt) 
               
-  get-properties-for-completion = all-properties; map(fieldaccess-proposal-prop)
+  get-properties-for-inverse-completion :
+    (ent,propsrt) -> result
+    with x := <try-strip-generic-sort; ?SimpleSort(<id>)> propsrt
+       ; props := <all-properties
+                  ; filter(where(get-property-type;try-strip-generic-sort; ?SimpleSort(ent)))
+                  ; if <?GenericSort("List",_)>propsrt then remove-all(get-property-type;?GenericSort(<?"Set"<+?"List">,_)) end
+                  ; if <?GenericSort("Set",_)>propsrt  then remove-all(get-property-type;?GenericSort("List",_)) end
+                  > x
+       ; result := <map(fieldaccess-proposal-prop)> props
     
 rules //completion for property names in object creation expression
   
