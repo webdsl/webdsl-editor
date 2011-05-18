@@ -66,8 +66,8 @@
 	
   <target name="-compile-str" if="file">
   	<dependset>
-  	  <srcfileset file="${dir}/{$file}.str" />
-  	  <targetfileset file="${dir}/bin/${file}.java" />
+  	  <srcfilelist dir="${dir}" files="${file}.str" />
+  		<targetfilelist dir="${dir}/bin" files="${file}.java" />
   	</dependset>
   	<available file="${dir}/bin/${file}.java" property="compile-str.${file}.available" />
   	<antcall target="-compile-str-helper" />

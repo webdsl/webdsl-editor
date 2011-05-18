@@ -43,9 +43,10 @@ rules     // match stratego constructors
   
   find-dr-creation =
       ?SetDynRule(<get-dr-id>,_)        // DR : x -> y
-   <+ ?AddDynRule(<get-dr-id>,_)        // DR :+ x -> y
-   <+ ?DynRuleAssignAdd(<get-dr-id>,_)  // DR :+= x
    <+ ?SetDynRuleMatch(<get-dr-id>,_)   // DR : x
+   <+ ?AddDynRule(<get-dr-id>,_)        // DR :+ x -> y
+   <+ ?DynRuleAssign(<get-dr-id>,_)     // DR := x
+   <+ ?DynRuleAssignAdd(<get-dr-id>,_)  // DR :+= x
    
    collect-dr-creation(|name) = 
       find-dr-creations
