@@ -80,7 +80,7 @@ rules
     ; try(add-generated-anno)
       
   add-generated-anno: (stamp, value) -> (stamp, value2)
-    where <not(has-ast-mapping)> value
+    where <not(oncetd(has-ast-mapping))> value
         ; not(is-string <+ is-list)
         ; value2 := <add-anno(|IsGeneratedAnno())> value
 
