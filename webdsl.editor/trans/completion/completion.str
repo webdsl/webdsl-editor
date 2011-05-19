@@ -40,17 +40,16 @@ rules // inverse property annotation completion foo -> Foo (inverse=Foo.bar)
 rules //completion for property names in object creation expression
   
   editor-complete-proposal :
-    IncompleteObjectPropertyAssignment(COMPLETION(_)) -> <all-properties; map(fieldaccess-proposal-prop)> x
+    IncompleteObjectPropertyAssignment(COMPLETION(_)) -> <all-properties; map(fieldaccess-proposal-prop); map((<concat-strings> [<id>," := "],id))> x
     where get-anno(?ObjectCreationTypeAnno(x))
     
   editor-complete-proposal :
     ObjectPropertyAssignment(COMPLETION(_),_) -> <all-properties; map(fieldaccess-proposal-prop)> x
     where get-anno(?ObjectCreationTypeAnno(x))
     
-  //this solution is slow and fragile, add recovery rules instead, e.g. see IncompleteObjectPropertyAssignment for ObjectCreationAssignment
+  //working with NOCONTEXT and parent-at-position is slow and fragile, add simple productions instead, e.g. see IncompleteObjectPropertyAssignment for ObjectCreationAssignment
   //var d := EntA{ i := 4 [ctrl+space]
   //[VarDeclInitInferred("d",ObjectCreation(SimpleSort("EntA"),[ObjectPropertyAssignment("i",Int("4"))])),NOCONTEXT(COMPLETION(""))]
-  //unfortunately this only works after specifying the first objectpropertyassignment
   /*editor-complete-proposal(|ast,position) :
     nc@NOCONTEXT(COMPLETION(_)) -> prop*
     where candidate-sorts; fetch(?"ObjectPropertyAssignment") 
@@ -115,6 +114,15 @@ rules //TemplateCall
     where result := <all-keys-TopLevelTemplateDecl;map(TopLevelTemplateDecl; \Define(_,name,fargs,_,_)->(name,fargs)\; func-sig-to-complete-proposal)> 
     
 rules //Var    
+   
+  extend rename :
+    NOCONTEXT(COMPLETION(x)){anno*} -> NOCONTEXT(COMPLETION(x)){anno1*}
+    with  anno1* := <put-closure-in-anno> anno*
+        
+  editor-complete-proposal :
+    nc@NOCONTEXT(COMPLETION(x)){anno*} -> result
+    where candidate-sorts; fetch(?"Statement") 
+        ; result := <editor-complete-proposal> Var(COMPLETION(x)){anno*}
    
   editor-complete-proposal :
     v@Var(COMPLETION(_)) -> [var*, fun*, glo*, ses*]
