@@ -71,7 +71,7 @@ rules  //FieldAccess
 
   fieldaccess-proposal-prop :
     p -> result
-    with  p1 := <normalize-declare> p
+    with  p1 := <try(normalize-declare)> p //try because Property constructor is already normalized
         ; name := <get-property-name> p1
         ; type := <get-property-type> p1
         ; result := <prop-to-complete-proposal> (name,type)
