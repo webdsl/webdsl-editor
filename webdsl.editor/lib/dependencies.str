@@ -3,9 +3,22 @@ module separation/dependencies
 imports
   lib/dr
 
-strategies  
+strategies
+
+  // these two strategies should be in libstratego-lib, but is not yet supported
+  // by the c compiler due to usage of an older aterm library 
+  WriteToStreamingFile = 
+    WriteToFile(write-in-saf-to-stream)
   
-  // TODO: when are module keys deleted from the dep file ?
+  write-in-saf-to-stream =
+    if-java-platform(
+      ?(Stream(stream), term); prim("SSL_write_term_to_stream_saf", stream, term); !Stream(<id>)
+    );
+    if-c-platform(
+      fatal-err-msg(|["Trying to write SAF file on c platform, not supported"])
+    )
+
+// TODO: when are module keys deleted from the dep file ?
 
 rules     // externals
 
@@ -25,7 +38,7 @@ rules     // externals
           // store unchanged data
           x2* := <all-keys-PreviouslyUsedRules; filter(\fullpath -> (fullpath, <PreviouslyUsedRules>) where not(<used-data> fullpath)\)>;
           x* := [x1*,x2*];
-          <WriteToBinaryFile> (filename, x*)
+          <WriteToStreamingFile> (filename, x*)
       end
       
   find-dependent-modules(used-rules | created-rules, prev-created-rules, all-mods) =
