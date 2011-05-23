@@ -181,12 +181,12 @@ strategies // editor service interface
     (selected, position, ast, path, project-path) -> None()
     with  mods := <editor-analyze-multifile>
         ; <queue-analysis> mods
-        ; FullPath => path
+        ; FullPath => fullpath
         ; {| CurrentFile:
-              rules(CurrentFile := path)
+              rules(CurrentFile := fullpath)
             ; FileSignature
             ; write-cache
-          |}    
+          |}
       
   on-save-generate-file-to-enable-build = write-saved-but-not-built-file
       
