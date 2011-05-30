@@ -9,6 +9,7 @@ import org.eclipse.imp.preferences.fields.RadioGroupFieldEditor;
 import org.eclipse.jface.dialogs.IDialogPage;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
@@ -137,8 +138,13 @@ public class WebDSLEditorWizardPage extends WizardPage {
      * @see IDialogPage#createControl(Composite)
      */
     public void createControl(Composite parent) {
-        Composite container = new Composite(parent, SWT.NULL);
-        
+        ScrolledComposite sc = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
+        sc.setMinSize(1015, 670);
+        sc.setExpandHorizontal(true);
+        sc.setExpandVertical(true);
+        Composite container = new Composite(sc, SWT.NULL);
+        sc.setContent(container);
+
         addLayout(container);
           
         projectAndApplicationNameEntry(container);        
