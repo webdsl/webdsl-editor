@@ -219,7 +219,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         writeProjectFile(project);
         refreshProject(project);
         
-        openEditorsForExampleApp(appName, project,monitor);
+        // don't open files in editor tabs, because both the editor analysis and first compilation will copy built-in.app to the project, 
+        // which seems to cause build issues for clean builds on windows, where it complains about not being able to delete built-in.app
+        // subsequent builds (not clean) will not copy this file anymore, so avoiding this issue in the first build should be enough
+        //openEditorsForExampleApp(appName, project,monitor);
     }
      
      public static void disableAutoBuild() {
