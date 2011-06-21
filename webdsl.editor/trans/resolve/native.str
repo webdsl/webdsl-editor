@@ -23,6 +23,5 @@ rules
   pp-native-super: None() -> ""
   
   hover: NativeClassConstructor(arg*) -> text
-    with  text := <concat-strings> ["constructor (",<map(native-type-to-webdsl-type); pp-args> arg*, ")"]
+    with  text := <concat-strings> ["constructor (",<map(native-type-to-webdsl-type); pp-args-types> arg*, ")"]
   
-  pp-type: ClassSort(x_class) -> x_class

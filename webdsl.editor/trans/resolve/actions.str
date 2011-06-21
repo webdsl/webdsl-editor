@@ -24,7 +24,7 @@ rules
 rules  
     
   hover: Action(name, arg*, _) -> text
-    with  text := <concat-strings> ["action ",name,"(",<pp-args> arg*,")"]
+    with  text := <concat-strings> ["action ",name,"(",<pp-args-types> arg*,")"]
 
-	hover: Placeholder(name, _) -> text
-		with	text := <concat-strings> ["placeholder ", name]
+  hover: Placeholder(name, _) -> text
+    with	text := <concat-strings> ["placeholder ", name]

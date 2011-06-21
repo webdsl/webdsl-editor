@@ -63,14 +63,14 @@ rules // hover
   hover: tc@ThisCall(nm, arg*) -> txt
     with  targ* := <map(type-of)> arg*
         ; srt := <type-of> tc
-        ; txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ",<pp-type> srt]
+        ; txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args-types> targ*,") : ",<pp-type> srt]
     
   // Built-in function
   hover: c@Call(exp, nm, arg*) -> txt 
     where targ* := <map(type-of)> arg*
         ; srt-exp := <type-of> exp
         ; srt := <type-of> c
-    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args> targ*,") : ", <pp-type> srt, " of type ",<pp-type> srt-exp]
+    with  txt := <concat-strings> ["Built-in function ",nm,"(",<pp-args-types> targ*,") : ", <pp-type> srt, " of type ",<pp-type> srt-exp]
         
   hover: Arg(x, srt) -> text
     with  text := <concat-strings> ["Argument ", x, " : ",<pp-type> srt] 
@@ -80,10 +80,10 @@ rules // utils
   pp-func: Function(name,args,ret,_) -> <pp-func> Predicate(name,args,None())
     where <IsPredicate> (name, <map(farg-to-type)> args)
   pp-func: Function(name,args,ret,_) ->
-    <concat-strings> ["Function ",name,"(",<pp-args> args,") : ",<pp-type> ret]
+    <concat-strings> ["Function ",name,"(",<pp-args-types> args,") : ",<pp-type> ret]
   pp-func: FunctionNoReturn(name, args, _) ->
-    <concat-strings> ["Function ",name,"(",<pp-args> args,")"]
+    <concat-strings> ["Function ",name,"(",<pp-args-types> args,")"]
   pp-func: Predicate(name,args,_) ->
-    <concat-strings> ["Predicate ",name,"(",<pp-args> args,")"]
+    <concat-strings> ["Predicate ",name,"(",<pp-args-types> args,")"]
   
-  pp-args = map(try(?Arg(_,<id>)); pp-type); separate-by(|", "); concat-strings
+  pp-args-types = map(try(?Arg(_,<id>)); pp-type); separate-by(|", "); concat-strings

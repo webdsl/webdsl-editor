@@ -19,7 +19,7 @@ rules
 
   declaration-of: acrule|[ rule x_kind x_templatename(margs) { e acrule* } ]| -> decl
     where ("template" := x_kind <+ "ajaxtemplate" := x_kind)
-    		; targ* := <marg-to-farg> margs
+        ; targ* := <marg-to-farg> margs
         ; decl := <TemplateNewName; TemplateDecl> (x_templatename, targ*)
          
 rules // hover
@@ -69,7 +69,7 @@ rules // presentation
     ; separate-by(|"<br/>"); concat-strings => text
   
   template-sig-to-text(|type): (name, targ*) -> text
-    with text := <concat-strings> [type, " ", name,"(",<pp-args> targ*,")"]
+    with text := <concat-strings> [type, " ", name,"(",<pp-args-types> targ*,")"]
 
 rules // util
   

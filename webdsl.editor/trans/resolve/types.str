@@ -29,7 +29,3 @@ strategies
   pp-type-long: GenericSort(type, [srt]) -> <concat-strings> [<capitalize-string> type, "&lt;", <pp-type; capitalize-string> srt, "&gt;"]
   pp-type-long: Enum(x,_) -> <concat-strings> ["enum ", x]
   
-  pp-type: SimpleSort(x) -> x
-  pp-type: GenericSort(type, [srt]) -> <concat-strings> [<capitalize-string> type, "&lt;", <pp-type> srt, "&gt;"]
-  pp-type: Enum(x,_) -> x
-  pp-type: None() -> "void"

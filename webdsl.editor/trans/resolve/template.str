@@ -19,7 +19,7 @@ rules		// hover
 
   hover: Define(mods, x, farg*, _, _) -> text
     with  type := <mods-to-define-type; capitalize-string> mods
-        ; text := <concat-strings> [type, " ", x, "(", <pp-args> farg*, ")"]
+        ; text := <concat-strings> [type, " ", x, "(", <pp-args-types> farg*, ")"]
   
   hover: TemplateCall(nm, arg*, _, _) -> text
     where <CallToBuiltInTemplate> nm
