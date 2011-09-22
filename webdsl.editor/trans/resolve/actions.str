@@ -28,3 +28,5 @@ rules
 
   hover: Placeholder(name, _) -> text
     with	text := <concat-strings> ["placeholder ", name]
+    
+    signature constructors Action : Term * Term * Term -> Term

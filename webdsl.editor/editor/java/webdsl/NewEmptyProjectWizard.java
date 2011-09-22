@@ -23,7 +23,11 @@ public class NewEmptyProjectWizard extends WebDSLEditorWizard {
         copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
         createDirs(project.getLocation()+"/stylesheets");
         copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
-        
+        createDirs(project.getLocation()+"/search");
+        copyFile(plugindir+"webdsl-template/new_project/search/searchconfiguration.app", project.getLocation()+"/search/searchconfiguration.app");
+        createDirs(project.getLocation()+"/search/analyzerfiles");
+        copyFile(plugindir+"webdsl-template/new_project/search/analyzerfiles/stopwords.txt", project.getLocation()+"/search/analyzerfiles/stopwords.txt");
+        copyFile(plugindir+"webdsl-template/new_project/search/analyzerfiles/synonyms.txt", project.getLocation()+"/search/analyzerfiles/synonyms.txt");
         copyWebDSLSrcLibrary(project, appName, plugindir);
         
         //create other special dirs, to avoid seeing red warnings in build, also helps to see what you can modify/extend

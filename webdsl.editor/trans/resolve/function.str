@@ -77,8 +77,8 @@ rules // hover
 
 rules // utils
   
-  pp-func: Function(name,args,ret,_) -> <pp-func> Predicate(name,args,None())
-    where <IsPredicate> (name, <map(farg-to-type)> args)
+  // pp-func: Function(name,args,ret,_) -> <pp-func> Predicate(name,args,None())
+  //   where <IsPredicate> (name, <map(farg-to-type)> args)
   pp-func: Function(name,args,ret,_) ->
     <concat-strings> ["Function ",name,"(",<pp-args-types> args,") : ",<pp-type> ret]
   pp-func: FunctionNoReturn(name, args, _) ->

@@ -184,6 +184,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             if(isRootApp){
                 out.write("rootapp=true\n");
             }
+            out.write("indexdir=searchindex\n");
             out.close(); 
         } 
         catch (IOException e) { 
@@ -271,6 +272,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
          createDirs(project.getLocation()+"/stylesheets");
          copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
+         createDirs(project.getLocation()+"/search");
+         copyFile(plugindir+"webdsl-template/new_project/search/searchconfiguration.app", project.getLocation()+"/search/searchconfiguration.app");
       
          copyWebDSLSrcLibrary(project, appName, plugindir);
          
