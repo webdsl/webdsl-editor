@@ -9,6 +9,7 @@ imports
   typecheck/import		// for ExtraWarnings
   trans/-
   lib/-
+  fact-extraction/-
   
 signature constructors
   FILE : Term -> Term

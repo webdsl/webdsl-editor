@@ -1,0 +1,15 @@
+module fact-extraction/datalog
+
+imports
+   libwebdsl-front
+   libwebdsl-generator
+   typecheck/template
+
+rules
+   
+  datalog-extraction :
+    a@(node, position, ast, path, project-path) -> (filename, result)
+    with  filename := <guarantee-extension(|"aterm")> path
+    with  <editor-analyze> (ast, path, project-path)
+        ; result := <collect-all(?Define(_,_,_,_,_)); flatten-list>
+  
