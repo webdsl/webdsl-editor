@@ -4,6 +4,11 @@ imports
    libwebdsl-front
    libwebdsl-generator
    typecheck/template
+   webdsl_editor
+
+signature constructors
+  
+  Fact : Id * List(Constant) -> Term
 
 rules
    
@@ -11,5 +16,27 @@ rules
     a@(node, position, ast, path, project-path) -> (filename, result)
     with  filename := <guarantee-extension(|"aterm")> path
     with  <editor-analyze> (ast, path, project-path)
-        ; result := <collect-all(?Define(_,_,_,_,_)); flatten-list>
+        ; entity* := <all-keys-EntDecl; map(!Fact("entity",[<id>]))>  //map(!$[entity('[<id>]').]); concat-strings>
+        ; property* := <all-keys-TypeOfProperty; map(!Fact("property",[<Fst>, <Snd>, <TypeOfProperty; pp-type>]))>
+        ; function* := <all-keys-Functions; mapconcat(extract-functions)>
+        ; super* := <all-keys-EntDecl; filter(!Fact("super",[<Extends>,<id>]))>
+        ; result := <map(pp-datalog); concat-strings> [entity*,property*,function*,super*]
+        //; result := <bagof-Properties; map(pp-webdsl-to-string); concat-strings> "Test" // <collect-all(?Define(_,_,_,_,_)); flatten-list>
   
+  extract-functions:
+    ent -> funs
+    where funs := <bagof-Functions; mapconcat(extract-function(|ent))> ent
+      
+  extract-function(|ent):
+    fun -> [Fact("function", [ent, uniqname, name, <pp-type>ret]) | argfacts]
+    where (name,args,ret) := <get-function-sig-full> fun
+        ; uniqname := <new-function-name> (name, <map(farg-to-type)> args)
+        ; argfacts := <add-indices; map(extract-function-arg(|ent,uniqname))> args
+  
+  extract-function-arg(|ent,uniqname):
+    (num,Arg(name,type)) -> Fact("argument", [ent, uniqname, num, name, <pp-type> type])
+  
+  pp-datalog : 
+    Fact(name,cs) -> $[[name]([args]).
+    ]
+    where args := <map(single-quote); separate-by(|","); concat-strings>cs
