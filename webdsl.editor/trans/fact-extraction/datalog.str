@@ -18,25 +18,64 @@ rules
     with  <editor-analyze> (ast, path, project-path)
         ; entity* := <all-keys-EntDecl; map(!Fact("entity",[<id>]))>  //map(!$[entity('[<id>]').]); concat-strings>
         ; property* := <all-keys-TypeOfProperty; map(!Fact("property",[<Fst>, <Snd>, <TypeOfProperty; pp-type>]))>
-        ; function* := <all-keys-Functions; mapconcat(extract-functions)>
+        ; entityfunction* := <all-keys-Functions; mapconcat(extract-entity-functions)>
         ; super* := <all-keys-EntDecl; filter(!Fact("super",[<Extends>,<id>]))>
-        ; result := <map(pp-datalog); concat-strings> [entity*,property*,function*,super*]
+        ; pagesig* := <all-keys-PageDecl; mapconcat(PageDecl; extract-page)>
+        ; templatesig* := <all-keys-CurrentTemplateDecl; mapconcat(CurrentTemplateDecl; extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
+        ; result := <map(pp-datalog); concat-strings> [entity*,super*,property*,entityfunction*,pagesig*,templatesig*]
         //; result := <bagof-Properties; map(pp-webdsl-to-string); concat-strings> "Test" // <collect-all(?Define(_,_,_,_,_)); flatten-list>
   
-  extract-functions:
+rules
+  
+  extract-page:
+    Define(mod*, name, fargs, targs, body) -> [Fact("page",[name])| [argfact*,callfact*]]
+    with argfact* := <add-indices; map(extract-page-arg(|name))> fargs
+    with callfact* := <extract-template-body-calls(|name, body)>
+    
+  extract-page-arg(|page):
+    (num,Arg(name,type)) -> Fact("pageargument", [page, num, name, <pp-type> type])
+    
+  extract-template:
+    Define(mod*, name, fargs, targs, body) -> [Fact("template", [uniqname, name]) | [argfact*,callfact*]]
+    with uniqname := <get-template-unique-name-from-define>
+    with argfact* := <add-indices; map(extract-template-arg(|uniqname))> fargs
+    with callfact* := <extract-template-body-calls(|uniqname, body)>
+    
+  extract-template-arg(|uniqname):
+    (num,Arg(name,type)) -> Fact("templateargument", [uniqname, num, name, <pp-type> type])
+    
+  extract-template-body-calls(|uniqname,body) :
+    _ -> facts
+    with calls := <collect(is-defined-tc-get-called-tc)> body
+       ; facts := <map(!Fact("templatecall",[uniqname,<id>]))> calls
+
+  get-template-unique-name-from-define :
+    Define(mod*, name, fargs, targs, body) -> uniqname
+    with uniqname := <generate-template-name-fargs>(name, fargs)
+
+rules  
+  
+  extract-entity-functions:
     ent -> funs
-    where funs := <bagof-Functions; mapconcat(extract-function(|ent))> ent
+    where funs := <bagof-Functions; mapconcat(extract-entity-function(|ent))> ent
       
-  extract-function(|ent):
+  extract-entity-function(|ent):
     fun -> [Fact("function", [ent, uniqname, name, <pp-type>ret]) | argfacts]
     where (name,args,ret) := <get-function-sig-full> fun
         ; uniqname := <new-function-name> (name, <map(farg-to-type)> args)
-        ; argfacts := <add-indices; map(extract-function-arg(|ent,uniqname))> args
+        ; argfacts := <add-indices; map(extract-entity-function-arg(|ent,uniqname))> args
   
-  extract-function-arg(|ent,uniqname):
-    (num,Arg(name,type)) -> Fact("argument", [ent, uniqname, num, name, <pp-type> type])
+  extract-entity-function-arg(|ent,uniqname):
+    (num,Arg(name,type)) -> Fact("functionargument", [ent, uniqname, num, name, <pp-type> type])
+
+rules
   
   pp-datalog : 
     Fact(name,cs) -> $[[name]([args]).
     ]
-    where args := <map(single-quote); separate-by(|","); concat-strings>cs
+    with args := <not(is-list);debug(!"Fact(_,X) must be a list: ");fail 
+                  <+ 
+                  map(is-string; single-quote <+ is-int; int-to-string <+ debug(!"Fact(_,[..,X,..]) must be String or Int: ");fail); 
+                  separate-by(|","); 
+                  concat-strings>cs
+    
