@@ -23,38 +23,74 @@ rules
         ; globalfunction* := <all-keys-FunctionDecl; mapconcat(FunctionDecl; extract-global-function)>
         ; super* := <all-keys-EntDecl; filter(!Fact("super",[<Extends>,<id>]))>
         ; pagesig* := <all-keys-PageDecl; mapconcat(PageDecl; extract-page)>
-        ; templatesig* := <all-keys-CurrentTemplateDecl; mapconcat(CurrentTemplateDecl; extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
-        ; result := <map(pp-datalog); concat-strings> [entity*,super*,property*,entityfunction*,pagesig*,templatesig*,globalfunction*]
+        ; templatesig* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); remove-all(?Define(<fetch(Page())>,_,_,_,_)); mapconcat(extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
+        ; accesscontrol* := <all-keys-AccessControlRule; map(bagof-AccessControlRule); flatten-list; mapconcat(extract-access-control)>
+        ; result := <map(pp-datalog <+ debug(!"pp-datalog failed: ");fail); concat-strings> [entity*,super*,property*,entityfunction*,pagesig*,templatesig*,globalfunction*, accesscontrol*]
         //; result := <bagof-Properties; map(pp-webdsl-to-string); concat-strings> "Test" // <collect-all(?Define(_,_,_,_,_)); flatten-list>
   
 rules
   
   extract-page:
-    Define(mod*, name, fargs, targs, body) -> [Fact("page",[name])| [argfact*,callfact*]]
+    Define(mod*, name, fargs, targs, body) -> [Fact("page",[name]) | [argfact*,common*] ]
     with argfact* := <add-indices; map(extract-page-arg(|name))> fargs
     with callfact* := <extract-template-body-calls(|name, body)>
+    with common* := <extract-page-template-body-common(|name,body)>
     
   extract-page-arg(|page):
     (num,Arg(name,type)) -> Fact("pageargument", [page, num, name, <pp-type> type])
     
   extract-template:
-    Define(mod*, name, fargs, targs, body) -> [Fact("template", [uniqname, name]) | [argfact*,callfact*]]
+    Define(mod*, name, fargs, targs, body) -> [Fact("template", [uniqname, name]) | [argfact*,ajaxfact*,common*] ]
     with uniqname := <get-template-unique-name-from-define>
     with argfact* := <add-indices; map(extract-template-arg(|uniqname))> fargs
+    with ajaxfact* := <?Define(<fetch(AjaxTemplate())>,_,_,_,_);![Fact("ajaxtemplate",[uniqname])] <+ ![]>
+    with common* := <extract-page-template-body-common(|uniqname,body)>
+    
+  extract-page-template-body-common(|uniqname,body) :
+    _ -> [callfact*,navigate*,action*]
     with callfact* := <extract-template-body-calls(|uniqname, body)>
+    with navigate* := <extract-template-navigates(|uniqname,body)>
+    with action* := <extract-template-actions(|uniqname,body)>
     
   extract-template-arg(|uniqname):
     (num,Arg(name,type)) -> Fact("templateargument", [uniqname, num, name, <pp-type> type])
+    
+  get-template-unique-name-from-define :
+    Define(mod*, name, fargs, targs, body) -> uniqname
+    with uniqname := <generate-template-name-fargs>(name, fargs)
     
   extract-template-body-calls(|uniqname,body) :
     _ -> facts
     with calls := <collect(is-defined-tc-get-called-tc)> body
        ; facts := <map(!Fact("templatecall",[uniqname,<id>]))> calls
+         
+  extract-template-navigates(|uniqname,body) :
+    _ -> facts
+    with calls := <collect(is-navigate-call-get-called-page-name)> body
+       ; facts := <map(!Fact("navigate",[uniqname,<id>]))> calls
+  
+  is-navigate-call-get-called-page-name : NavigateCall(pc@PageCall(x,arg*),passign*,elem*){anno*} -> x
 
-  get-template-unique-name-from-define :
-    Define(mod*, name, fargs, targs, body) -> uniqname
-    with uniqname := <generate-template-name-fargs>(name, fargs)
+  extract-template-actions(|uniqname,body) :
+    _ -> facts
+    with facts := <collect(extract-template-action(|uniqname)); concat> body
 
+  extract-template-action(|uniqname) :
+    Action(mods,name,fargs,body) -> [Fact("action", [uniqname, name]) | [argfact*,callfact*] ]
+    with argfact* := <add-indices; map(extract-action-arg(|uniqname,name))> fargs
+    with callfact* := <extract-action-body-calls(|uniqname,name,body)>
+    
+  extract-action-arg(|uniqname,aname):
+    (num,Arg(name,type)) -> Fact("actionargument", [uniqname, aname, num, name, <pp-type> type])
+    
+  //reusing resolve code 
+  extract-action-body-calls(|uniqname,name,body) :
+    _ -> [factglobal*,factent*]
+    with callsglobal := <collect(?ThisCall(_,_);declaration-of)> body 
+       ; factglobal* := <map(get-function-sig-unique-name;Fst;!Fact("functioncallactiontoglobal",[uniqname,name,<id>]))> callsglobal
+    with callsent := <collect(?Call(_,_,_);declaration-of;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
+       ; factent* := <map((id,get-function-sig-unique-name;Fst);!Fact("functioncallactiontoentity",[uniqname,name,<Fst>,<Snd>]))> callsent
+  
 rules  
   
   extract-entity-functions:
@@ -77,7 +113,6 @@ rules
   extract-entity-function-arg(|ent,uniqname):
     (num,Arg(name,type)) -> Fact("entityfunctionargument", [ent, uniqname, num, name, <pp-type> type])
 
-  //reusing resolve code 
   extract-entity-function-body-calls(|ent,uniqname,body) :
     _ -> [factglobal*,factent*]
     with callsglobal := <collect(?ThisCall(_,_);declaration-of)> body 
@@ -106,13 +141,57 @@ rules
   extract-global-function-arg(|uniqname):
     (num,Arg(name,type)) -> Fact("globalfunctionargument", [uniqname, num, name, <pp-type> type])
 
-  //reusing resolve code 
   extract-global-function-body-calls(|uniqname,body) :
+    _ -> fact*
+    with fact* := <extract-function-calls(|"functioncallglobaltoentity","functioncallglobaltoglobal",[uniqname],body)>
+ 
+  extract-function-calls(|factnameentity,factnameglobal,uniqnameparts,body) :
     _ -> [factglobal*,factent*]
     with callsglobal := <collect(?ThisCall(_,_);declaration-of)> body 
-       ; factglobal* := <map(get-function-sig-unique-name;Fst;!Fact("functioncallglobaltoglobal",[uniqname,<id>]))> callsglobal
+       ; factglobal* := <map(get-function-sig-unique-name;Fst;!Fact(factnameglobal,<concat> [uniqnameparts,[<id>]]))> callsglobal
     with callsent := <collect(?Call(_,_,_);declaration-of;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
-       ; factent* := <map((id,get-function-sig-unique-name;Fst);!Fact("functioncallglobaltoentity",[uniqname,<Fst>,<Snd>]))> callsent
+       ; factent* := <map((id,get-function-sig-unique-name;Fst);!Fact(factnameentity,<concat> [uniqnameparts,[<Fst>,<Snd>]]))> callsent
+
+rules
+
+  extract-access-control :
+    acr@AccessControlRule(_,matchname,_,_,_) -> []
+    where <is-substring(!"*")> matchname
+
+  extract-access-control :
+    acr@AccessControlRule("page",x_pagematchname,margs@MatchArgs(farg1,_),e,acrule*) -> [Fact("acrule",["page",x_pagematchname]) | [callfact*,nested*] ]
+    where not(<is-substring(!"*")> x_pagematchname)
+    with callfact* := <extract-acrule-function-calls(|["page",x_pagematchname], e)>
+    with nested* := <filter(extract-access-control(|["page",x_pagematchname]));concat> acrule*
+    
+  extract-access-control :
+    acr@AccessControlRule("template",x_pagematchname,margs@MatchArgs(fargs,_),e,acrule*) -> [Fact("acrule",["template",uniqname]) | [callfact*,nested*] ]
+    where not(<is-substring(!"*")> x_pagematchname)
+    with uniqname := <generate-template-name-fargs>(x_pagematchname, fargs)
+    with callfact* := <extract-acrule-function-calls(|["template",uniqname], e)>
+    with nested* := <filter(extract-access-control(|["template",uniqname]));concat> acrule*
+    
+  extract-access-control :
+    acr@AccessControlRule("action",x_pagematchname,margs@MatchArgs(farg1,_),e,acrule*) -> [Fact("acrule",["action",x_pagematchname]) | [callfact*] ]
+    where not(<is-substring(!"*")> x_pagematchname)
+    with callfact* := <extract-acrule-function-calls(|["action",x_pagematchname], e)>
+
+  extract-access-control(|uniqnames) :
+    acr@AccessControlRule("action",x_pagematchname,margs@MatchArgs(farg1,_),e,acrule*) -> [Fact("acrule", uniqnameaction*) | [callfact*] ]
+    where not(<is-substring(!"*")> x_pagematchname)
+    with uniqnameaction* := <concat>[uniqnames,["action",x_pagematchname]]
+    with callfact* := <extract-acrule-function-calls(|uniqnameaction*, e)>
+    
+  extract-access-control :
+    acr@AccessControlRule("ajaxtemplate",x_pagematchname,margs@MatchArgs(fargs,_),e,acrule*) -> [Fact("acrule",["ajaxtemplate",uniqname]) | [callfact*,nested*] ]
+    where not(<is-substring(!"*")> x_pagematchname)
+    with uniqname := <generate-template-name-fargs>(x_pagematchname, fargs)
+    with callfact* := <extract-acrule-function-calls(|["ajaxtemplate",uniqname], e)>
+    with nested* := <filter(extract-access-control(|["ajaxtemplate",uniqname]));concat> acrule*
+
+  extract-acrule-function-calls(|uniqnameparts,body) :
+    _ -> fact*
+    with fact* := <extract-function-calls(|"functioncallacruletoentity","functioncallacruletoglobal",uniqnameparts,body)>
 
 rules
   
@@ -124,4 +203,3 @@ rules
                   map(is-string; single-quote <+ is-int; int-to-string <+ debug(!"Fact(_,[..,X,..]) must be String or Int: ");fail); 
                   separate-by(|","); 
                   concat-strings>cs
-    
