@@ -18,7 +18,7 @@ rules
     with  filename := <guarantee-extension(|"aterm")> path
     with  <editor-analyze> (ast, path, project-path)
         ; entity* := <all-keys-EntDecl; map(!Fact("entity",[<id>]))>  //map(!$[entity('[<id>]').]); concat-strings>
-        ; property* := <all-keys-TypeOfProperty; map(!Fact("property",[<Fst>, <Snd>, <TypeOfProperty; pp-type>]))>
+        ; property* := <extract-entity-properties>
         ; entityfunction* := <all-keys-Functions; mapconcat(extract-entity-functions)>
         ; globalfunction* := <all-keys-FunctionDecl; mapconcat(FunctionDecl; extract-global-function)>
         ; super* := <all-keys-EntDecl; filter(!Fact("super",[<Extends>,<id>]))>
@@ -26,8 +26,18 @@ rules
         ; templatesig* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); remove-all(?Define(<fetch(Page())>,_,_,_,_)); mapconcat(extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
         ; accesscontrol* := <all-keys-AccessControlRule; map(bagof-AccessControlRule); flatten-list; mapconcat(extract-access-control)>
         ; result := <map(pp-datalog <+ debug(!"pp-datalog failed: ");fail); concat-strings> [entity*,super*,property*,entityfunction*,pagesig*,templatesig*,globalfunction*, accesscontrol*]
-        //; result := <bagof-Properties; map(pp-webdsl-to-string); concat-strings> "Test" // <collect-all(?Define(_,_,_,_,_)); flatten-list>
+
+rules
   
+  extract-entity-properties =
+    all-keys-PropertyDecl; mapconcat(entity-property-tuple-to-fact)
+    
+  entity-property-tuple-to-fact :
+    (ent,prop) -> [Fact("property",[<Fst>, <Snd>, <TypeOfProperty; pp-type>]) | inverse* ]
+    with if (invent,invprop) := <InverseProperty>
+         then inverse* := [Fact("inverse",[ent, prop, invent, invprop])]
+         else inverse* := [] end 
+    
 rules
   
   extract-page:

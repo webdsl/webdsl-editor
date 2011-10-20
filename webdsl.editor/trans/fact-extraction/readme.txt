@@ -15,6 +15,9 @@ super('Person','Author').
 //property(entity name, property name, property type).
 property('Author','name','String').
 
+//inverse(entity1, property of entity1, entity2, property of entity2).
+inverse('Foo','a','Bar','b').
+
 functions
 ---------
 
