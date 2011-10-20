@@ -62,6 +62,14 @@ template('yInt','y').
 //ajaxtemplate(unique template name).
 ajaxtemplate('showMessages').
 
+/form(page name or unique template name that contains a form).
+form('root').
+form('fooInt').
+
+/databind(page name or unique template name that contains data binding).
+databind('root').
+databind('fooInt').
+
 //templateargument(unique template name, argument number, argument name, argument type).
 templateargument('yInt',1,'i','Int').
 

@@ -15,7 +15,7 @@ rules
    
   datalog-extraction :
     a@(node, position, ast, path, project-path) -> (filename, result)
-    with  filename := <guarantee-extension(|"aterm")> path
+    with  filename := <guarantee-extension(|"datalog")> path
     with  <editor-analyze> (ast, path, project-path)
         ; entity* := <all-keys-EntDecl; map(!Fact("entity",[<id>]))>  //map(!$[entity('[<id>]').]); concat-strings>
         ; property* := <extract-entity-properties>
@@ -57,10 +57,12 @@ rules
     with common* := <extract-page-template-body-common(|uniqname,body)>
     
   extract-page-template-body-common(|uniqname,body) :
-    _ -> [callfact*,navigate*,action*]
+    _ -> [callfact*,navigate*,action*,form*,databind*]
     with callfact* := <extract-template-body-calls(|uniqname, body)>
     with navigate* := <extract-template-navigates(|uniqname,body)>
     with action* := <extract-template-actions(|uniqname,body)>
+    with form* := <extract-template-forms(|uniqname,body)>
+    with databind* := <extract-template-databind(|uniqname,body)>
     
   extract-template-arg(|uniqname):
     (num,Arg(name,type)) -> Fact("templateargument", [uniqname, num, name, <pp-type> type])
@@ -80,6 +82,22 @@ rules
        ; facts := <map(!Fact("navigate",[uniqname,<id>]))> calls
   
   is-navigate-call-get-called-page-name : NavigateCall(pc@PageCall(x,arg*),passign*,elem*){anno*} -> x
+
+  extract-template-forms(|uniqname,body) :
+    _ -> facts
+    with if <oncetd(match-template-with-name(|"form"))> body
+         then facts := [Fact("form",[uniqname])]
+         else facts := []
+         end
+         
+  extract-template-databind(|uniqname,body) :
+    _ -> facts
+    with if <oncetd(?DataBindAction(_))> body
+         then facts := [Fact("databind",[uniqname])]
+         else facts := []
+         end
+
+rules
 
   extract-template-actions(|uniqname,body) :
     _ -> facts
