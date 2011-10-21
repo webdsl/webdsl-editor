@@ -13,19 +13,34 @@ signature constructors
 
 rules
    
-  datalog-extraction :
+  datalog-extraction : // use on main app file
     a@(node, position, ast, path, project-path) -> (filename, result)
     with  filename := <guarantee-extension(|"datalog")> path
-    with  <editor-analyze> (ast, path, project-path)
+    with  <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         ; entity* := <all-keys-EntDecl; map(!Fact("entity",[<id>]))>  //map(!$[entity('[<id>]').]); concat-strings>
         ; property* := <extract-entity-properties>
         ; entityfunction* := <all-keys-Functions; mapconcat(extract-entity-functions)>
-        ; globalfunction* := <all-keys-FunctionDecl; mapconcat(FunctionDecl; extract-global-function)>
+        ; globalfunction* := <all-keys-FunctionDecl; filter(FunctionDecl; extract-global-function <+ debug(!"Function not supported: ");fail);concat>
         ; super* := <all-keys-EntDecl; filter(!Fact("super",[<Extends>,<id>]))>
         ; pagesig* := <all-keys-PageDecl; mapconcat(PageDecl; extract-page)>
-        ; templatesig* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); remove-all(?Define(<fetch(Page())>,_,_,_,_)); mapconcat(extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
-        ; accesscontrol* := <all-keys-AccessControlRule; map(bagof-AccessControlRule); flatten-list; mapconcat(extract-access-control)>
+        ; templatesig* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); remove-all(?Define(<fetch(Page()<+Local())>,_,_,_,_)); mapconcat(extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
+        ; accesscontrol* := <all-keys-AccessControlRule; map(bagof-AccessControlRule); flatten-list; filter(extract-access-control <+ debug(!"AC rule not supported: ");fail);concat>
         ; result := <map(pp-datalog <+ debug(!"pp-datalog failed: ");fail); concat-strings> [entity*,super*,property*,entityfunction*,pagesig*,templatesig*,globalfunction*, accesscontrol*]
+
+rules 
+  
+  //full load of entire application, cannot use editor/plugin module loading for this analysis
+  //because it doesn't contain all data (to optimize for type checking), e.g. it removes the body of templates
+  full-app-load(|dir) =
+    where(<chdir> dir) //set current dir to main app file
+  ; import-modules
+  ; in-typechecking-phase(
+        typecheck-init
+      ; typecheck-declare
+      ; typechecker-after-declare
+      ; rename-top
+    )
 
 rules
   
@@ -160,9 +175,10 @@ rules
   
   extract-global-function:
     fun -> [Fact("globalfunction", [uniqname, name, <pp-type>ret]) | [argfact*,callfact*]]
-    where (uniqname,name,args,ret) := <get-function-sig-unique-name> fun
+    where not(oncetd(?Arg(_,"Undefined")))
+    with  (uniqname,name,args,ret) := <get-function-sig-unique-name> fun
         ; argfact* := <add-indices; map(extract-global-function-arg(|uniqname))> args
-    with  if body := <extract-function-body> fun
+        ; if body := <extract-function-body> fun
           then callfact* := <extract-global-function-body-calls(|uniqname,body)>
           else callfact* := [] end 
 
@@ -177,7 +193,7 @@ rules
     _ -> [factglobal*,factent*]
     with callsglobal := <collect(?ThisCall(_,_);declaration-of)> body 
        ; factglobal* := <map(get-function-sig-unique-name;Fst;!Fact(factnameglobal,<concat> [uniqnameparts,[<id>]]))> callsglobal
-    with callsent := <collect(?Call(_,_,_);declaration-of;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
+    with callsent := <collect(where(?Call(<type-of; is-webdsl-type>,_,_));declaration-of;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
        ; factent* := <map((id,get-function-sig-unique-name;Fst);!Fact(factnameentity,<concat> [uniqnameparts,[<Fst>,<Snd>]]))> callsent
 
 rules
