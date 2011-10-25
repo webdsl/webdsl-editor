@@ -18,10 +18,10 @@ rules
     with  filename := <guarantee-extension(|"datalog")> path
     with  <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-        ; entity* := <all-keys-EntDecl; map(!Fact("entity",[<id>]))>  //map(!$[entity('[<id>]').]); concat-strings>
+        ; entity* := <all-keys-EntDecl; map(!Fact("entity",[<id>]))>
         ; property* := <extract-entity-properties>
-        ; entityfunction* := <all-keys-Functions; mapconcat(extract-entity-functions)>
-        ; globalfunction* := <all-keys-FunctionDecl; filter(FunctionDecl; extract-global-function <+ debug(!"Function not supported: ");fail);concat>
+        ; entityfunction* := <extract-entity-functions>
+        ; globalfunction* := <extract-global-functions>
         ; super* := <all-keys-EntDecl; filter(!Fact("super",[<Extends>,<id>]))>
         ; pagesig* := <all-keys-PageDecl; mapconcat(PageDecl; extract-page)>
         ; templatesig* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); remove-all(?Define(<fetch(Page()<+Local())>,_,_,_,_)); mapconcat(extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
@@ -136,12 +136,14 @@ rules
   
 rules  
   
-  extract-entity-functions:
-    ent -> funs
-    where funs := <bagof-Functions; mapconcat(extract-entity-function(|ent))> ent
+  extract-entity-functions =
+    all-keys-EntityFunctionDecl
+  ; fix-dr-dummy-annos
+  ; filter(!(<id>,<EntityFunctionDecl>);extract-entity-function <+ debug(!"Entity function not supported: ");fail)
+  ; concat
       
-  extract-entity-function(|ent):
-    fun -> [Fact("entityfunction", [ent, uniqname, name, <pp-type>ret]) | [argfact*,callfact*]]
+  extract-entity-function:
+    ((ent,n,t),fun) -> [Fact("entityfunction", [ent, uniqname, name, <pp-type>ret]) | [argfact*,callfact*]]
     where (uniqname,name,args,ret) := <get-function-sig-unique-name> fun
         ; argfact* := <add-indices; map(extract-entity-function-arg(|ent,uniqname))> args
     with  if body := <extract-function-body> fun
@@ -158,20 +160,27 @@ rules
 
   extract-entity-function-body-calls(|ent,uniqname,body) :
     _ -> [factglobal*,factent*]
-    with callsglobal := <collect(?ThisCall(_,_);declaration-of)> body 
+    with callsglobal := <collect(?ThisCall(_,_);where(not(function-lookup(|ent)));function-lookup)> body 
        ; factglobal* := <map(get-function-sig-unique-name;Fst;!Fact("functioncallentitytoglobal",[ent,uniqname,<id>]))> callsglobal
-    with callsent := <collect(?ThisCall(_,_);declaration-in-entity(|ent);!(ent,<id>) <+ ?Call(_,_,_);declaration-of;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
+    with callsent := <collect(?ThisCall(_,_);function-lookup(|ent);!(ent,<id>) <+ ?Call(_,_,_);function-lookup;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
        ; factent* := <map((id,get-function-sig-unique-name;Fst);!Fact("functioncallentitytoentity",[ent,uniqname,<Fst>,<Snd>]))> callsent
 
   extract-function-body = 
        \Function(x,farg,_,body) -> body\
-    <+ \FunctionNoReturn(x,farg,body) -> body\
     <+ \Predicate(x,farg,body) -> body\
     <+ \PredicateInEntity(x,farg,body) -> body\
     <+ \NativeFunction(x,farg,body) -> body\
     <+ \StaticEntityFunction(x,farg,_,body) -> body\
     
 rules
+  
+  fix-dr-dummy-annos = remove-all(not(has-anno(|DR_DUMMY()))) /* for some reason keys occur twice: ("test2",[])  ("test2",[]){DR_DUMMY} */
+ 
+  extract-global-functions = 
+    all-keys-FunctionDecl
+  ; fix-dr-dummy-annos
+  ; filter(FunctionDecl; extract-global-function <+ debug(!"Global function not supported: ");fail)
+  ; concat
   
   extract-global-function:
     fun -> [Fact("globalfunction", [uniqname, name, <pp-type>ret]) | [argfact*,callfact*]]
@@ -191,11 +200,40 @@ rules
  
   extract-function-calls(|factnameentity,factnameglobal,uniqnameparts,body) :
     _ -> [factglobal*,factent*]
-    with callsglobal := <collect(?ThisCall(_,_);declaration-of)> body 
+    with callsglobal := <collect(?ThisCall(_,_);function-lookup)> body 
        ; factglobal* := <map(get-function-sig-unique-name;Fst;!Fact(factnameglobal,<concat> [uniqnameparts,[<id>]]))> callsglobal
-    with callsent := <collect(where(?Call(<type-of; is-webdsl-type>,_,_));declaration-of;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
+    with callsent := <collect(?Call(_,_,_);function-lookup;!(<get-anno(?FromEntity(_));?FromEntity(<id>)>,<id>))> body
        ; factent* := <map((id,get-function-sig-unique-name;Fst);!Fact(factnameentity,<concat> [uniqnameparts,[<Fst>,<Snd>]]))> callsent
 
+  prepare-type-for-compare = strip-ref-sort; try(simplify-functionsort); strip-all-annos  
+
+rules /* @TODO refactor: merge with resolve code */
+
+  function-lookup :
+    Call(e1, f, e2*) -> <add-anno(|FromEntity(<?SimpleSort(<id>)>te1))> fun
+    where te1 := <type-of; prepare-type-for-compare> e1
+        ; fun := <check-sig-get-called-sig> (te1, f, e2*)
+  
+  function-lookup(|ent) :
+    ThisCall(f, e2*) -> <add-anno(|FromEntity(ent))> fun 
+    where not(FunctionSort(_,_) := <type-of> Var(f))
+    where fun := <check-sig-get-called-sig> (SimpleSort(<strip-annos>ent), f, e2*)   
+
+  function-lookup :
+    c@ThisCall(f, e2*) -> fun
+    where not(FunctionSort(_,_) := <type-of> Var(f))
+    where fun := <check-sig-get-called-sig> (None(), f, e2*) 
+
+  check-sig-get-called-sig :
+    (tcallee, f, e*) -> fun
+    where not(<?SimpleSort("PageServlet")> tcallee) //@TODO figure out what goes wrong with this built-in
+    where t* := <map(type-of<+debug(!"type-of failed: ");fail);prepare-type-list-for-compare> e*
+        ; f1 := <strip-annos> f
+        ; fun := <resolve-function-call-to-decl> (tcallee, f1, t*)
+//        ; fun := <(<EntityFunctionDecl> (<?SimpleSort(<id>)>tcallee, f1, t*) <+ <FunctionDecl> (f1, t*))> //no overload resolution
+
+  //fix-simple-sorts = alltd(?SimpleSort(_);strip-all-annos)
+  
 rules
 
   extract-access-control :
