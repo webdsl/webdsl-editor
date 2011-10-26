@@ -35,6 +35,7 @@ rules
   full-app-load(|dir) =
     where(<chdir> dir) //set current dir to main app file
   ; import-modules
+  ; remove-string-position-annos
   ; in-typechecking-phase(
         typecheck-init
       ; typecheck-declare
