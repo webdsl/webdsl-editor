@@ -73,12 +73,13 @@ rules
     with common* := <extract-page-template-body-common(|uniqname,body)>
     
   extract-page-template-body-common(|uniqname,body) :
-    _ -> [callfact*,navigate*,action*,form*,databind*]
+    _ -> [callfact*,navigate*,action*,form*,databind*,functioncall*]
     with callfact* := <extract-template-body-calls(|uniqname, body)>
     with navigate* := <extract-template-navigates(|uniqname,body)>
     with action* := <extract-template-actions(|uniqname,body)>
     with form* := <extract-template-forms(|uniqname,body)>
     with databind* := <extract-template-databind(|uniqname,body)>
+    with functioncall* := <extract-template-function-calls(|[uniqname], body)>
     
   extract-template-arg(|uniqname):
     (num,Arg(name,type)) -> Fact("templateargument", [uniqname, num, name, <pp-type> type])
@@ -112,6 +113,10 @@ rules
          then facts := [Fact("databind",[uniqname])]
          else facts := []
          end
+  
+  extract-template-function-calls(|uniqnameparts,body) :
+    _ -> fact*
+    with fact* := <extract-function-calls(|"functioncalltemplatetoentity","functioncalltemplatetoglobal",uniqnameparts,body)>
 
 rules
 

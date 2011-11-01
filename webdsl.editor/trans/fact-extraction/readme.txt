@@ -91,6 +91,13 @@ functioncallactiontoglobal('root','bla','global2Int').
 //functioncallactiontoglobal(page name or unique template name, action name, entity name, unique entity function name).
 functioncallactiontoentity('root','bla','Test','foo').
 
+//functioncalltemplatetoglobal(page name or unique template name, unique global function name)
+functioncalltemplatetoglobal('addAliasSet_Alias_','getAliasString').
+
+//functioncalltemplatetoentity(page name or unique template name, entity name, unique entity function name).
+functioncalltemplatetoentity('aliasAdvisedAlias','Alias','allAdvisedTheses').
+
+
 access control
 --------------
 
