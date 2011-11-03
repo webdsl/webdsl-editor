@@ -85,6 +85,9 @@ action('root','bla').
 //actionargument(page name or unique template name, action name, argument number, argument name, argument type).
 actionargument('root','bla',1,'i','Int').
 
+//actionreturn(page name or unique template name, action name, called page name or unique template name).
+actionreturn('root','bla','root').
+
 //functioncallactiontoglobal(page name or unique template name, action name, unique global function name).
 functioncallactiontoglobal('root','bla','global2Int').
 

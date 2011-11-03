@@ -125,13 +125,18 @@ rules
     with facts := <collect(extract-template-action(|uniqname)); concat> body
 
   extract-template-action(|uniqname) :
-    Action(mods,name,fargs,body) -> [Fact("action", [uniqname, name]) | [argfact*,callfact*] ]
+    Action(mods,name,fargs,body) -> [Fact("action", [uniqname, name]) | [argfact*, callfact*, return*] ]
     with argfact* := <add-indices; map(extract-action-arg(|uniqname,name))> fargs
     with callfact* := <extract-action-body-calls(|uniqname,name,body)>
+    with return* := <extract-action-return(|uniqname,name,body)>
     
   extract-action-arg(|uniqname,aname):
     (num,Arg(name,type)) -> Fact("actionargument", [uniqname, aname, num, name, <pp-type> type])
     
+  extract-action-return(|uniqname,name,body):
+    _ -> facts
+    with facts := <collect(\ Return(PageCall(pagename,_)) -> Fact("actionreturn",[uniqname, name, pagename]) \)> body
+         
   //reusing resolve code 
   extract-action-body-calls(|uniqname,name,body) :
     _ -> [factglobal*,factent*]
