@@ -23,7 +23,7 @@ rules
         ; entityfunction* := <extract-entity-functions>
         ; globalfunction* := <extract-global-functions>
         ; super* := <all-keys-EntDecl; filter(!Fact("super",[<Extends>,<id>]))>
-        ; pagesig* := <all-keys-PageDecl; mapconcat(PageDecl; extract-page)>
+        ; pagesig* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); filter(where(?Define(<fetch(Page()<+Local())>,_,_,_,_))); mapconcat(extract-page)>
         ; templatesig* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); remove-all(?Define(<fetch(Page()<+Local())>,_,_,_,_)); mapconcat(extract-template)> //CurrentTemplateDecl contains 'renamed' template bodies
         ; accesscontrol* := <all-keys-AccessControlRule; map(bagof-AccessControlRule); flatten-list; filter(extract-access-control <+ debug(!"AC rule not supported: ");fail);concat>
         ; result := <map(pp-datalog <+ debug(!"pp-datalog failed: ");fail); concat-strings> [entity*,super*,property*,entityfunction*,pagesig*,templatesig*,globalfunction*, accesscontrol*]
@@ -59,7 +59,6 @@ rules
   extract-page:
     Define(mod*, name, fargs, targs, body) -> [Fact("page",[name]) | [argfact*,common*] ]
     with argfact* := <add-indices; map(extract-page-arg(|name))> fargs
-    with callfact* := <extract-template-body-calls(|name, body)>
     with common* := <extract-page-template-body-common(|name,body)>
     
   extract-page-arg(|page):
