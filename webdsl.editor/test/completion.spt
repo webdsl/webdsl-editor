@@ -1,0 +1,39 @@
+module completion 
+
+language WebDSL
+
+setup [[
+  application test
+  
+  define page root(){}
+]]
+
+test simple completion test [[
+  entity A {
+  	i :: [[Int]]
+  }
+]] 
+complete to "Bool"
+//complete to "Float"
+//complete to "String"
+//...
+
+test simple completion test [[
+  entity A {
+  	a -> A
+  	i :: Int
+  }
+  entity B:A {
+  	b -> B
+  	s :: String
+  }
+  entity C:B {
+  	c -> C
+  	se :: Secret
+  }
+  function foo(a:A){
+  	log(a.[[i]]);
+  }
+]] 
+complete to "i"
+//...

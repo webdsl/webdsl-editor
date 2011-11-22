@@ -1,0 +1,28 @@
+module resolve 
+
+language WebDSL
+
+setup [[
+  application test
+  
+  define page root(){}
+]]
+
+test simple resolve test [[
+  entity [[A]] {
+    a -> [[A]]
+    i :: Int
+    function foo(bar:[[A]]){
+      var a := [[A]]{};
+    }  
+  }
+  function foo(bar:[[A]]){
+    var a := [[A]]{};
+  } 
+]] 
+resolve #2 to #1 
+resolve #3 to #1 
+resolve #4 to #1 
+resolve #4 to #1 
+resolve #5 to #1 
+resolve #6 to #1 
