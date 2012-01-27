@@ -126,6 +126,7 @@ completions
   completion template : Definition = "var " <name> " := " <exp> (blank)
   completion template : Definition = "request var " <name> " : " <Type> (blank)
   completion template : Definition = "enum " <Name> " {\n\t\n}" (blank) 
+  completion template : Definition = "analyzer " <Name> "{\n\t//charfilter = aCharFilter\n\ttokenizer = StandardTokenizer\n\t//tokenfilter = aTokenFilter\n}" (blank)
 
 completions
 
