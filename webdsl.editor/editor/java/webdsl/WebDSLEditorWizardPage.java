@@ -40,9 +40,12 @@ public class WebDSLEditorWizardPage extends WizardPage {
     
     protected boolean isInputProjectNameChanged;
     protected boolean dbTypeSelected = false;
-    protected boolean isMysqlDatabaseSelected;
-    public boolean isMysqlSelected()  { return isMysqlDatabaseSelected; }
-    public boolean isSqliteSelected() { return !isMysqlDatabaseSelected; }
+    
+    public enum SelectedDatabase {
+        MYSQL, H2, H2MEM
+    }
+    protected SelectedDatabase selectedDatabase = SelectedDatabase.H2; 
+    public SelectedDatabase getSelectedDatabase() { return selectedDatabase; }
 
     protected Label labelDBHost;
     protected Text inputDBHost;
@@ -84,7 +87,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     protected boolean selectedDbMode = false;
     
     protected Group dbselectGroup;
-    protected Group sqliteGroup;
+    protected Group h2Group;
     protected Group mysqlGroup;
     protected Group dbmodeGroup;
     protected Group emailGroup;
@@ -177,8 +180,11 @@ public class WebDSLEditorWizardPage extends WizardPage {
         Button bMysql = new Button(dbselectGroup, SWT.RADIO);
         bMysql.setText("MySQL database: recommended for regular users; requires mysql installation and (empty) database created");
 
-        Button bSqlite = new Button(dbselectGroup, SWT.RADIO);
-        bSqlite.setText("Sqlite database: recommended for first-time users; limitations: no concurrent request, no File/Image support");
+        Button bH2= new Button(dbselectGroup, SWT.RADIO);
+        bH2.setText("H2 Database Engine (file): recommended for first-time users; database stored in file");
+
+        Button bH2mem= new Button(dbselectGroup, SWT.RADIO);
+        bH2mem.setText("H2 Database Engine (in-memory): database stored in memory");
 
         mysqlGroup = new Group(container, SWT.NULL);
         
@@ -241,22 +247,22 @@ public class WebDSLEditorWizardPage extends WizardPage {
             public void widgetDefaultSelected(SelectionEvent e) {  }
         });
         
-        sqliteGroup = new Group(container, SWT.NULL);
+        h2Group = new Group(container, SWT.NULL);
         
-        GridData sqliteGridData = new GridData();
-        sqliteGridData.horizontalAlignment = GridData.FILL;
-        sqliteGridData.horizontalSpan = 2;
-        sqliteGroup.setLayoutData(sqliteGridData);
+        GridData h2GridData = new GridData();
+        h2GridData.horizontalAlignment = GridData.FILL;
+        h2GridData.horizontalSpan = 2;
+        h2Group.setLayoutData(h2GridData);
 
-        sqliteGroup.setText("Sqlite configuration");
+        h2Group.setText("H2 Database Engine (file) configuration");
         
-        GridLayout sqliteGroupLayout = new GridLayout();
-        sqliteGroup.setLayout(sqliteGroupLayout);
-        sqliteGroupLayout.numColumns = 2;
-        sqliteGroupLayout.verticalSpacing = 9;
+        GridLayout h2GroupLayout = new GridLayout();
+        h2Group.setLayout(h2GroupLayout);
+        h2GroupLayout.numColumns = 2;
+        h2GroupLayout.verticalSpacing = 9;
         
-        (labelDBFile = new Label(sqliteGroup, SWT.NULL)).setText("&Database file:");
-        inputDBFile = new Text(sqliteGroup, SWT.BORDER | SWT.SINGLE);
+        (labelDBFile = new Label(h2Group, SWT.NULL)).setText("&Database file:");
+        inputDBFile = new Text(h2Group, SWT.BORDER | SWT.SINGLE);
         inputDBFile.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         inputDBFile.addModifyListener(new ModifyListener() {
             public void modifyText(ModifyEvent e) {
@@ -371,15 +377,22 @@ public class WebDSLEditorWizardPage extends WizardPage {
             public void widgetDefaultSelected(SelectionEvent e) {
             }
         });
-        bSqlite.addSelectionListener(new SelectionListener() {
+        bH2.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
-                pickSqlite();
+                pickH2();
+            }
+            public void widgetDefaultSelected(SelectionEvent e) {
+            }
+        });
+        bH2mem.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                pickH2mem();
             }
             public void widgetDefaultSelected(SelectionEvent e) {
             }
         });
         
-        sqliteGroup.setEnabled(false);
+        h2Group.setEnabled(false);
         inputDBFile.setEnabled(false);
         mysqlGroup.setEnabled(false);
         inputDBHost.setEnabled(false);
@@ -400,33 +413,55 @@ public class WebDSLEditorWizardPage extends WizardPage {
     private void pickMysql(){
         dbTypeSelected = true;
         
-        sqliteGroup.setEnabled(false);
-        inputDBFile.setEnabled(false);
-        
         mysqlGroup.setEnabled(true);
+        h2Group.setEnabled(false);
+        
         inputDBHost.setEnabled(true);
         inputDBName.setEnabled(true);
         inputDBPass.setEnabled(true);
         inputDBUser.setEnabled(true);
+
+        inputDBFile.setEnabled(false);
         
         mysqlGroup.setFocus();
-        isMysqlDatabaseSelected = true;
+        selectedDatabase = SelectedDatabase.MYSQL;
         
         onChange();
     }
-    private void pickSqlite(){
+    
+    private void pickH2(){
         dbTypeSelected = true;
         
         mysqlGroup.setEnabled(false);
+        h2Group.setEnabled(true);
+        
         inputDBHost.setEnabled(false);
         inputDBName.setEnabled(false);
         inputDBPass.setEnabled(false);
         inputDBUser.setEnabled(false);
         
-        sqliteGroup.setEnabled(true);
         inputDBFile.setEnabled(true);
-        sqliteGroup.setFocus();
-        isMysqlDatabaseSelected = false;
+        
+        h2Group.setFocus();
+        selectedDatabase = SelectedDatabase.H2;
+        
+        onChange();
+    }
+    
+    private void pickH2mem(){
+        dbTypeSelected = true;
+        
+        mysqlGroup.setEnabled(false);
+        h2Group.setEnabled(false);
+        
+        inputDBHost.setEnabled(false);
+        inputDBName.setEnabled(false);
+        inputDBPass.setEnabled(false);
+        inputDBUser.setEnabled(false);
+
+        inputDBFile.setEnabled(false);
+        
+        selectedDatabase = SelectedDatabase.H2MEM;
         
         onChange();
     }

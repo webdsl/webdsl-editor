@@ -48,6 +48,8 @@ import org.eclipse.wst.server.core.ServerUtil;
 import org.eclipse.wst.server.core.internal.Server;
 import org.eclipse.wst.server.core.internal.ServerWorkingCopy;
 
+import webdsl.WebDSLEditorWizardPage.SelectedDatabase;
+
 /**
  * A wizard for creating new WebDSL projects.
  */
@@ -83,7 +85,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
     public boolean performFinish() {
         final String appName = input.getInputAppName();
         final String projectName = input.getInputProjectName();
-        final boolean isMysqlSelected = input.isMysqlSelected();
+        final SelectedDatabase selectedDatabase = input.getSelectedDatabase();
         final String host = input.getInputDBHost();
         final String user = input.getInputDBUser();
         final String pass = input.getInputDBPass();
@@ -101,7 +103,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         IRunnableWithProgress op = new IRunnableWithProgress() {
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
                 try {
-                    doFinish(appName, projectName, isMysqlSelected, host, user, pass, name, mode, file, tomcatpath, smtphost, smtpport, smtpuser, smtppass, isRootApp, monitor);
+                    doFinish(appName, projectName, selectedDatabase, host, user, pass, name, mode, file, tomcatpath, smtphost, smtpport, smtpuser, smtppass, isRootApp, monitor);
                 } catch (Exception e) {
                     throw new InvocationTargetException(e);
                 } finally {
@@ -138,7 +140,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         return webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
     }
     
-     private void doFinish(String appName, String projectName, boolean isMysqlSelected, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, boolean isRootApp, IProgressMonitor monitor) throws IOException, CoreException {
+     private void doFinish(String appName, String projectName, SelectedDatabase selectedDatabase, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, boolean isRootApp, IProgressMonitor monitor) throws IOException, CoreException {
         enableAutoBuild();
          
         final int TASK_COUNT = 3;
@@ -169,16 +171,20 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             out.write("tomcatpath="+tomcatpath+"\n");
             out.write("httpport=8080\n");
             out.write("httpsport=8443\n");
-            if(isMysqlSelected){
+            if(selectedDatabase == SelectedDatabase.MYSQL){
                 out.write("dbserver="+host+"\n"); 
                 out.write("dbuser="+user+"\n"); 
                 out.write("dbpassword="+pass+"\n");
                 out.write("dbname="+name+"\n");
                 out.write("dbmode="+mode+"\n");
             }
-            else{
-                out.write("db=sqlite\n");
+            else if(selectedDatabase == SelectedDatabase.H2){
+                out.write("db=h2\n");
                 out.write("dbfile="+file+"\n");
+                out.write("dbmode="+mode+"\n");
+            }
+            else if(selectedDatabase == SelectedDatabase.H2MEM){
+                out.write("db=h2mem\n");
                 out.write("dbmode="+mode+"\n");
             }
             if(isRootApp){
