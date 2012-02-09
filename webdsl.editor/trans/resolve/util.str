@@ -13,22 +13,22 @@ signature constructors
 strategies
   
   editor-resolve-internal =
-  		remove-hover-info
-    ; if editor-resolve => tgt then
-  	  		<find-declaration> tgt
-  	  	; try(where(get-anno(?FromEntity(_)); set-hover-info))
-    		; try(where(get-hover-info; debug(!"Got hover info: ")))
-    		; debug(!"Resolved: ")
-    	else
-    	    ?(<id>,_,_,_,_)
-    		; debug(!"No resolve for: ")
-    		; fail
-    	end
+    remove-hover-info
+  ; if editor-resolve => tgt then
+        <find-declaration> tgt
+      ; try(where(get-anno(?FromEntity(_)); set-hover-info))
+      ; try(where(get-hover-info; debug(!"Got hover info: ")))
+      ; debug(!"Resolved: ")
+    else
+        ?(<id>,_,_,_,_)
+      ; debug(!"No resolve for: ")
+      ; fail
+    end
   
   remove-module-info = try(dr-end-scope(|"LookupFromModule")); dr-begin-scope(|"LookupFromModule")
     
   // Default resolve
-  editor-resolve: (node, position, ast, path, project-path) -> <declaration-of> node
+  editor-resolve: (node, position, ast, path, project-path) -> <parent-at-position(|position);declaration-of> ast
   editor-hover: (node, position, ast, path, project-path) -> <hover-1> node
     
   hover-1 = 
