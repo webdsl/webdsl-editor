@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Properties;
@@ -59,7 +60,12 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
               
               WebDSLEditorWizard.initWtpServerConfig(WebDSLEditorWizard.getPluginDir(),project,project.getName(),monitor);
               
-              tryStartServer(project, monitor, new ChainedJob(){ public void run(){ pollDeployedAppAndOpenBrowser(project, buildid, 0); }}, 0);
+              tryStartServer(project, monitor, 
+                  new ChainedJob(){ 
+                      public void run(){
+                          pollDeployedAppAndOpenBrowser(project, buildid, 0); 
+                      }
+                  }, 0);
               //pollDeployedAppAndOpenBrowser(project, buildid, 1000);
             }
             worked( monitor, 1 );
@@ -308,7 +314,10 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         while(tries > 0 && !found){
           tries = tries - 1;
           try {
-            InputStreamReader instream = new InputStreamReader(url.openStream());
+            URLConnection con = url.openConnection();
+            con.setConnectTimeout(3000);
+            con.setReadTimeout(3000);
+            InputStreamReader instream = new InputStreamReader(con.getInputStream());
             BufferedReader inreader = new BufferedReader(instream);
             String inputLine = inreader.readLine();
             while (inputLine != null) {
@@ -319,6 +328,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             }
             inreader.close();
           } catch (Exception e) {
+            System.out.println("Error while requesting page "+url+" : "+e.getMessage());
             //e.printStackTrace();
           }
           try {

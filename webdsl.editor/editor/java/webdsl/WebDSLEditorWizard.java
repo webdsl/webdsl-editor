@@ -307,6 +307,9 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          ant.append("\t<property name=\"currentdir\" value=\"${basedir}\"/>\n");
          ant.append("\t<property name=\"webdsl-java-cp\" value=\"${plugindir}/include/webdsl.jar\"/>\n");
          ant.append("\t<property name=\"webdslexec\" value=\"java\"/>\n");
+         ant.append("\t<!-- command-line build only uses .servletapp, plugin build also uses WebContent to deploy with WTP -->\n");         
+         ant.append("\t<property name=\"generate-dir\" value=\"WebContent\"/>\n");
+         ant.append("\t<property name=\"webcontentdir\" value=\"${currentdir}/${generate-dir}\"/>\n");
          ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
         
          ant.append("\t<target name=\"plugin-eclipse-build\">\n");
@@ -495,7 +498,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          wstcomponentFile.append("<project-modules id=\"moduleCoreId\" project-version=\"1.5.0\">\n");
          wstcomponentFile.append("\t<wb-module deploy-name=\""+projectName+"\">\n");
          wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/\" source-path=\"/WebContent\"/>\n");
-         wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src\"/>\n");
+         //wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src\"/>\n");
+         wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src-template\"/>\n");
+         wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/.servletapp/src-generated\"/>\n");
+         wstcomponentFile.append("\t\t<wb-resource deploy-path=\"/WEB-INF/classes\" source-path=\"/nativejava\"/>\n");
          if(isRootApp){
            wstcomponentFile.append("\t\t<property name=\"context-root\" value=\"\"/>\n");
          }else{
@@ -637,6 +643,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          String workspacedir = workspace.getRoot().getRawLocation().toString();
          
          String workingDir = workspacedir+"/Servers/workingdir/tomcat/tmp_v"+webdslversion;
+         System.out.println("Server working dir: "+workingDir); //seems to be ignored, VM_ARGUMENTS settings below are overridden
          StringBuffer tomcatconfigFile = new StringBuffer();
          tomcatconfigFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
          tomcatconfigFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.tomcat.core.launchConfigurationType\">\n");
@@ -789,6 +796,21 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
              serveraddmodule.modifyModules(modules, null, null);
              serveraddmodule.saveAll(false,monitor);
          }
+     }
+     public static void removeProjectModuleFromServer(IProject project, IServer plugintomcat6server, IProgressMonitor monitor) throws CoreException{
+        if(plugintomcat6server == null){
+            System.out.println("module is currently not in server, cannot remove it");
+            return;
+        }
+        IModule[] currentModules = plugintomcat6server.getModules();
+        IModule projectModule = ServerUtil.getModule(project);
+        if(Arrays.asList(currentModules).contains(projectModule)){
+            IServerWorkingCopy serveraddmodule = new ServerWorkingCopy((Server) plugintomcat6server);
+            // remove the project module from the server config
+            IModule[] modules = {projectModule};
+            serveraddmodule.modifyModules(null, modules, null);
+            serveraddmodule.saveAll(false,monitor);
+        }
      }
      
      public static void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
