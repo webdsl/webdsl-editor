@@ -46,6 +46,12 @@ public class WebDSLEditorWizardPage extends WizardPage {
     }
     protected SelectedDatabase selectedDatabase = SelectedDatabase.H2; 
     public SelectedDatabase getSelectedDatabase() { return selectedDatabase; }
+    
+    public enum SelectedServer {
+        WTPTOMCAT, EXTERNALTOMCAT, CONSOLETOMCAT
+    }
+    protected SelectedServer selectedServer = SelectedServer.WTPTOMCAT; 
+    public SelectedServer getSelectedServer() { return selectedServer; }
 
     protected Label labelDBHost;
     protected Text inputDBHost;
@@ -69,7 +75,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     public String getInputDBMode() { return inputDBMode.trim(); }
 
     protected Text inputTomcatPath;
-    public String getInputTomcatPath() { return "/opt/tomcat"; } //return inputTomcatPath.getText().trim(); }
+    public String getInputTomcatPath() { return inputTomcatPath.getText().trim(); }
     
     protected Text inputSmtpHost;
     public String getInputSmtpHost() { return inputSmtpHost.getText().trim(); }
@@ -87,6 +93,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     protected boolean selectedDbMode = false;
     
     protected Group dbselectGroup;
+    protected Group serverselectGroup;
     protected Group h2Group;
     protected Group mysqlGroup;
     protected Group dbmodeGroup;
@@ -142,7 +149,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
      */
     public void createControl(Composite parent) {
         ScrolledComposite sc = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-        sc.setMinSize(1015, 670);
+        sc.setMinSize(1015, 850);
         sc.setExpandHorizontal(true);
         sc.setExpandVertical(true);
         Composite container = new Composite(sc, SWT.NULL);
@@ -320,6 +327,62 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });		
         
+        
+        serverselectGroup = new Group(container, SWT.NULL);
+        GridData serverselectGridData = new GridData();
+        serverselectGridData.horizontalAlignment = GridData.FILL;
+        serverselectGridData.horizontalSpan = 2;
+        serverselectGroup.setLayoutData(serverselectGridData);
+        serverselectGroup.setText("Select Server Deployment (may be changed later by editing application.ini or running the 'Convert to a WebDSL project' wizard)");
+        GridLayout serverselectGroupLayout = new GridLayout();
+        serverselectGroup.setLayout(serverselectGroupLayout);
+        serverselectGroupLayout.numColumns = 1;
+        serverselectGroupLayout.verticalSpacing = 9;
+        
+        Button bWTP = new Button(serverselectGroup, SWT.RADIO);
+        bWTP.setText("WTP Tomcat");
+        bWTP.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                selectedServer = SelectedServer.WTPTOMCAT;
+                inputTomcatPath.setEnabled(false);
+            }
+            public void widgetDefaultSelected(SelectionEvent e) {
+            }
+        });
+
+        Button bExternal = new Button(serverselectGroup, SWT.RADIO);
+        bExternal.setText("External Tomcat");
+        bExternal.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                selectedServer = SelectedServer.EXTERNALTOMCAT;
+                inputTomcatPath.setEnabled(true);
+            }
+            public void widgetDefaultSelected(SelectionEvent e) {
+            }
+        });
+        
+        new Label(serverselectGroup, SWT.NULL).setText("Tomcat path:");
+        inputTomcatPath = new Text(serverselectGroup, SWT.BORDER | SWT.SINGLE);
+        inputTomcatPath.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        inputTomcatPath.addModifyListener(new ModifyListener() {
+            public void modifyText(ModifyEvent e) {
+                onChange();
+            }
+        });
+        inputTomcatPath.setText("/opt/tomcat");
+        
+        /*
+        Button bConsole = new Button(serverselectGroup, SWT.RADIO);
+        bConsole.setText("Tomcat in console");
+        bConsole.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                selectedServer = SelectedServer.CONSOLETOMCAT;
+            }
+            public void widgetDefaultSelected(SelectionEvent e) {
+            }
+        });
+        */
+        
         emailGroup = new Group(container, SWT.NULL);
         GridData emailGridData = new GridData();
         emailGridData.horizontalAlignment = GridData.FILL;
@@ -399,6 +462,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
         inputDBName.setEnabled(false);
         inputDBPass.setEnabled(false);
         inputDBUser.setEnabled(false);
+
+        inputTomcatPath.setEnabled(false);
         
         isRootApp = new Button(container, SWT.CHECK);
         isRootApp.setText("&Root Application");
