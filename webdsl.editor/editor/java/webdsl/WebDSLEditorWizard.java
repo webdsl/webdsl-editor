@@ -322,7 +322,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
            ant.append("\t<property name=\"generate-dir\" value=\".servletapp\"/>\n");
          }
          ant.append("\t<property name=\"webcontentdir\" value=\"${currentdir}/${generate-dir}\"/>\n");
-         ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build.xml\"/>\n");
+         ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build-eclipse-plugin-entry.xml\"/>\n");
         
          ant.append("\t<target name=\"plugin-eclipse-build\">\n");
          ant.append("\t\t<antcall target=\"eclipse-build\"/>\n");
