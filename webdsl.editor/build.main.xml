@@ -89,6 +89,7 @@
         <exclude name="**/.servletapp/**" />
         <exclude name="**/.webdsl-parsecache/**" />
         <exclude name="**/.webdsl-fragment-cache/**" />
+        <exclude name="**/plugin-build-deps/**" />
       </fileset>
     </sync>
     
