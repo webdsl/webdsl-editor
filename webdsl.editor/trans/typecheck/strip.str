@@ -18,7 +18,6 @@ rules
   strip-bodies: DerivedPropertyNoAnno(x,type,sort,e) -> DerivedPropertyNoAnno(x,type,sort,None())
   
   strip-bodies: Function(name,args,ret,_) -> Function(name,args,ret,None())
-  strip-bodies: FunctionNoReturn(name,args,_) -> FunctionNoReturn(name,args,None())
   
   strip-bodies: Predicate(name,args,_) -> Predicate(name,args,None())
   

@@ -81,8 +81,6 @@ rules // utils
   //   where <IsPredicate> (name, <map(farg-to-type)> args)
   pp-func: Function(name,args,ret,_) ->
     <concat-strings> ["Function ",name,"(",<pp-args-types> args,") : ",<pp-type> ret]
-  pp-func: FunctionNoReturn(name, args, _) ->
-    <concat-strings> ["Function ",name,"(",<pp-args-types> args,")"]
   pp-func: Predicate(name,args,_) ->
     <concat-strings> ["Predicate ",name,"(",<pp-args-types> args,")"]
   
