@@ -40,5 +40,7 @@ builders
   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
   builder   : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)
   builder   : "Extract Datalog"         = datalog-extraction (openeditor) (realtime) (meta)
+  builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
+  builder   : "Disable on-save analysis"          = disable-on-save-analyze
   
 //  !!!!     WebDSL-Builders.esv is generated from WebDSL-Builders.template.esv in this project     !!!!

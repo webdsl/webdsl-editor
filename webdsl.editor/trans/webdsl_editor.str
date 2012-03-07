@@ -171,12 +171,15 @@ strategies // editor service interface
         ; complete-work-unit
         ; <set-markers(|ast)> errors
   
+  disable-on-save-analyze = write-disable-on-save-analysis-file; <debug> "disabled on-save analysis of other files"; !None()
+  enable-on-save-analyze = delete-disable-on-save-analysis-file; <debug> "enabled on-save analysis of other files"; !None()
+  
   // Expect that editor-analyze has analyzed the file.
   // Find dependent modules, and queue them for analysis.
   // Also save a cache of our new signature.
   on-save: (selected, position, ast, path, project-path) -> None()
     with on-save-generate-file-to-enable-build
-    with on-save-analyze-other-files
+    with skip-on-save-analysis <+ on-save-analyze-other-files
       
   on-save-analyze-other-files :
     (selected, position, ast, path, project-path) -> None()
@@ -192,8 +195,15 @@ strategies // editor service interface
   on-save-generate-file-to-enable-build = write-saved-but-not-built-file
       
   write-saved-but-not-built-file =
-    <WriteToTextFile> (<concat-strings>[<project-path>,"/.saved-but-not-built"], "saved")    
-    
+    <WriteToTextFile> (<concat-strings>[<project-path>,"/.saved-but-not-built"], "saved")     
+  
+  write-disable-on-save-analysis-file =
+    <WriteToTextFile> (<concat-strings>[<project-path>,"/.disable-on-save-analysis"], "")     
+  delete-disable-on-save-analysis-file = 
+    <remove-file> <concat-strings>[<project-path>,"/.disable-on-save-analysis"]
+  skip-on-save-analysis = 
+    where(<ReadFromFile> <concat-strings>[<project-path>,"/.disable-on-save-analysis"])    
+   
   find-extra-errors = fail
   
   desugar-all =
@@ -201,7 +211,7 @@ strategies // editor service interface
   
   import-main-file: ast -> ast
     with  appname := <AppName>
-        ; where(!appname; debug(!"Explicitely importing main file: ")) 
+        ; where(!appname; debug(!"Explicitly importing main file: ")) 
           // TODO: add specific warning referencing application.ini if the main file is not found
         ; <try(get-imports)> Imports(appname) // try: import error is added if failed.
           
