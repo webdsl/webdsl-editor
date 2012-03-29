@@ -415,13 +415,13 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                   //server might have been started in the mean time
                   if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
                     System.out.println("Starting server.");
-                    server.start(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
+                    server.synchronousStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
                   }
-                  //after starting execute ChainedJob
-                  if(cj!=null){cj.run();}
                 } catch (CoreException e) {
                     e.printStackTrace();
-                }
+                }  
+                //after starting execute ChainedJob
+                if(cj!=null){cj.run();}
                 return Status.OK_STATUS;
             }
         };
@@ -435,7 +435,11 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                 /* stop and start or restart */
                 /*server.stop(true);
                 addStartServerJob(server, cj, delay);*/
-                server.restart(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
+                try {
+                    server.synchronousRestart(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
+                } catch (CoreException e) {
+                    e.printStackTrace();
+                }
                 if(cj!=null){cj.run();}
                 return Status.OK_STATUS;
             }
