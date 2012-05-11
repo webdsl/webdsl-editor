@@ -140,6 +140,7 @@
 	     <javac destdir="${build}">                        
 	     	<src path="${java-runtime}"/>
 	     </javac>
+		<echo>compiled ant tasks</echo>
 	</target>
 </project>
 
