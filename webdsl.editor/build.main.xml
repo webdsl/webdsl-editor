@@ -128,18 +128,15 @@
   </target>
   
   <target name="update.editor-ts" unless="available.editor-ts">
-    <get-unix-ts/>
+    <script language="javascript">
+      <![CDATA[
+        var ts = Math.round(new Date().getTime()/1000.0);
+        self.getProject().setProperty('timestamp.unix', ts);
+        ]]>
+    </script>
     <echo>Editor timestamp is: ${timestamp.unix}</echo>
     <echo file="${path.timestamp.term}">${timestamp.unix}</echo>
     <!-- force strj to run -->
     <touch file="${trans}/${strmodule}.str" />
   </target>
-
-  <scriptdef name="get-unix-ts" language="javascript">
-    <![CDATA[
-      var ts = Math.round(new Date().getTime()/1000.0);
-      self.getProject().setProperty('timestamp.unix', ts);
-      ]]>
-  </scriptdef>
-
 </project>
