@@ -128,15 +128,11 @@
   </target>
   
   <target name="update.editor-ts" unless="available.editor-ts">
-    <script language="javascript">
-      <![CDATA[
-        var ts = Math.round(new Date().getTime()/1000.0);
-        self.getProject().setProperty('timestamp.unix', ts);
-        ]]>
-    </script>
+    <taskget-unix-ts/>
     <echo>Editor timestamp is: ${timestamp.unix}</echo>
     <echo file="${path.timestamp.term}">${timestamp.unix}</echo>
     <!-- force strj to run -->
     <touch file="${trans}/${strmodule}.str" />
   </target>
+ <taskdef name="taskget-unix-ts" classname="org.webdsl.editor.ant.TaskGetUnixTs" classpath="bin"/>  
 </project>
