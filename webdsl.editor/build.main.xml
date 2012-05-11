@@ -15,6 +15,7 @@
   <property name="lib" location="lib" />
   <property name="build" location="bin" />
   <property name="dist" location="bin/dist" />
+  <property name="java-runtime" location="java-runtime/src" />
 
   <!-- WEBDSL: import compiler properties -->
   <loadproperties srcFile="import.webdsl.properties" />
@@ -127,7 +128,7 @@
     <available file="${path.timestamp.term}" property="available.editor-ts" />
   </target>
   
-  <target name="update.editor-ts" unless="available.editor-ts">
+  <target name="update.editor-ts" unless="available.editor-ts" depends="compile-ant-task">
     <taskget-unix-ts/>
     <echo>Editor timestamp is: ${timestamp.unix}</echo>
     <echo file="${path.timestamp.term}">${timestamp.unix}</echo>
@@ -135,4 +136,10 @@
     <touch file="${trans}/${strmodule}.str" />
   </target>
  <taskdef name="taskget-unix-ts" classname="org.webdsl.editor.ant.TaskGetUnixTs" classpath="bin"/>  
+	<target name="compile-ant-task">
+	     <javac destdir="${build}">                        
+	     	<src path="${java-runtime}"/>
+	     </javac>
+	</target>
 </project>
+
