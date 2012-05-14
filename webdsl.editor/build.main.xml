@@ -128,19 +128,23 @@
     <available file="${path.timestamp.term}" property="available.editor-ts" />
   </target>
   
-  <target name="update.editor-ts" unless="available.editor-ts" depends="compile-ant-task">
-    <taskget-unix-ts/>
-    <echo>Editor timestamp is: ${timestamp.unix}</echo>
-    <echo file="${path.timestamp.term}">${timestamp.unix}</echo>
-    <!-- force strj to run -->
-    <touch file="${trans}/${strmodule}.str" />
-  </target>
- <taskdef name="taskget-unix-ts" classname="org.webdsl.editor.ant.TaskGetUnixTs" classpath="bin"/>  
+	<target name="declare-get-unix-ts" depends="compile-ant-task">
+		 <taskdef name="taskget-unix-ts" classname="org.webdsl.editor.ant.TaskGetUnixTs" classpath="bin"/>  
+	</target>
 	<target name="compile-ant-task">
 	     <javac destdir="${build}">                        
 	     	<src path="${java-runtime}"/>
 	     </javac>
 		<echo>compiled ant tasks</echo>
 	</target>
+  <target name="update.editor-ts" unless="available.editor-ts" depends="declare-get-unix-ts">
+    <taskget-unix-ts/>
+  	<echo>Editor timestamp is: ${timestamp.unix}</echo>
+    <echo file="${path.timestamp.term}">${timestamp.unix}</echo>
+    <!-- force strj to run -->
+    <touch file="${trans}/${strmodule}.str" />
+  </target>
+
+ 
 </project>
 
