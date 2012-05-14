@@ -129,7 +129,7 @@
   </target>
   
 	<target name="declare-get-unix-ts" >
-		 <taskdef name="taskget-unix-ts"  classname="org.webdsl.ant.TaskGetUnixTs"/>  
+		 <taskdef name="taskget-unix-ts"  classname="org.webdsl.ant.TaskGetUnixTs" classpath="webdsl-template/template-java-servlet/lib/webdsl-support.jar"/>  
 	</target>
   <target name="update.editor-ts" unless="available.editor-ts" depends="declare-get-unix-ts">
     <taskget-unix-ts/>
