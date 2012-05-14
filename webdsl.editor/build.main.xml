@@ -128,19 +128,8 @@
     <available file="${path.timestamp.term}" property="available.editor-ts" />
   </target>
   
-	<target name="declare-get-unix-ts" depends="compile-ant-task">
-		 <taskdef name="taskget-unix-ts" classname="org.webdsl.editor.ant.TaskGetUnixTs" classpath="bin"/>  
-	</target>
-	<target name="compile-ant-task">
-	     <javac destdir="${build}">                        
-	     	<src path="${java-runtime}"/>
-	     	<classpath>
-	     	 <fileset dir="${ant.library.dir}">
-	     	 	<include name="**/*.jar" />
-	     	 </fileset>
-	     	</classpath>
-	     </javac>
-		<echo>compiled ant tasks</echo>
+	<target name="declare-get-unix-ts" >
+		 <taskdef name="taskget-unix-ts"  classname="org.webdsl.editor.ant.TaskGetUnixTs"/>  
 	</target>
   <target name="update.editor-ts" unless="available.editor-ts" depends="declare-get-unix-ts">
     <taskget-unix-ts/>
