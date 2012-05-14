@@ -134,6 +134,11 @@
 	<target name="compile-ant-task">
 	     <javac destdir="${build}">                        
 	     	<src path="${java-runtime}"/>
+	     	<classpath>
+	     	 <fileset dir="${ant.library.dir}">
+	     	 	<include name="**/*.jar" />
+	     	 </fileset>
+	     	</classpath>
 	     </javac>
 		<echo>compiled ant tasks</echo>
 	</target>
