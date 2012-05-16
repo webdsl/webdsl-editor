@@ -2,7 +2,7 @@
 <feature
       id="webdsl.editor.feature"
       label="WebDSL Editor"
-      version="1.2.2"
+      version="1.2.9.qualifier"
       plugin="webdsl.editor">
 
    <description url="http://webdsl.org">
@@ -24,6 +24,12 @@
       <import feature="org.eclipse.jst.enterprise_userdoc.feature" version="3.1.0.v200809051357-62FIXBgJ99nBPBjIHN_" match="greaterOrEqual"/>
       <import feature="org.eclipse.jst.server_adapters.ext.feature" version="3.1.1.v20090813-777HFDPCcNBBz0BjJU4BA8" match="greaterOrEqual"/>
    </requires>
+   
+   <includes         
+     	id="org.strategoxt.imp"
+     	version="0.0.0"
+     	optional="true"
+     	search-location="both"/>
 
    <plugin
          id="webdsl.editor"
