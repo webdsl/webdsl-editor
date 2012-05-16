@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: WebDSL Plug-in
 Bundle-SymbolicName: webdsl.editor;singleton:=true
-Bundle-Version: 1.2.8
+Bundle-Version: 1.2.9.1
 Bundle-Activator: webdsl.Activator
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
@@ -30,7 +30,6 @@ Require-Bundle: org.eclipse.core.runtime,
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: org.acoda.editor,
  org.webdsl.back_end_transformations,
- org.webdsl.editor.ant,
  org.webdsl.java_pp_fake,
  org.webdsl.java_transformations,
  org.webdsl.to_java_servlet,

@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="WebDSL" default="all">
+  
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+    <classpath>
+      <pathelement location="lib/ant-contrib-1.0b3.jar"/>
+    </classpath>
+  </taskdef>   
 
   <!-- Key input modules -->
   <property name="sdfmodule" value="WebDSL" />
@@ -68,9 +74,12 @@
     <property name="stratego.compile.target" value="stratego.${spoofax.output.type}"/>
     <!-- update builder -->
     <copy file="editor/${esvmodule}-Builders.template.esv" tofile="editor/${esvmodule}-Builders.esv" overwrite="true"/>
-    <replace file="editor/${esvmodule}-Builders.esv"
-      token="@spoofax.output.type@" value="${spoofax.output.type}" />
-
+    <replace file="editor/${esvmodule}-Builders.esv" token="@spoofax.output.type@" value="${spoofax.output.type}" />
+    <if><equals arg1="${acoda.enabled}" arg2="true"/>
+      <then>
+        <replace file="editor/${esvmodule}-Builders.esv" token="//acoda disabled " value="" />
+      </then>
+    </if>
     <antcall target="${stratego.compile.target}" />
     <jar update="true" destfile="${include}/${strmodule}.jar">
      <fileset dir="${src-gen}" excludes="**/*.java" />
@@ -116,10 +125,14 @@
       preservelastmodified="true" todir="lib" />
     <copy file="${webdsl.home}/libwrite-files.rtree"
       preservelastmodified="true" todir="lib" />
-    <copy file="${acoda.home}/bin/org/acoda/editor/editor.rtree"
-      preservelastmodified="true" todir="lib" />
-    <copy file="${acoda.home}/bin/dist/acoda.jar"		
-      preservelastmodified="true" todir="include" />  <!-- FIXME: I am putting a jar import here, which is ugly and temporary. Spoofax currently supports a single external jar, we need two. I posted a feature reqeust on YellowGrass. -->
+    <if><equals arg1="${acoda.enabled}" arg2="true"/>
+      <then>
+        <copy file="${acoda.home}/bin/org/acoda/editor/editor.rtree"
+          preservelastmodified="true" todir="lib" />
+        <copy file="${acoda.home}/bin/dist/acoda.jar"		
+          preservelastmodified="true" todir="include" />  <!-- FIXME: I am putting a jar import here, which is ugly and temporary. Spoofax currently supports a single external jar, we need two. I posted a feature reqeust on YellowGrass. -->
+      </then>
+    </if>
   </target>
 
   <property name="path.timestamp.term" value="${include}/editor.timestamp.aterm" />
@@ -128,12 +141,12 @@
     <available file="${path.timestamp.term}" property="available.editor-ts" />
   </target>
   
-	<target name="declare-get-unix-ts" >
-		 <taskdef name="taskget-unix-ts"  classname="org.webdsl.ant.TaskGetUnixTs" classpath="lib/webdsl-editor-antTasks.jar"/>  
-	</target>
+  <target name="declare-get-unix-ts" >
+     <taskdef name="taskget-unix-ts"  classname="org.webdsl.ant.TaskGetUnixTs" classpath="lib/webdsl-editor-antTasks.jar"/>  
+  </target>
   <target name="update.editor-ts" unless="available.editor-ts" depends="declare-get-unix-ts">
     <taskget-unix-ts/>
-  	<echo>Editor timestamp is: ${timestamp.unix}</echo>
+    <echo>Editor timestamp is: ${timestamp.unix}</echo>
     <echo file="${path.timestamp.term}">${timestamp.unix}</echo>
     <!-- force strj to run -->
     <touch file="${trans}/${strmodule}.str" />

@@ -178,8 +178,6 @@
     
     <extension point="org.eclipse.ant.core.extraClasspathEntries">
       <extraClasspathEntry library="webdsl-template/template-java-servlet/lib/webdsl-support.jar"/>
-      <extraClasspathEntry library="lib/webdsl-editor-antTasks.jar"/>
-  
     </extension>    
     
 </plugin>

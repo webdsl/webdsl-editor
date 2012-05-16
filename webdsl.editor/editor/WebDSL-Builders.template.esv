@@ -29,18 +29,26 @@ builders
   
   provider  : include/webdsl_editor.@spoofax.output.type@
   provider  : include/webdsl.jar
-  provider	: include/acoda.jar
+//acoda disabled   provider	: include/acoda.jar
   
-  builder		: "Create Database Schema"		= editor-createdatabase
-  builder		: "Show Database Schema"		= editor-wdl2schema (openeditor) (realtime)
-  builder 		: "Visualize Data Model"		= editor-wdl2dot (openeditor) (persistent) (realtime)
-  builder		: "Visualize Database Schema"   = editor-wdlschema2dot (openeditor) (persistent)
-  builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
-  builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
-  builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
+//acoda disabled   builder		: "Create Database Schema"		= editor-createdatabase
+//acoda disabled   builder		: "Show Database Schema"		= editor-wdl2schema (openeditor) (realtime)
+//acoda disabled   builder   	: "Visualize Data Model"		= editor-wdl2dot (openeditor) (persistent) (realtime)
+//acoda disabled   builder		: "Visualize Database Schema"   = editor-wdlschema2dot (openeditor) (persistent)
+//acoda disabled   builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
+//acoda disabled   builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
+//acoda disabled   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
   builder   : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)
   builder   : "Extract Datalog"         = datalog-extraction (openeditor) (realtime) (meta)
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
+  
+  
+//  pretty-print : pp-webdsl-to-string
+
+//  refactoring : "Rename Entity" = rename-entity /*(source)*/ (cursor)
+//    shortcut : "org.eclipse.jdt.ui.edit.text.java.rename.element"
+//    input
+//      identifier : "new name" = ""    
   
 //  !!!!     WebDSL-Builders.esv is generated from WebDSL-Builders.template.esv in this project     !!!!
