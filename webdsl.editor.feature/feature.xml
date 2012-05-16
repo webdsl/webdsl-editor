@@ -28,7 +28,7 @@
    <includes         
      	id="org.strategoxt.imp"
      	version="0.0.0"
-     	optional="true"
+     	optional="false"
      	search-location="both"/>
 
    <plugin
