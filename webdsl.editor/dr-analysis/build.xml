@@ -9,7 +9,7 @@
   <property name="src.packstratego" value="packstratego" />
   
   <path id="strj">
-    <pathelement location="${eclipse.strategoxt.strategojar}" />
+    <pathelement location="${eclipse.spoofaximp.strategojar}" />
   </path>
   
   <target name="create-dr-term" depends="pack-stratego, dranalysis">
@@ -78,7 +78,7 @@
   <target name="-compile-str-helper" if="file" unless="compile-str.${file}.available">
     <java classname="org.strategoxt.strj.Main" failonerror="true">
       <classpath>
-        <pathelement location="${eclipse.strategoxt.strategojar}" />
+        <pathelement location="${eclipse.spoofaximp.strategojar}" />
       </classpath>
       <arg value="-i" />
       <arg path="${dir}/${file}.str" />
