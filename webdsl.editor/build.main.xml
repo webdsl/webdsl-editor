@@ -15,7 +15,7 @@
 
   <!-- Project directories -->
   <property name="trans" location="trans" />
-  <property name="src-gen" location="editor/java" />
+  <property name="src-gen" location="editor/java-generated" />
   <property name="syntax" location="syntax" />
   <property name="include" location="include" />
   <property name="lib" location="lib" />
