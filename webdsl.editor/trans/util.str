@@ -60,7 +60,7 @@ rules   // Versioning
   
   editor-timestamp = import-term(include/editor.timestamp.aterm)
   
-rules // file writing
+rules // file IO
 	
   text-to-file(|filename): text -> text
     where(
@@ -68,6 +68,12 @@ rules // file writing
       ; <fputs> (text, file)
       ; <fclose> file
     )
+    
+  write-ast-to-file(|filename) : ast -> ast
+	with 	text := <pp-webdsl-to-string> ast
+	  		; <text-to-file(|filename)> text
+  	
+
 
 rules
   
