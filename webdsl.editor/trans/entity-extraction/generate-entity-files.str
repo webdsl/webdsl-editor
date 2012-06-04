@@ -9,10 +9,15 @@ imports
 rules //builder
 	
   generate-entity-files: (selected, position, ast, path, project-path) -> None()
-  	where (all-keys-EntDecl;map(EntDecl;complete-entity-with-extends-properties);filter(not(is-builtin-entity));map(entity-to-file))
-rules // file stuff  		      
+  	where	entities := <all-keys-EntDecl
+  				; map(EntDecl; complete-entity-with-extends-properties)> 
+  			; filteredEntites := <filter(not(is-builtin-entity))> entities
+  			; <map(entity-to-file)> filteredEntites
+  	
+rules // file stuff  
+			      
   make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
-  	where page :=  ModuleDefs(moduleName, [e], [])
+  	where 	page := ModuleDefs(moduleName, [e], [])
   	
   entity-to-file: e@Entity(name,_, props) -> e
   	with 	dirname := "entities_generated"
@@ -20,6 +25,7 @@ rules // file stuff
   			; filename := $[[<project-path>]/[dirname]/[name].app]
 	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
 	  		  ; write-ast-to-file(|filename)> e  
+	  		    
 rules //entity manipulation
 	
   complete-entity-with-extends-properties : Entity(name, super, props) -> Entity(name, super, new-props)
