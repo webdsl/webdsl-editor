@@ -11,11 +11,11 @@ rules //builder
 	
   generate-entity-files: (selected, position, ast, path, project-path) -> None()
   	where	dirname := "entities_generated"
-  			; <create-dir-in-workspace>  dirname 
-  			; entities := <all-keys-EntDecl
-  				; map(EntDecl; complete-entity-with-extends-properties)> 
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; cleanedEntities := <map(try(remove-general-super-from-entity))> filteredEntities
+  			; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
+  			; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
   			; <map(entity-to-file(|dirname))> cleanedEntities
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
   	
