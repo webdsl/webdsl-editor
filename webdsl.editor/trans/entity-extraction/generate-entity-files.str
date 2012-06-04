@@ -8,7 +8,7 @@ imports
   	
 rules
 	
-  test-strat: x -> x
+  generate-entity-files: (selected, position, ast, path, project-path) -> None()
   	where (all-keys-EntDecl;map(EntDecl;complete-entity-with-extends-properties);filter(not(is-builtin-entity));map(entity-to-file))
   		
   complete-entity-with-extends-properties : Entity(name, super, props) -> Entity(name, super, new-props)
