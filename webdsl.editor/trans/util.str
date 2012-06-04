@@ -81,7 +81,8 @@ rules // file IO
 rules // check for builtin-entities
   is-builtin-entity : entity -> entity
    	where	(? EntityNoSuper(name, _) 
-     		<+ ?Entity(name, _, _))
+     			<+ ?Entity(name, _, _))
+     			<+ is-string; ?name
      		; builtin-entities := [
      		  	"dummy_webdsl_entity",
      		  	"Exception",
