@@ -1,6 +1,7 @@
 module entity-extraction/generate-entity-files
 
 imports
+	libstratego-lib
 	libwebdsl-generator
   	libwebdsl-front
   	util
@@ -9,19 +10,21 @@ imports
 rules //builder
 	
   generate-entity-files: (selected, position, ast, path, project-path) -> None()
-  	where	entities := <all-keys-EntDecl
+  	where	dirname := "entities_generated"
+  			; entities := <all-keys-EntDecl
   				; map(EntDecl; complete-entity-with-extends-properties)> 
   			; filteredEntites := <filter(not(is-builtin-entity))> entities
-  			; <map(entity-to-file)> filteredEntites
+  			; <create-dir-in-workspace>  dirname 
+  			; <map(entity-to-file(|dirname))> filteredEntites
+  			; <refresh-workspace-file> project-path  
   	
 rules // file stuff  
 			      
   make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
   	where 	page := ModuleDefs(moduleName, [e], [])
   	
-  entity-to-file: e@Entity(name,_, props) -> e
-  	with 	dirname := "entities_generated"
-  			; <create-dir-in-workspace> dirname
+  entity-to-file(|dirname): e@Entity(name,_, props) -> e
+  	with 	<file-exists> $[[<project-path>]/[dirname]]
   			; filename := $[[<project-path>]/[dirname]/[name].app]
 	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
 	  		  ; write-ast-to-file(|filename)> e  
