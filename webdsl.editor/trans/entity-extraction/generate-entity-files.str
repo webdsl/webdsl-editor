@@ -9,12 +9,12 @@ imports
 rules
 	
   test-strat: x -> x
-  	where (all-keys-EntDecl;map(EntDecl;complete-entity-with-extends);filter(not(is-builtin-entity));map(entity-to-file))
+  	where (all-keys-EntDecl;map(EntDecl;complete-entity-with-extends-properties);filter(not(is-builtin-entity));map(entity-to-file))
   		
-  complete-entity-with-extends-props : Entity(name, super, props) -> Entity(name, super, new-props)
+  complete-entity-with-extends-properties : Entity(name, super, props) -> Entity(name, super, new-props)
   	where  new-props := <get-all-properties-and-functions-from-entityname> name
   	
-  complete-entity-with-extends : Entity(name, props) -> Entity(name, new-props)
+  complete-entity-with-extends-properties : Entity(name, props) -> Entity(name, new-props)
   	where  new-props := <get-all-properties-and-functions-from-entityname> name
   	
   get-all-properties-and-functions-from-entityname : name -> props
@@ -25,7 +25,6 @@ rules
   make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
   	where page :=  ModuleDefs(moduleName, [e], [])
   	
-  	  
   entity-to-file: e@Entity(name,_, props) -> e
   	with 	dirname := "entities_generated"
   			; <create-dir-in-workspace> dirname
