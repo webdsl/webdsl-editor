@@ -5,7 +5,12 @@ imports
   	libwebdsl-front
   	util
   	lib/-
+  	
 rules
+	
+  test-strat: x -> x
+  	where (all-keys-EntDecl;map(EntityFromName);filter(not(is-builtin-entity));map(entity-to-file))
+  		
 	
   make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
   	where page :=  ModuleDefs(moduleName, [e], [])
