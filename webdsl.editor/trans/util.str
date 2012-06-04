@@ -77,7 +77,22 @@ rules // file IO
  	with 	dir := $[[<project-path>]/[dirname]]   
 	  		; if <file-exists> dir then id else <mkdir> dir end
 	  		; <refresh-workspace-file> <project-path>
-	  
+
+rules // check for builtin-entities
+  is-builtin-entity : entity -> entity
+   	where	(? Entity(name, _) 
+     		<+ ?Entity(name, _, _))
+     		; builtin-entities := [
+     		  	"dummy_webdsl_entity",
+     		  	"Exception",
+     		  	"QueuedEmail",
+     		  	"RequestLogEntry",
+     		  	"SessionManager",
+     		  	"SessionMessage",
+     		  	"ValidationException",
+     		  	"ValidationExceptionMultiple"
+     		  ]
+     		; <fetch(?name)> builtin-entities  
 rules
   
   generate-aterm:
