@@ -23,21 +23,24 @@ rules // file stuff
 			      
   make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
   	where 	page := ModuleDefs(moduleName, [e], [])
+  
+  make-valid-page-from-entity(|moduleName) : e@EntityNoSuper(_, _) -> page
+  	where 	page := ModuleDefs(moduleName, [e], [])
   	
-  entity-to-file(|dirname): e@Entity(name,_, props) -> e
-  	with 	<file-exists> $[[<project-path>]/[dirname]]
+  	
+  entity-to-file(|dirname): e -> e
+  	with 	(? Entity(name, _, _) 
+     			<+ ?EntityNoSuper(name,_))
+  			; <file-exists> $[[<project-path>]/[dirname]]
   			; filename := $[[<project-path>]/[dirname]/[name].app]
 	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
 	  		  ; write-ast-to-file(|filename)> e  
 	  		    
 rules //entity manipulation
 
-  remove-general-super-from-entity : Entity(name, "Entity",  props) -> Entity(name, props)
+  remove-general-super-from-entity : Entity(name, "Entity",  props) -> EntityNoSuper(name, props)
 
   complete-entity-with-extends-properties : Entity(name, super, props) -> Entity(name, super, new-props)
-  	where  new-props := <get-all-properties-and-functions-from-entityname> name
-  	
-  complete-entity-with-extends-properties : Entity(name, props) -> Entity(name, new-props)
   	where  new-props := <get-all-properties-and-functions-from-entityname> name
   	
   get-all-properties-and-functions-from-entityname : name -> props
