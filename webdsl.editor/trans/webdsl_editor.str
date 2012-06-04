@@ -9,7 +9,7 @@ imports
   typecheck/import		// for ExtraWarnings
   trans/-
   lib/-
-  fact-extraction/-
+  entity-extraction/generate-entity-files
   
 signature constructors
   FILE : Term -> Term
