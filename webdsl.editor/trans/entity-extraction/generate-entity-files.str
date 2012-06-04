@@ -35,8 +35,8 @@ rules // file stuff
 	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
 	  		  ; write-ast-to-file(|filename)> e  
 	  		    
- generate-main-file(|moduleName): entities -> mainAST
-   where 	modules := map(entity-name-to-import-name(|moduleName))
+ generate-main-file(|moduleName): entitynames -> mainAST
+   where 	modules := <map(\x -> $[[moduleName]/[x]]\)> entitynames
    			; mainAST := ModuleDefs("entities_generated/main", [modules], [])
 rules //entity manipulation
 
