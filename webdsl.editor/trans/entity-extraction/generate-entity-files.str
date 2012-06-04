@@ -13,9 +13,10 @@ rules //builder
   	where	dirname := "entities_generated"
   			; entities := <all-keys-EntDecl
   				; map(EntDecl; complete-entity-with-extends-properties)> 
-  			; filteredEntites := <filter(not(is-builtin-entity))> entities
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; cleanedEntities := <map(try(remove-general-super-from-entity))> filteredEntities
   			; <create-dir-in-workspace>  dirname 
-  			; <map(entity-to-file(|dirname))> filteredEntites
+  			; <map(entity-to-file(|dirname))> cleanedEntities
   			; <refresh-workspace-file> project-path  
   	
 rules // file stuff  
@@ -30,7 +31,9 @@ rules // file stuff
 	  		  ; write-ast-to-file(|filename)> e  
 	  		    
 rules //entity manipulation
-	
+
+  remove-general-super-from-entity : Entity(name, "Entity",  props) -> Entity(name, props)
+
   complete-entity-with-extends-properties : Entity(name, super, props) -> Entity(name, super, new-props)
   	where  new-props := <get-all-properties-and-functions-from-entityname> name
   	
