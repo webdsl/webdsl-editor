@@ -9,9 +9,19 @@ imports
 rules
 	
   test-strat: x -> x
-  	where (all-keys-EntDecl;map(EntityFromName);filter(not(is-builtin-entity));map(entity-to-file))
+  	where (all-keys-EntDecl;map(EntDecl;complete-entity-with-extends);filter(not(is-builtin-entity));map(entity-to-file))
   		
-	
+  complete-entity-with-extends-props : Entity(name, super, props) -> Entity(name, super, new-props)
+  	where  new-props := <get-all-properties-and-functions-from-entityname> name
+  	
+  complete-entity-with-extends : Entity(name, props) -> Entity(name, new-props)
+  	where  new-props := <get-all-properties-and-functions-from-entityname> name
+  	
+  get-all-properties-and-functions-from-entityname : name -> props
+  	where  props' := <bagof-Properties> name
+  		   ; functions' := <bagof-Functions> name
+  		   ; props := <concat> [props',functions'] 
+  		      
   make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
   	where page :=  ModuleDefs(moduleName, [e], [])
   	
