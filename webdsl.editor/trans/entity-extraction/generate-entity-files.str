@@ -1,0 +1,10 @@
+module entity-extraction/generate-entity-files
+
+imports
+	libwebdsl-generator
+  	libwebdsl-front
+rules
+	
+  make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
+  	where page :=  ModuleDefs(moduleName, [e], [])
+  	
