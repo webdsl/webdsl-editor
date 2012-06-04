@@ -27,7 +27,6 @@ rules // file stuff
   make-valid-page-from-entity(|moduleName) : e@EntityNoSuper(_, _) -> page
   	where 	page := ModuleDefs(moduleName, [e], [])
   	
-  	
   entity-to-file(|dirname): e -> e
   	with 	(? Entity(name, _, _) 
      			<+ ?EntityNoSuper(name,_))
@@ -36,6 +35,9 @@ rules // file stuff
 	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
 	  		  ; write-ast-to-file(|filename)> e  
 	  		    
+ generate-main-file(|moduleName): entities -> mainAST
+   where 	modules := map(entity-name-to-import-name(|moduleName))
+   			; mainAST := ModuleDefs("entities_generated/main", [modules], [])
 rules //entity manipulation
 
   remove-general-super-from-entity : Entity(name, "Entity",  props) -> EntityNoSuper(name, props)
@@ -47,3 +49,4 @@ rules //entity manipulation
   	where  props' := <bagof-Properties> name
   		   ; functions' := <bagof-Functions> name
   		   ; props := <concat> [props',functions'] 
+  		    
