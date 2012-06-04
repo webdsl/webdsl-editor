@@ -73,8 +73,11 @@ rules // file IO
 	with 	text := <pp-webdsl-to-string> ast
 	  		; <text-to-file(|filename)> text
   	
-
-
+  create-dir-in-workspace : dirname -> dirname
+ 	with 	dir := $[[<project-path>]/[dirname]]   
+	  		; if <file-exists> dir then id else <mkdir> dir end
+	  		; <refresh-workspace-file> <project-path>
+	  
 rules
   
   generate-aterm:
