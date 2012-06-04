@@ -19,3 +19,4 @@ webdsl.editor/utils/make_permissive.jar
 webdsl.editor/utils/sdf2imp.jar
 webdsl.editor/webdsl-template/*
 webdsl.editor/build.generated.xml
+webdsl.editor/bin/*
