@@ -2,6 +2,10 @@ module completion/completion
 
 imports
   libwebdsl-front
+  libwebdsl-generator
+  webdsl_editor
+  lib/editor-common.generated
+  
     
 strategies  
   
@@ -102,7 +106,7 @@ rules
 rules //TemplateCall
   
   editor-complete-proposal :
-    TemplateCall(COMPLETION(_),[],None,None) -> result
+    TemplateCall(COMPLETION(_),[],None(),None()) -> result
     where result := <all-keys-TopLevelTemplateDecl;map(TopLevelTemplateDecl; \Define(_,name,fargs,_,_)->(name,fargs)\; func-sig-to-complete-proposal)> 
     
 rules //Var    
