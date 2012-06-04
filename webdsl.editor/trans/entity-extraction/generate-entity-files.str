@@ -17,6 +17,7 @@ rules //builder
   			; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
   			; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
   			; <map(entity-to-file(|dirname))> cleanedEntities
+  			; <main-file-to-file(|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
   	
 rules // file stuff  
@@ -36,8 +37,15 @@ rules // file stuff
 	  		  ; write-ast-to-file(|filename)> e  
 	  		    
  generate-main-file(|moduleName): entitynames -> mainAST
-   where 	modules := <map(\x -> $[[moduleName]/[x]]\)> entitynames
-   			; mainAST := ModuleDefs("entities_generated/main", [modules], [])
+   where 	modules := <map(\entityName ->Imports( $[[moduleName]/[entityName]] )\)> entitynames
+   			; mainAST := ModuleDefs($[[moduleName]/main], [modules], [])
+  
+ main-file-to-file(|dirname): entitynames -> entitynames
+  where		<file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/main.app]
+	  		; <generate-main-file(|dirname)
+	  		  ; write-ast-to-file(|filename)> entitynames
+	  		       			  
 rules //entity manipulation
 
   remove-general-super-from-entity : Entity(name, "Entity",  props) -> EntityNoSuper(name, props)
