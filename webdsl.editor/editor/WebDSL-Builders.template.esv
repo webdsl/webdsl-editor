@@ -42,7 +42,8 @@ builders
   builder   : "Extract Datalog"         = datalog-extraction (openeditor) (realtime) (meta)
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
-  
+  builder 	: "Generate entity files"			  = generate-entity-files
+ 
   
 //  pretty-print : pp-webdsl-to-string
 
