@@ -37,7 +37,8 @@ rules // file stuff
 	  		  ; write-ast-to-file(|filename)> e  
 	  		    
  generate-main-file(|moduleName): entitynames -> mainAST
-   where 	modules := <map(\entityName ->Imports( $[[moduleName]/[entityName]] )\)> entitynames
+   where 	sortednames := <string-sort> entitynames
+   			; modules := <map(\entityName ->Imports( $[[moduleName]/[entityName]] )\)> sortednames
    			; mainAST := ModuleDefs($[[moduleName]/main], [modules], [])
   
  main-file-to-file(|dirname): entitynames -> entitynames
