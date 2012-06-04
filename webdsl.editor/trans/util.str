@@ -60,6 +60,15 @@ rules   // Versioning
   
   editor-timestamp = import-term(include/editor.timestamp.aterm)
   
+rules // file writing
+	
+  text-to-file(|filename): text -> text
+    where(
+      file := <fopen> (filename, "w")
+      ; <fputs> (text, file)
+      ; <fclose> file
+    )
+
 rules
   
   generate-aterm:
