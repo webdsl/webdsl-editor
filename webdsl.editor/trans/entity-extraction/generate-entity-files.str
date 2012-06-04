@@ -6,11 +6,22 @@ imports
   	util
   	lib/-
   	
-rules
+rules //builder
 	
   generate-entity-files: (selected, position, ast, path, project-path) -> None()
   	where (all-keys-EntDecl;map(EntDecl;complete-entity-with-extends-properties);filter(not(is-builtin-entity));map(entity-to-file))
-  		
+rules // file stuff  		      
+  make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
+  	where page :=  ModuleDefs(moduleName, [e], [])
+  	
+  entity-to-file: e@Entity(name,_, props) -> e
+  	with 	dirname := "entities_generated"
+  			; <create-dir-in-workspace> dirname
+  			; filename := $[[<project-path>]/[dirname]/[name].app]
+	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
+	  		  ; write-ast-to-file(|filename)> e  
+rules //entity manipulation
+	
   complete-entity-with-extends-properties : Entity(name, super, props) -> Entity(name, super, new-props)
   	where  new-props := <get-all-properties-and-functions-from-entityname> name
   	
@@ -21,13 +32,3 @@ rules
   	where  props' := <bagof-Properties> name
   		   ; functions' := <bagof-Functions> name
   		   ; props := <concat> [props',functions'] 
-  		      
-  make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
-  	where page :=  ModuleDefs(moduleName, [e], [])
-  	
-  entity-to-file: e@Entity(name,_, props) -> e
-  	with 	dirname := "entities_generated"
-  			; <create-dir-in-workspace> dirname
-  			; filename := $[[<project-path>]/[dirname]/[name].app]
-	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
-	  		  ; write-ast-to-file(|filename)> e  
