@@ -3,10 +3,11 @@ package webdsl;
 import java.io.IOException;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.swt.widgets.Display;
 import org.strategoxt.imp.runtime.EditorState;
+
+import static webdsl.FileUtils.*;
 
 public class NewEmptyProjectWizard extends WebDSLEditorWizard {
 

@@ -16,7 +16,7 @@ public class PollDeployedAppTask extends Task {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         final IProject project = workspace.getRoot().getProject(projectname);
         String buildid = WebDSLProjectBuilder.getBuildIdCompleted(project);
-        WebDSLProjectBuilder.pollDeployedAppAndOpenBrowser(project,buildid, 0);
+        new WebDSLProjectBuilder().pollDeployedAppAndOpenBrowser(project,buildid, 0); //wtp tomcat specific
     }
     
     public void setProjectname(String projectname) {

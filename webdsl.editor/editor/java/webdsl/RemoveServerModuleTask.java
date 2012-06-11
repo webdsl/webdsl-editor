@@ -10,6 +10,8 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.wst.server.core.IServer;
 
+import static webdsl.WTPUtils.*;
+
 //hoped this would help with redeploying after context path change, but it doesn't
 public class RemoveServerModuleTask extends Task {
     private String projectname;
@@ -18,13 +20,13 @@ public class RemoveServerModuleTask extends Task {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         final IProject project = workspace.getRoot().getProject(projectname);
         try {
-            IServer server = WebDSLProjectBuilder.getTomcatServer(project, null);
+            IServer server = WebDSLProjectBuilder.getProjectServer(project, null);
             if(server == null){
                 System.out.println("module is currently not in server, cannot remove it");
             }
             else{
               System.out.println("Removing server module for project: "+projectname);
-              WebDSLEditorWizard.removeProjectModuleFromServer(project, server, null);
+              removeProjectModuleFromServer(project, server, null);
               System.out.println("Stop server.");
               server.stop(true);
             }

@@ -19,7 +19,7 @@ public class StartServerTask extends Task {
         IProject project = workspace.getRoot().getProject(projectname);
         try {
             NullProgressMonitor monitor = new NullProgressMonitor();
-            WebDSLProjectBuilder.tryStartServer(project, monitor,null,0);
+            new WebDSLProjectBuilder().tryStartServer(project, monitor,null,0); //wtp tomcat specific
         } catch (CoreException e) {
             e.printStackTrace();
         }
