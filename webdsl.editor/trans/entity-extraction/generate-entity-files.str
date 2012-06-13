@@ -38,7 +38,7 @@ rules // file stuff
   			; <file-exists> $[[<project-path>]/[dirname]]
   			; filename := $[[<project-path>]/[dirname]/[name].app]
 	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
-	  		  ; write-ast-to-file(|filename)> e  
+	  		   ; write-ast-to-file(|filename)> e  
 	  		    
  generate-main-file(|moduleName): entitynames -> mainAST
    where 	sortednames := <string-sort> entitynames
@@ -62,4 +62,8 @@ rules //entity manipulation
   	where  props' := <bagof-Properties> name
   		   ; functions' := <bagof-Functions> name
   		   ; props := <concat> [props',functions'] 
-  		    
+
+	// override asfix-anno-location : x->x 
+	// override  implode-asfix : x->x
+	override  implode-with-location-annos(|path) =
+		topdown(!<id>{ At(path, <origin-line>, <origin-column>) }) 
