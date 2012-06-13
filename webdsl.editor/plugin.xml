@@ -144,10 +144,18 @@
     
     <!-- in .project use: <buildCommand><name>webdsl.editor.builder</name></buildCommand> -->
     <extension id="builder"
-    name="WebDSL Project Builder"
+    name="WebDSL Project Builder Tomcat"
     point="org.eclipse.core.resources.builders">
       <builder hasNature="false">
-        <run class="webdsl.WebDSLProjectBuilder"/>
+        <run class="webdsl.WebDSLProjectBuilderWTPTomcat"/>
+      </builder>
+    </extension>
+    <!-- or use: <buildCommand><name>webdsl.editor.builderJ2EEPreview</name></buildCommand> -->
+    <extension id="builderJ2EEPreview"
+    name="WebDSL Project Builder J2EE Preview"
+    point="org.eclipse.core.resources.builders">
+      <builder hasNature="false">
+        <run class="webdsl.WebDSLProjectBuilderWTPJ2EEPreview"/>
       </builder>
     </extension>
     

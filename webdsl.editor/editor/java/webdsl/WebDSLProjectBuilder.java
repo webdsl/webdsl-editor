@@ -30,8 +30,11 @@ import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.ServerUtil;
 //import org.eclipse.wst.server.core.util.PublishAdapter;
 import org.eclipse.wst.server.ui.internal.ServerUIPlugin;
+
+import static webdsl.FileUtils.*;
+
 @SuppressWarnings("restriction")
-public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
+public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
     //@SuppressWarnings("unchecked")
     @SuppressWarnings("rawtypes")
@@ -58,7 +61,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
               //addRefreshJob(project,defaultDelay);
               //setPublishListener(project, monitor, buildid);
               
-              WebDSLEditorWizard.initWtpServerConfig(WebDSLEditorWizard.getPluginDir(),project,project.getName(),monitor);
+              initWtpServerConfig(WebDSLEditorWizard.getPluginDir(),project,project.getName(),monitor);
               
               tryStartServer(project, monitor, 
                   new ChainedJob(){ 
@@ -93,7 +96,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     }
     public static void markWebDSLProjectBuilderStarted(IProject project){
         try {
-            WebDSLEditorWizard.writeStringToFile("started", project.getLocation()+"/.servletapp/.webdsl-project-builder-started");
+            writeStringToFile("started", project.getLocation()+"/.servletapp/.webdsl-project-builder-started");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -142,12 +145,17 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             }
         }
     }
+    
+    protected void initWtpServerConfig(String plugindir, IProject project, String projectname, IProgressMonitor monitor) throws CoreException{
+        
+    }
+    
 
     /*
      * tried several ways of calling ant, but none of them is working as needed, ant is now called from .project builder directly instead
      */
     /*
-    public static void runAntBuild(IProject project, IProgressMonitor monitor, String buildid) throws CoreException{
+    public void runAntBuild(IProject project, IProgressMonitor monitor, String buildid) throws CoreException{
 
         File buildFile = new File(project.getLocation().toString()+"/build.xml");
 
@@ -200,7 +208,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
    // }
 
 
-    public static IServer getTomcatServer(IProject project, IProgressMonitor monitor){
+    public static IServer getProjectServer(IProject project, IProgressMonitor monitor){
         IServer[] servers = ServerUtil.getServersByModule(ServerUtil.getModule(project), monitor);
         for(IServer s :  servers){
           return s;
@@ -219,17 +227,17 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     }*/
     
     
-    public static void pollDeployedAppAndOpenBrowser(final IProject project, final String buildid, int delay){
+    public void pollDeployedAppAndOpenBrowser(final IProject project, final String buildid, int delay){
       if(buildid != null){
         Job job = new Job("poll deployed app and open browser") {
            public IStatus run(IProgressMonitor monitor){
-               boolean deployed = WebDSLProjectBuilder.pollDeployedAppForNewBuildId(project,buildid);
+               boolean deployed = pollDeployedAppForNewBuildId(project,buildid);
                if(deployed){
                    //opens default external browser
                    try {
                        IWorkbenchBrowserSupport browserSupport = ServerUIPlugin.getInstance().getWorkbench().getBrowserSupport();
                        IWebBrowser browser = browserSupport.createBrowser(IWorkbenchBrowserSupport.LOCATION_BAR | IWorkbenchBrowserSupport.NAVIGATION_BAR, null, null, null);
-                       browser.openURL(new URL(WebDSLProjectBuilder.getAppUrl(project)));
+                       browser.openURL(new URL(getAppUrl(project)));
                    } catch (MalformedURLException e) {
                        e.printStackTrace();
                    } catch (PartInitException e) {
@@ -246,7 +254,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
     public static int defaultDelay = 1000;
 /*
-    public static void setPublishListener(final IProject project,IProgressMonitor monitor, final String buildid) throws CoreException{
+    public void setPublishListener(final IProject project,IProgressMonitor monitor, final String buildid) throws CoreException{
          final IServer tomcatserver = getTomcatServer(project,monitor);
          tryRemovePreviousListener(tomcatserver);
 
@@ -291,7 +299,11 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         previouslyAddedPublishListener = publishListener;
     }
 */
-    public static String getAppUrl(IProject project){
+    public String getAppUrl(IProject project){
+        return getUrlRoot(project);
+    }
+    
+    public String getUrlRoot(IProject project){
         if(isRootApp(project)){
             return "http://localhost:8080/";
         }
@@ -300,7 +312,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
     }
 
-    public static boolean pollDeployedAppForNewBuildId(IProject project, String buildid){
+    public boolean pollDeployedAppForNewBuildId(IProject project, String buildid){
         URL url = null;
         try {
             url = new URL(getAppUrl(project)+"?show_build_id=true");
@@ -352,14 +364,18 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     //restart once for a new project
     public static List<String> alreadyStarted = new ArrayList<String>();
 
-    public static void tryStartServer(IProject project, IProgressMonitor monitor, ChainedJob cj, int delay) throws CoreException{
+    public static void openServersProject(IProgressMonitor monitor) throws CoreException{
         //open 'Servers' project if closed, otherwise tomcat will not start
         IProject servers = ResourcesPlugin.getWorkspace().getRoot().getProject("Servers");
         if(!servers.isOpen()){
             servers.open(monitor);
         }
+    }
+    
+    public void tryStartServer(IProject project, IProgressMonitor monitor, ChainedJob cj, int delay) throws CoreException{
+        openServersProject(monitor);
 
-        final IServer server = getTomcatServer(project,monitor);
+        final IServer server = getProjectServer(project,monitor);
 
         if(forcePublish){
             // invoke publish first time, the initial start tends to hang when
@@ -410,6 +426,7 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     
     public static void addStartServerJob(final IServer server, final ChainedJob cj, int delay){
         Job job = new Job("start server") {
+            @SuppressWarnings("deprecation")
             public IStatus run(IProgressMonitor monitor){
                 try {
                   //server might have been started in the mean time
@@ -427,9 +444,23 @@ public final class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         };
         job.schedule(delay);
     }
+    
+    public static void addStopServerJob(final IServer server, final ChainedJob cj, int delay){
+        Job job = new Job("stop server") {
+            @SuppressWarnings("deprecation")
+            public IStatus run(IProgressMonitor monitor){
+                System.out.println("Stopping server.");
+                server.synchronousStop(true);
+                if(cj!=null){cj.run();}
+                return Status.OK_STATUS;
+            }
+        };
+        job.schedule(delay);
+    }
    
     public static void addRestartServerJob(final IServer server, final ChainedJob cj, final int delay){
         Job job = new Job("Restarting server.") {
+            @SuppressWarnings("deprecation")
             public IStatus run(IProgressMonitor monitor){
                 System.out.println("Stopping server.");
                 /* stop and start or restart */

@@ -48,7 +48,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     public SelectedDatabase getSelectedDatabase() { return selectedDatabase; }
     
     public enum SelectedServer {
-        WTPTOMCAT, EXTERNALTOMCAT, CONSOLETOMCAT
+        WTPTOMCAT, EXTERNALTOMCAT, CONSOLETOMCAT, WTPJ2EEPREVIEW
     }
     protected SelectedServer selectedServer = SelectedServer.WTPTOMCAT; 
     public SelectedServer getSelectedServer() { return selectedServer; }
@@ -149,7 +149,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
      */
     public void createControl(Composite parent) {
         ScrolledComposite sc = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-        sc.setMinSize(1015, 850);
+        sc.setMinSize(1015, 875);
         sc.setExpandHorizontal(true);
         sc.setExpandVertical(true);
         Composite container = new Composite(sc, SWT.NULL);
@@ -338,6 +338,17 @@ public class WebDSLEditorWizardPage extends WizardPage {
         serverselectGroup.setLayout(serverselectGroupLayout);
         serverselectGroupLayout.numColumns = 1;
         serverselectGroupLayout.verticalSpacing = 9;
+        
+        Button bWTPTestServer = new Button(serverselectGroup, SWT.RADIO);
+        bWTPTestServer.setText("WTP J2EE Preview");
+        bWTPTestServer.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                selectedServer = SelectedServer.WTPJ2EEPREVIEW;
+                inputTomcatPath.setEnabled(false);
+            }
+            public void widgetDefaultSelected(SelectionEvent e) {
+            }
+        });
         
         Button bWTP = new Button(serverselectGroup, SWT.RADIO);
         bWTP.setText("WTP Tomcat");
