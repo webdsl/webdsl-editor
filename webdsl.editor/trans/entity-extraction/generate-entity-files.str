@@ -1,7 +1,9 @@
 module entity-extraction/generate-entity-files
 
 imports
+	fact-extraction/datalog
 	libstratego-lib
+	libstratego-sglr
 	libwebdsl-generator
   	libwebdsl-front
   	util
@@ -10,6 +12,8 @@ imports
 rules //builder
 	
   generate-entity-files: (selected, position, ast, path, project-path) -> None()
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	dirname := "entities_generated"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
