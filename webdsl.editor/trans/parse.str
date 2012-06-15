@@ -56,7 +56,10 @@ rules
       // create directory (cannot use create-dirs, we have an absolute dirname)
     ; <file-exists <+ mkdir(|"w")> servletappdir
     ; <concat-strings; (file-exists <+ mkdir(|"w"))> [servletappdir,"src-webdsl-template/"]
-    ; <copy-file> (src, dst)
+    ; <(id,file-exists) <+ copy-file> (src, dst) //this assumes that the existing .app file is the right version, 
+      // the editor cleans the whole project when updated which should make this a reasonable assumption. 
+      // issues could arise when also starting command-line builds with a different version of built-in.app, 
+      // then building in the editor would require a manual clean first
     ; <refresh-workspace-file> dst // TODO: need relative path?
     ; !dst
       
