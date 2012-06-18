@@ -46,11 +46,13 @@ rules //builder
 		
 	property-to-par: x -> par
      where	<is-property-cons> x
-     		; cleanProp := <try(remove-derive-from-property)> x
+     		; sigProp := <try(remove-derive-from-property)> x
+     		; cleanProp := <try(remove-Anno-from-property)> sigProp
      		; propertyString := <pp-webdsl-to-string> cleanProp
 			; par := TemplateCallBody("par", TemplateBody([ Text(propertyString) ]))
 	
 	remove-derive-from-property: DerivedProperty(t1, t2, t3, t4, t5) -> Property(t1, t2, t3, t4)
 	
 	remove-derive-from-property: DerivedPropertyNoAnno(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3)
-			  
+	
+	remove-Anno-from-property: Property(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3) 		  
