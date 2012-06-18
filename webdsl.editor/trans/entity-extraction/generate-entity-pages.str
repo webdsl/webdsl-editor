@@ -1,0 +1,42 @@
+module entity-extraction/generate-entity-pages
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+  	util
+  	lib/-
+  	entity-extraction/generate-entity-files
+  	
+rules //builder
+	
+  generate-entity-pages: (selected, position, ast@Application(_, _), path, project-path) -> None()
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  	where	dirname := "entity-pages"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
+  			; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
+  			; <map(entity-to-page(|dirname))> cleanedEntities
+  			; <main-file-to-file(|dirname)> filteredEntities  
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+  			
+   entity-to-page(|dirname): e -> e
+  	with 	(? Entity(name, _, _) 
+     			<+ ?EntityNoSuper(name,_))	
+     		; <file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[name].app]
+	  		; <make-entity-page(|$[[dirname]/[name]])
+	  		   ; write-ast-to-file(|filename)> e
+	
+	make-entity-page(|modulename) : e@EntityNoSuper(name, _) -> result
+	 with  	result := ModuleDefs(modulename, 
+	 					[ DefinePage([], $[showEntity[name]], [], None(), 
+	 						[])
+	 					], [] )	
+		
+		

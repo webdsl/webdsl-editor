@@ -10,6 +10,7 @@ imports
   trans/-
   lib/-
   entity-extraction/generate-entity-files
+  entity-extraction/generate-entity-pages
   
 signature constructors
   FILE : Term -> Term

@@ -43,7 +43,7 @@ builders
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
   builder 	: "Generate entity files"			  = generate-entity-files
- 
+  builder 	: "Generate entity pages"			  = generate-entity-pages (meta)
   
 //  pretty-print : pp-webdsl-to-string
 
