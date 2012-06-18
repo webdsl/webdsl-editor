@@ -304,11 +304,12 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     }
     
     public String getUrlRoot(IProject project){
+    	String port = getProperty(project, "httpport");
         if(isRootApp(project)){
-            return "http://localhost:8080/";
+            return "http://localhost:" + port + "/";
         }
         else{
-            return "http://localhost:8080/"+project.getName()+"/";
+            return "http://localhost:" + port +"/"+project.getName()+"/";
         }
     }
 
