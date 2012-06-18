@@ -67,14 +67,14 @@ rules //page stuf
 rules //main page
 	
  generate-main-page-file(|moduleName): entitynames -> mainAST
-   where 	sortednames := <string-sort> entitynames
+   where 	 <generate-main-model-file(|moduleName); ?ModuleDefs(_, modules, _)> entitynames
+   			; sortednames := <string-sort> entitynames
    			; entitylinks := <map(enityname-to-pagelink)> sortednames
-   			; mainAST := ModuleDefs(moduleName, 
-	 					[ DefinePage([], "showEntities", [], None(), 
+   			; page := DefinePage([], "showEntities", [], None(), 
 	 						[ TemplateCallBody("title", TemplateBody([Text("Entities")]))
 							, TemplateCallNoAssigns("group", [Text("Entities")], TemplateBody(entitylinks))  
 							])
-	 					], [] )	  
+   			; mainAST := ModuleDefs(moduleName, <concat> [modules, [page]], [] )	  
 
 rules //converting
 		
