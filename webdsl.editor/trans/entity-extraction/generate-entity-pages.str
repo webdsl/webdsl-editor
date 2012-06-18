@@ -36,7 +36,11 @@ rules //builder
 	make-entity-page(|modulename) : e@EntityNoSuper(name, _) -> result
 	 with  	result := ModuleDefs(modulename, 
 	 					[ DefinePage([], $[showEntity[name]], [], None(), 
-	 						[])
+	 						[ TemplateCallBody("title", TemplateBody([Text(name)]))
+							, TemplateCallBody("header", TemplateBody([Text(name)]))
+							, TemplateCallNoAssigns("group", [String("Properties")], TemplateBody([]))  
+							, TemplateCallNoAssigns("group", [String("Functions")], TemplateBody([]))
+							])
 	 					], [] )	
 		
 		
