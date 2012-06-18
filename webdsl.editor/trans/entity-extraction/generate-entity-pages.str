@@ -10,7 +10,7 @@ imports
   	lib/-
   	entity-extraction/generate-entity-files
   	
-rules //builder
+rules //builder 
 	
   generate-entity-pages: (selected, position, ast@Application(_, _), path, project-path) -> None()
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
@@ -50,8 +50,8 @@ rules //page stuf
      where	<is-property-cons> x
      		; sigProp := <try(remove-derive-from-property)> x
      		; cleanProp := <try(remove-Anno-from-property)> sigProp
-     		; propertyString := <pp-webdsl-to-string> cleanProp
-			; par := TemplateCallBody("par", TemplateBody([ Text(propertyString) ]))
+     		; propertyString := <property-to-webdsl-ast-string-represatation> cleanProp
+			; par := TemplateCallBody("par", TemplateBody(propertyString))
 	
 	function-to-par: x -> par
      where	<is-function-cons> x
@@ -74,9 +74,7 @@ rules//custom way to pp
 	function-to-webdsl-ast-string-represatation: Function(t1, t2, t3, t4) -> result
 	 where 	begin := Text($[function [t1] ( ])
 	 		; params := <map(arg-to-webdsl-ast-string-represatation)> t2
-	 		; debug(!"1")
 	 		; paramsSeperated := <separate-by(|Text(", ")) ; flatten-list> params
-			; debug(!"2")
 			; inbetween := Text(" ) : ")	
 			; type := <sort-to-navigate <+ sort-to-text> t3
 			; result := <flatten-list> [begin, paramsSeperated, inbetween, type]  
@@ -85,6 +83,12 @@ rules//custom way to pp
 	 where 	begin := Text($[[name] :[" "]])
 			; typestring := <sort-to-navigate <+ sort-to-text> type
 			;  result := [begin, typestring]
+	
+	property-to-webdsl-ast-string-represatation: PropertyNoAnno(name, sort, type) -> result
+	 where 	begin := Text(name) 
+	 		; middle := Text(<pp-webdsl-to-string> sort) 
+	 		; typestring := <sort-to-navigate <+ sort-to-text> type
+	 		; result := <flatten-list> [begin, Text(" "), middle, Text(" "), typestring]
 	
 	sort-to-navigate : SimpleSort(t) -> result
 	 where  <IsEntity> t
