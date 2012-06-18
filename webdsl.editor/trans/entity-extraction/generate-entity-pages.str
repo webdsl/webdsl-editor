@@ -56,8 +56,8 @@ rules //page stuf
 	function-to-par: x -> par
      where	<is-function-cons> x
      		; sigFun := <remove-body-from-function> x
-     		; functionString := <pp-webdsl-to-string> sigFun
-			; par := TemplateCallBody("par", TemplateBody([ Text(functionString) ]))
+     		; functionString := <function-to-webdsl-ast-string-represatation> sigFun
+			; par := TemplateCallBody("par", TemplateBody(functionString))
 
 rules //converting
 		
@@ -68,13 +68,23 @@ rules //converting
 	remove-Anno-from-property: Property(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3) 	
 	
 	remove-body-from-function: Function(t1, t2, t3, t4) -> Function(t1, t2, t3,None())
-	
+
+rules//custom way to pp  
+		
 	function-to-webdsl-ast-string-represatation: Function(t1, t2, t3, t4) -> result
 	 where 	begin := Text($[function [t1] ( ])
-	 		// ; params 
-	 		// :
-	sort-to-text : SimpleSort(t) -> result
+	 		; params := <sort-to-text> t2
+			; inbetween := Text(" ) : ")	
+			; type := <sort-to-navigate <+ sort-to-text> t3
+			; result := <flatten-list> [begin, params, inbetween, type]  
+	
+	sort-to-navigate : SimpleSort(t) -> result
 	 where  <IsEntity> t
 	 where not (<is-builtin-entity> t)
-	 where  result := DispatchNavigate([DispatchNavigateCallNoArg($[showEntity[t]])], [Text(t)])			
-		
+	 where  result := NavigateCall(PageCall( $[showEntity[t]], []), [], [Text(t)])
+	
+	sort-to-navigate : GenericSort(name, type) -> result
+	 where 	param := <Hd; sort-to-navigate> type
+		 	; result := [Text($[[name]<]), param, Text(">")]
+	
+	sort-to-text: x -> Text(<pp-webdsl-to-string> x) 
