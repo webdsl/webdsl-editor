@@ -63,6 +63,7 @@
   <property name="build.strategoxt.stratego" location="${user.home}/.nix-profile/bin" />
 
   <import file="build.generated.xml" />
+  <import file="build.clean.xml" />
 
   <!-- WEBDSL: custom main target, don't use spoofaximp.default -->
   <target name="all" depends="check.editor-ts.present, all.release" />
