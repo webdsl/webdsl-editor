@@ -88,6 +88,7 @@ rules // check for builtin-entities
      		  	"Exception",
      		  	"QueuedEmail",
      		  	"RequestLogEntry",
+     		  	"SecurityContext",
      		  	"SessionManager",
      		  	"SessionMessage",
      		  	"ValidationException",
