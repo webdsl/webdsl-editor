@@ -73,10 +73,18 @@ rules//custom way to pp
 		
 	function-to-webdsl-ast-string-represatation: Function(t1, t2, t3, t4) -> result
 	 where 	begin := Text($[function [t1] ( ])
-	 		; params := <sort-to-text> t2
+	 		; params := <map(arg-to-webdsl-ast-string-represatation)> t2
+	 		; debug(!"1")
+	 		; paramsSeperated := <separate-by(|Text(", ")) ; flatten-list> params
+			; debug(!"2")
 			; inbetween := Text(" ) : ")	
 			; type := <sort-to-navigate <+ sort-to-text> t3
-			; result := <flatten-list> [begin, params, inbetween, type]  
+			; result := <flatten-list> [begin, paramsSeperated, inbetween, type]  
+	
+	arg-to-webdsl-ast-string-represatation: Arg(name, type) -> result
+	 where 	begin := Text($[[name] : ])
+			; typestring := <sort-to-navigate <+ sort-to-text> type
+			;  result := [begin, typestring]
 	
 	sort-to-navigate : SimpleSort(t) -> result
 	 where  <IsEntity> t
