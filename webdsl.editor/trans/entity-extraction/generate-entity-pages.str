@@ -82,7 +82,7 @@ rules//custom way to pp
 			; result := <flatten-list> [begin, paramsSeperated, inbetween, type]  
 	
 	arg-to-webdsl-ast-string-represatation: Arg(name, type) -> result
-	 where 	begin := Text($[[name] : ])
+	 where 	begin := Text($[[name] :[" "]])
 			; typestring := <sort-to-navigate <+ sort-to-text> type
 			;  result := [begin, typestring]
 	
