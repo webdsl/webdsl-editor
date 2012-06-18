@@ -22,7 +22,7 @@ rules //builder
   			; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
   			; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
   			; <map(entity-to-page(|dirname))> cleanedEntities
-  			; <main-file-to-file(|dirname)> filteredEntities  
+  			; <main-file-to-file(generate-main-page-file|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
 rules //page stuf  			
@@ -38,7 +38,7 @@ rules //page stuf
 	 with  	((<?EntityNoSuper(name, props)> e 
 	 			; header := [Text(name)] )
 	 		<+ (<?Entity(name, super, props)> e 
-	 			; linksuper := NavigateCall(PageCall( $[showEntity[super]], []), [], [Text(super)])
+	 			; linksuper := <enityname-to-pagelink> super
 	 			; header := [Text($[[name] :[" "]]), linksuper] ) )
 	 		; properties := <filter(property-to-par)> props
 	 		; functions := <filter(function-to-par)> props
@@ -63,6 +63,18 @@ rules //page stuf
      		; sigFun := <remove-body-from-function> x
      		; functionString := <function-to-webdsl-ast-string-represatation> sigFun
 			; par := TemplateCallBody("par", TemplateBody(functionString))
+			  
+rules //main page
+	
+ generate-main-page-file(|moduleName): entitynames -> mainAST
+   where 	sortednames := <string-sort> entitynames
+   			; entitylinks := <map(enityname-to-pagelink)> sortednames
+   			; mainAST := ModuleDefs(moduleName, 
+	 					[ DefinePage([], "showEntities", [], None(), 
+	 						[ TemplateCallBody("title", TemplateBody([Text("Entities")]))
+							, TemplateCallNoAssigns("group", [Text("Entities")], TemplateBody(entitylinks))  
+							])
+	 					], [] )	  
 
 rules //converting
 		
@@ -95,13 +107,15 @@ rules//custom way to pp
 	 		; typestring := <sort-to-navigate <+ sort-to-text> type
 	 		; result := <flatten-list> [begin, Text(" "), middle, Text(" "), typestring]
 	
-	sort-to-navigate : SimpleSort(t) -> result
+	sort-to-navigate: SimpleSort(t) -> <enityname-to-pagelink> t
 	 where  <IsEntity> t
 	 where not (<is-builtin-entity> t)
-	 where  result := NavigateCall(PageCall( $[showEntity[t]], []), [], [Text(t)])
 	
-	sort-to-navigate : GenericSort(name, type) -> result
+	sort-to-navigate: GenericSort(name, type) -> result
 	 where 	param := <Hd; sort-to-navigate> type
 		 	; result := [Text($[[name]<]), param, Text(">")]
 	
 	sort-to-text: x -> Text(<pp-webdsl-to-string> x) 
+	
+	enityname-to-pagelink: name -> NavigateCall(PageCall( $[showEntity[name]], []), [], [Text(name)])
+	 where 	<is-string> name 
