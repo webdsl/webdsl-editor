@@ -34,13 +34,18 @@ rules //page stuf
 	  		; <make-entity-page(|$[[dirname]/[name]])
 	  		   ; write-ast-to-file(|filename)> e
 	
-	make-entity-page(|modulename) : e@EntityNoSuper(name, props) -> result
-	 with  	properties := <filter(property-to-par)> props
+	make-entity-page(|modulename) : e -> result
+	 with  	((<?EntityNoSuper(name, props)> e 
+	 			; header := [Text(name)] )
+	 		<+ (<?Entity(name, super, props)> e 
+	 			; linksuper := NavigateCall(PageCall( $[showEntity[super]], []), [], [Text(super)])
+	 			; header := [Text($[[name] :[" "]]), linksuper] ) )
+	 		; properties := <filter(property-to-par)> props
 	 		; functions := <filter(function-to-par)> props
 	 		; result := ModuleDefs(modulename, 
 	 					[ DefinePage([], $[showEntity[name]], [], None(), 
 	 						[ TemplateCallBody("title", TemplateBody([Text(name)]))
-							, TemplateCallBody("header", TemplateBody([Text(name)]))
+							, TemplateCallBody("header", TemplateBody(header))
 							, TemplateCallNoAssigns("group", [Text("Properties")], TemplateBody(properties))  
 							, TemplateCallNoAssigns("group", [Text("Functions")], TemplateBody(functions))
 							])
