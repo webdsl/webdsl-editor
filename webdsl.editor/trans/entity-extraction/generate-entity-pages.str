@@ -33,14 +33,24 @@ rules //builder
 	  		; <make-entity-page(|$[[dirname]/[name]])
 	  		   ; write-ast-to-file(|filename)> e
 	
-	make-entity-page(|modulename) : e@EntityNoSuper(name, _) -> result
-	 with  	result := ModuleDefs(modulename, 
+	make-entity-page(|modulename) : e@EntityNoSuper(name, props) -> result
+	 with  	properties := <filter(property-to-par)> props
+	 		; result := ModuleDefs(modulename, 
 	 					[ DefinePage([], $[showEntity[name]], [], None(), 
 	 						[ TemplateCallBody("title", TemplateBody([Text(name)]))
 							, TemplateCallBody("header", TemplateBody([Text(name)]))
-							, TemplateCallNoAssigns("group", [String("Properties")], TemplateBody([]))  
-							, TemplateCallNoAssigns("group", [String("Functions")], TemplateBody([]))
+							, TemplateCallNoAssigns("group", [Text("Properties")], TemplateBody(properties))  
+							, TemplateCallNoAssigns("group", [Text("Functions")], TemplateBody([]))
 							])
 	 					], [] )	
 		
-		
+	property-to-par: x -> par
+     where	<is-property-cons> x
+     		; cleanProp := <try(remove-derive-from-property)> x
+     		; propertyString := <pp-webdsl-to-string> cleanProp
+			; par := TemplateCallBody("par", TemplateBody([ Text(propertyString) ]))
+	
+	remove-derive-from-property: DerivedProperty(t1, t2, t3, t4, t5) -> Property(t1, t2, t3, t4)
+	
+	remove-derive-from-property: DerivedPropertyNoAnno(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3)
+			  
