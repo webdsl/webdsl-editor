@@ -44,6 +44,7 @@ builders
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
   builder 	: "Generate entity files"			  = generate-entity-files
   builder 	: "Generate entity pages"			  = generate-entity-pages
+  builder   : "Generate JSON Functions"			  = generate-json-functions-for-entities (openeditor)
   
 //  pretty-print : pp-webdsl-to-string
 

@@ -28,7 +28,9 @@ rules //builder
   generate-entity-pages: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
 	where not (<?Application(_, _)> ast)
 	where fatal-err-msg(|"This builder is only supported on the application file")
-rules //page stuf  			
+	
+rules //page stuf  		
+		
    entity-to-page(|dirname): e -> e
   	with 	(? Entity(name, _, _) 
      			<+ ?EntityNoSuper(name,_))	

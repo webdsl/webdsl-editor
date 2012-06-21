@@ -1,0 +1,110 @@
+module webservices-generation/json
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+
+  	util
+  	lib/-
+
+overlays  
+	AllEntityProperties1 =    [VersionProperty1(), IdProperty1(), NameProperty1()]    
+	
+	IdProperty1 =    Property("id", Simple(), SimpleSort("UUID"), []){IsGeneratedProperty()}  
+	VersionProperty1 =    Property("version", Simple(), SimpleSort("Int"), []){IsGeneratedProperty()}  
+	NameProperty1 =    DerivedProperty("name", Simple(), SimpleSort("String"), [], []){IsGeneratedProperty()}
+	
+rules //builder
+	
+  generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> ("test.result", <Hd;pp-webdsl-to-string>result)
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  	where	dirname := ".webservices/json"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
+  			// ; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
+  			; result:= <filter(?("Event",_); make-valid-page-with-extends-entity(|dirname))> properties
+  			// ; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
+  			// ; <refresh-workspace-file> $[[project-path]/[dirname]]  
+	
+rules// lookup
+	
+  all-properties-including-entity-properties: entityName -> (entityName, props*)
+  	where props* := <concat> [<all-properties> entityName, AllEntityProperties1()]
+  
+rules//file generation
+	
+	
+	make-valid-page-with-extends-entity(|dirname) : (entityName,props) ->
+		ModuleDefs($[[dirname]/[entityName]], [ExtendEntity(entityName, functions)], [])
+	 where 	 simpleJSONFunction := <build-simple-json-function> props
+	 		; functions := [simpleJSONFunction]
+	 		
+rules//transformation
+	
+	build-simple-json-function: props -> function
+	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
+	 		; return := [Return(Var("object"))]
+	 		; filterdProperties := <filter(where(is-simple-prop))> props  
+	 		; puts := <filter(property-to-json); flatten-list> filterdProperties
+	 		; statements := <concat> [init, puts, return]
+	 		; function := Function("toSimpleJSON", [], SimpleSort("JSONObject"), Block(statements))
+
+	property-to-json: property -> statements
+	 where	(?Property(name, _, type, _) 
+	 			<+ ?PropertyNoAnno(name, _, type)
+	 			<+ ?DerivedProperty(name, _, type, _, _)
+	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
+	 		; value := <property-to-value-statement> (name,type)
+	 		; statements := 
+	 		  	[IfNoElse(
+	 		   	NotEq(FieldAccess(Var("this"), name), Null())
+	 		 		, Block([ Stat( Call( Var("object")
+	 		         , "put"
+	 		         , [String(name), value]
+	 		 	))]))]
+              	
+rules//type transformation
+	    // with  primtype* := ["Date","Time","DateTime", "File","Image","Patch","Secret","WikiText","Text"]
+
+	
+	property-to-value-statement: (name, SimpleSort("String")) -> [FieldAccess(Var("this"), name)]
+
+	property-to-value-statement: (name, SimpleSort("Int")) -> [FieldAccess(Var("this"), name)]
+	
+	property-to-value-statement: (name, SimpleSort("Bool")) -> [FieldAccess(Var("this"), name)]
+	
+	property-to-value-statement: (name, SimpleSort("Email")) -> [FieldAccess(Var("this"), name)]
+	
+	property-to-value-statement: (name, SimpleSort("Float")) -> [FieldAccess(Var("this"), name)]
+	
+	property-to-value-statement: (name, SimpleSort("Long")) -> [FieldAccess(Var("this"), name)]
+	
+	property-to-value-statement: (name, SimpleSort("UUID")) -> [FieldAccess(Var("this"), name)]
+
+	property-to-value-statement: (name, SimpleSort("URL")) -> [FieldAccess(Var("this"), name)]
+	// property-to-value-statement: x->x
+	
+rules //fix
+
+
+ override is-simple-prop :
+      p@Property(_, propkind, _, _) -> p
+      where not (<?Ref()> propkind)
+ 
+  override is-simple-prop : 
+      p@PropertyNoAnno(_, propkind, _) -> p
+      where not (<?Ref()> propkind)     
+
+  override is-simple-prop :
+      p@DerivedProperty(_, propkind, _, _, _) -> p
+      where not (<?Ref()> propkind)	
+  
+  override is-simple-prop :
+      p@DerivedPropertyNoAnno(_, propkind, _, _) -> p
+      where not (<?Ref()> propkind)	

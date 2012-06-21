@@ -9,8 +9,10 @@ imports
   typecheck/import		// for ExtraWarnings
   trans/-
   lib/-
+  
   entity-extraction/generate-entity-files
   entity-extraction/generate-entity-pages
+  webservices-generation/json
   
 signature constructors
   FILE : Term -> Term
