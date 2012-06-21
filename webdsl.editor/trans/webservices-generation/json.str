@@ -19,7 +19,7 @@ overlays
 	
 rules //builder
 	
-  generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> ("test.result", <Hd;pp-webdsl-to-string>result)
+  generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> ("test.result", <Hd;pp-webdsl-string>result)
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	dirname := ".webservices/json"
@@ -60,17 +60,22 @@ rules//transformation
 	 			<+ ?PropertyNoAnno(name, _, type)
 	 			<+ ?DerivedProperty(name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
-	 		; value := <property-to-value-statement> (name,type)
+	 		; value := <property-to-value-statement> (name,type)  
 	 		; statements := 
-	 		  	[IfNoElse(
-	 		   	NotEq(FieldAccess(Var("this"), name), Null())
-	 		 		, Block([ Stat( Call( Var("object")
-	 		         , "put"
-	 		         , [String(name), value]
-	 		 	))]))]
+	 		  [If(
+                Eq(FieldAccess(Var("this"), name), Null())
+              	, Block([<generate-json-put>(name, Cast(Null(), SimpleSort("Object")))])
+              	, Block([<generate-json-put>(name, value)])
+              )]
+  
+  generate-json-put: (name, value) -> 
+  	Stat( Call( Var("object")
+		, "put"
+	 	, [String($[[name]]), value]
+	))
               	
 rules//type transformation
-	    // with  primtype* := ["Date","Time","DateTime", "File","Image","Patch","Secret","WikiText","Text"]
+	    // with  primtype* := ["Date","Time","DateTime", "WikiText"] 
 
 	
 	property-to-value-statement: (name, SimpleSort("String")) -> [FieldAccess(Var("this"), name)]
@@ -88,6 +93,43 @@ rules//type transformation
 	property-to-value-statement: (name, SimpleSort("UUID")) -> [FieldAccess(Var("this"), name)]
 
 	property-to-value-statement: (name, SimpleSort("URL")) -> [FieldAccess(Var("this"), name)]
+	
+	property-to-value-statement: (name, SimpleSort("Text")) -> [FieldAccess(Var("this"), name)]
+	
+	property-to-value-statement: (name, SimpleSort("WikiText")) -> [Call(FieldAccess(Var("this"), name), "format", [])]
+
+	property-to-value-statement: (name, SimpleSort("DateTime")) -> [Div(
+														                  Call(FieldAccess(Var("this"), name), "getTime", [])
+														                , Long("1000L")
+														           )]
+
+	property-to-value-statement: (name, SimpleSort("Time")) -> [Call(
+																	FieldAccess(Var("this"),name)
+                          											, "format"
+                          											, [Call(Var("DateType"), "getDefaultTimeFormat", [])]
+                          										)]
+    
+    property-to-value-statement: (name, SimpleSort("Date")) -> [Call(
+																	FieldAccess(Var("this"),name)
+                          											, "format"
+                          											, [Call(Var("DateType"), "getDefaultDateFormat", [])]
+                          										)]                      											 
+
+rules// not allowed types	
+	
+	property-to-value-statement: (name, SimpleSort("Patch")) -> None()
+		where fail
+	
+	property-to-value-statement: (name, SimpleSort("Secret")) -> None()
+		where fail
+	
+	property-to-value-statement: (name, SimpleSort("Image")) -> None()
+		where fail
+	
+	property-to-value-statement: (name, SimpleSort("File")) -> None()
+		where fail
+	
+	// property-to-value-statement:
 	// property-to-value-statement: x->x
 	
 rules //fix
