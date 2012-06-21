@@ -70,14 +70,17 @@ rules // file IO
     )
     
   write-ast-to-file(|filename) : ast -> ast
-	with 	text := <pp-webdsl-to-string> ast
+	with 	text := <pp-webdsl-string> ast //todo: changeback to pp from compiler  
 	  		; <text-to-file(|filename)> text
-  	
+  
   create-dir-in-workspace : dirname -> dirname
- 	with 	dir := $[[<project-path>]/[dirname]]   
-	  		; if <file-exists> dir then id else <mkdir> dir end
-	  		; <refresh-workspace-file> <project-path>
-
+     with 	dirs := <string-tokenize(|['/'])> dirname
+     		; base := <split-init-last; Fst; separate-by(|"/"); concat-strings> dirs
+     		; if <?1><length>dirs then id else <create-dir-in-workspace> base end
+     		; dir := $[[<project-path>]/[dirname]]
+     		; if <file-exists> dir then id else <mkdir> dir end
+     		; <refresh-workspace-file> base
+     		  
 rules // check for builtin-entities
   is-builtin-entity : entity -> entity
    	where	(? EntityNoSuper(name, _) 
