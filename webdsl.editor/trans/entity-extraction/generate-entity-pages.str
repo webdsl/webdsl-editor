@@ -25,6 +25,9 @@ rules //builder
   			; <main-file-to-file(generate-main-page-file|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
+  generate-entity-pages: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+	where not (<?Application(_, _)> ast)
+	where fatal-err-msg(|"This builder is only supported on the application file")
 rules //page stuf  			
    entity-to-page(|dirname): e -> e
   	with 	(? Entity(name, _, _) 
@@ -50,6 +53,7 @@ rules //page stuf
 							, TemplateCallNoAssigns("group", [Text("Functions")], TemplateBody(functions))
 							])
 	 					], [] )	
+	
 		
 	property-to-par: x -> par
      where	<is-property-cons> x
@@ -63,13 +67,15 @@ rules //page stuf
      		; sigFun := <remove-body-from-function> x
      		; functionString := <function-to-webdsl-ast-string-represatation> sigFun
 			; par := TemplateCallBody("par", TemplateBody(functionString))
-			  
+	
+	pagelink-to-par: e@NavigateCall(t1, t2, t3) ->	TemplateCallBody("par", TemplateBody([e]))	  
+	
 rules //main page
 	
  generate-main-page-file(|moduleName): entitynames -> mainAST
    where 	 <generate-main-model-file(|moduleName); ?ModuleDefs(_, modules, _)> entitynames
    			; sortednames := <string-sort> entitynames
-   			; entitylinks := <map(enityname-to-pagelink)> sortednames
+   			; entitylinks := <map(enityname-to-pagelink; pagelink-to-par)> sortednames
    			; page := DefinePage([], "showEntities", [], None(), 
 	 						[ TemplateCallBody("title", TemplateBody([Text("Entities")]))
 							, TemplateCallNoAssigns("group", [Text("Entities")], TemplateBody(entitylinks))  
