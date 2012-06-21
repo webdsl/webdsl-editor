@@ -6,6 +6,7 @@ imports
 	libstratego-sglr
 	libwebdsl-generator
   	libwebdsl-front
+  	entity-extraction/generate-entity-files
 
   	util
   	lib/-
@@ -19,7 +20,7 @@ overlays
 	
 rules //builder
 	
-  generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> ("test.result", <Hd;pp-webdsl-string>result)
+  generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> None()
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	dirname := ".webservices/json"
@@ -27,22 +28,27 @@ rules //builder
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
-  			// ; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
-  			; result:= <filter(?("Event",_); make-valid-page-with-extends-entity(|dirname))> properties
-  			// ; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
-  			// ; <refresh-workspace-file> $[[project-path]/[dirname]]  
+  			; result:= <map(props-to-jsonfile(|dirname))> properties
+  			; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
 	
 rules// lookup
 	
   all-properties-including-entity-properties: entityName -> (entityName, props*)
-  	where props* := <concat> [<all-properties> entityName, AllEntityProperties1()]
-  
+  	where 	props1 := <concat> [<all-properties> entityName, AllEntityProperties1()]
+  			; props* := <filter(get-arguments; Hd; ?"name"); length; ?2; !props1; filter(not(NameProperty1())) <+ id> props1 //check for overwriting of nameProperty
+  			  
 rules//file generation
 	
+	props-to-jsonfile(|dirname): t@(name,props) -> t
+  	with	<file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[name].app]
+	  		; <make-valid-page-with-extends-entity(|$[[dirname]/[name]])
+	  		   ; write-ast-to-file(|filename)> t  
 	
 	make-valid-page-with-extends-entity(|dirname) : (entityName,props) ->
-		ModuleDefs($[[dirname]/[entityName]], [ExtendEntity(entityName, functions)], [])
-	 where 	 simpleJSONFunction := <build-simple-json-function> props
+		ModuleDefs(dirname, [ExtendEntity(entityName, functions)], [])
+	 where 	simpleJSONFunction := <build-simple-json-function> props
 	 		; functions := [simpleJSONFunction]
 	 		
 rules//transformation
@@ -50,21 +56,20 @@ rules//transformation
 	build-simple-json-function: props -> function
 	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
 	 		; return := [Return(Var("object"))]
-	 		; filterdProperties := <filter(where(is-simple-prop))> props  
-	 		; puts := <filter(property-to-json); flatten-list> filterdProperties
+	 		; filterdProperties := <filter(where(is-simple-prop); not(?VersionProperty1() + ?NameProperty1()))> props  
+	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
 	 		; statements := <concat> [init, puts, return]
 	 		; function := Function("toSimpleJSON", [], SimpleSort("JSONObject"), Block(statements))
 
-	property-to-json: property -> statements
+	property-to-json-without-null: property -> statements
 	 where	(?Property(name, _, type, _) 
 	 			<+ ?PropertyNoAnno(name, _, type)
 	 			<+ ?DerivedProperty(name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
 	 		; value := <property-to-value-statement> (name,type)  
 	 		; statements := 
-	 		  [If(
-                Eq(FieldAccess(Var("this"), name), Null())
-              	, Block([<generate-json-put>(name, Cast(Null(), SimpleSort("Object")))])
+	 		  [IfNoElse(
+                NotEq(FieldAccess(Var("this"), name), Null())
               	, Block([<generate-json-put>(name, value)])
               )]
   
@@ -75,8 +80,6 @@ rules//transformation
 	))
               	
 rules//type transformation
-	    // with  primtype* := ["Date","Time","DateTime", "WikiText"] 
-
 	
 	property-to-value-statement: (name, SimpleSort("String")) -> [FieldAccess(Var("this"), name)]
 
@@ -128,9 +131,7 @@ rules// not allowed types
 	
 	property-to-value-statement: (name, SimpleSort("File")) -> None()
 		where fail
-	
-	// property-to-value-statement:
-	// property-to-value-statement: x->x
+
 	
 rules //fix
 
