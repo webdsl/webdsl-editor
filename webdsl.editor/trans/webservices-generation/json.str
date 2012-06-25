@@ -31,6 +31,10 @@ rules //builder
   			; result:= <map(props-to-jsonfile(|dirname))> properties
   			; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+
+  generate-json-functions-for-entities: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+	where not (<?Application(_, _)> ast)
+	where fatal-err-msg(|"This builder is only supported on the application file")
 	
 rules// lookup
 	
@@ -49,7 +53,8 @@ rules//file generation
 	make-valid-page-with-extends-entity(|dirname) : (entityName,props) ->
 		ModuleDefs(dirname, [ExtendEntity(entityName, functions)], [])
 	 where 	simpleJSONFunction := <build-simple-json-function> props
-	 		; functions := [simpleJSONFunction]
+	 		; JSONFunction := <build-json-function> props
+	 		; functions := [simpleJSONFunction , JSONFunction]
 	 		
 rules//transformation
 	
@@ -60,17 +65,43 @@ rules//transformation
 	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
 	 		; statements := <concat> [init, puts, return]
 	 		; function := Function("toSimpleJSON", [], SimpleSort("JSONObject"), Block(statements))
+	 
+	build-json-function: props -> function
+	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
+	 		; return := [Return(Var("object"))]
+	 		; propertyStatements := <filter(property-to-json)> props
+	 		; statements := <concat> [init, propertyStatements, return]
+	 		; function := Function("toJSON", [], SimpleSort("JSONObject"), Block(statements))
 
 	property-to-json-without-null: property -> statements
 	 where	(?Property(name, _, type, _) 
 	 			<+ ?PropertyNoAnno(name, _, type)
 	 			<+ ?DerivedProperty(name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
-	 		; value := <property-to-value-statement> (name,type)  
+	 		; value := <exp-to-value-statement> (name,type)  
 	 		; statements := 
 	 		  [IfNoElse(
                 NotEq(FieldAccess(Var("this"), name), Null())
               	, Block([<generate-json-put>(name, value)])
+              )]
+   
+   property-to-json: property -> statements
+	 where	(?Property(name, _, type, _) 
+	 			<+ ?PropertyNoAnno(name, _, type)
+	 			<+ ?DerivedProperty(name, _, type, _, _)
+	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
+	 		; if <?"test18"> name then debug(!"1") else id end
+	 		; pre := <property-to-value-array-pre(|)> (name,type)
+	 		; if <?"test18"> name then debug(!"2") else id end
+	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), name) else exp := Var($[array[name]]) end	
+	 		; if <?"test18"> name then debug(!"3") else id end
+	 		; value := <exp-to-value-statement> (exp, type)
+	 		; if <?"test18"> name then debug(!"4") else id end
+	 		; statements := 
+	 		  [If(
+                Eq(FieldAccess(Var("this"), name), Null())
+                , Block([<generate-json-put>(name,Cast(Null(), SimpleSort("Object")))])
+              	, Block(<concat>[pre, [<generate-json-put>(name, value)]])
               )]
   
   generate-json-put: (name, value) -> 
@@ -81,73 +112,71 @@ rules//transformation
               	
 rules//type transformation
 	
-	property-to-value-statement: (name, SimpleSort("String")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("String")) -> [exp]
 
-	property-to-value-statement: (name, SimpleSort("Int")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("Int")) -> [exp]
 	
-	property-to-value-statement: (name, SimpleSort("Bool")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("Bool")) -> [exp]
 	
-	property-to-value-statement: (name, SimpleSort("Email")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("Email")) -> [exp]
 	
-	property-to-value-statement: (name, SimpleSort("Float")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("Float")) -> [exp]
 	
-	property-to-value-statement: (name, SimpleSort("Long")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("Long")) -> [exp]
 	
-	property-to-value-statement: (name, SimpleSort("UUID")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("UUID")) -> [exp]
 
-	property-to-value-statement: (name, SimpleSort("URL")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("URL")) -> [exp]
 	
-	property-to-value-statement: (name, SimpleSort("Text")) -> [FieldAccess(Var("this"), name)]
+	exp-to-value-statement: (exp, SimpleSort("Text")) -> [exp]
 	
-	property-to-value-statement: (name, SimpleSort("WikiText")) -> [Call(FieldAccess(Var("this"), name), "format", [])]
+	exp-to-value-statement: (exp, SimpleSort("WikiText")) -> [Call(exp, "format", [])]
 
-	property-to-value-statement: (name, SimpleSort("DateTime")) -> [Div(
-														                  Call(FieldAccess(Var("this"), name), "getTime", [])
+	exp-to-value-statement: (exp, SimpleSort("DateTime")) -> [Div(
+														                  Call(exp, "getTime", [])
 														                , Long("1000L")
 														           )]
 
-	property-to-value-statement: (name, SimpleSort("Time")) -> [Call(
-																	FieldAccess(Var("this"),name)
+	exp-to-value-statement: (exp, SimpleSort("Time")) -> [Call(
+																	exp
                           											, "format"
                           											, [Call(Var("DateType"), "getDefaultTimeFormat", [])]
                           										)]
     
-    property-to-value-statement: (name, SimpleSort("Date")) -> [Call(
-																	FieldAccess(Var("this"),name)
+    exp-to-value-statement: (exp, SimpleSort("Date")) -> [Call(
+																	exp
                           											, "format"
                           											, [Call(Var("DateType"), "getDefaultDateFormat", [])]
                           										)]                      											 
+ 	
+ 	exp-to-value-statement: (exp, type) -> [FieldAccess(exp, "id")]
+ 		where <is-entity-type> type
+ 	
+ 	exp-to-value-statement: (exp, GenericSort(_, _)) -> [exp]
+ 		
+
+    property-to-value-array-pre: (name, GenericSort(sort, [t@SimpleSort(type)])) -> [ VarDeclInitInferred(arrayname, ThisCall("JSONArray", []))
+																	, ForStmtNoFilter( type, t, FieldAccess(Var("this"), name)
+				                    									, Block([ 
+				                    									  	Stat( Call( Var(arrayname), "put",
+				                             									value
+				                            								))]))]
+		where 	arrayname := $[array[name]]
+				; value := <exp-to-value-statement>(Var(type), t)
 
 rules// not allowed types	
 	
-	property-to-value-statement: (name, SimpleSort("Patch")) -> None()
+	exp-to-value-statement: (name, SimpleSort("Patch")) -> None()
 		where fail
 	
-	property-to-value-statement: (name, SimpleSort("Secret")) -> None()
+	exp-to-value-statement: (name, SimpleSort("Secret")) -> None()
 		where fail
 	
-	property-to-value-statement: (name, SimpleSort("Image")) -> None()
+	exp-to-value-statement: (name, SimpleSort("Image")) -> None()
 		where fail
 	
-	property-to-value-statement: (name, SimpleSort("File")) -> None()
+	exp-to-value-statement: (name, SimpleSort("File")) -> None()
 		where fail
 
-	
-rules //fix
-
-
- override is-simple-prop :
-      p@Property(_, propkind, _, _) -> p
-      where not (<?Ref()> propkind)
- 
-  override is-simple-prop : 
-      p@PropertyNoAnno(_, propkind, _) -> p
-      where not (<?Ref()> propkind)     
-
-  override is-simple-prop :
-      p@DerivedProperty(_, propkind, _, _, _) -> p
-      where not (<?Ref()> propkind)	
-  
-  override is-simple-prop :
-      p@DerivedPropertyNoAnno(_, propkind, _, _) -> p
-      where not (<?Ref()> propkind)	
+	property-to-value-array-pre: (name, type ) -> []
+		where not (<?GenericSort(_, _)> type)
