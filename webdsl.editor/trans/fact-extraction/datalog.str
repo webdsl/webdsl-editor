@@ -179,7 +179,6 @@ rules
        \Function(x,farg,_,body) -> body\
     <+ \Predicate(x,farg,body) -> body\
     <+ \PredicateInEntity(x,farg,body) -> body\
-    <+ \NativeFunction(x,farg,body) -> body\
     <+ \StaticEntityFunction(x,farg,_,body) -> body\
     
 rules
