@@ -1,0 +1,35 @@
+module webservices-generation/model-tree
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+
+  	util 
+  	lib/-
+  		
+signature constructors
+	Node : entity * list(node) -> node 
+rules
+	
+  make-model-tree: (selected, position, ast@Application(_, _), path, project-path) -> ("test.result",result)
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  	where	TopEntity := <collect-all(\DeriveWebServices(name)->name\);Hd> ast
+  			; result := <make-node-of-entity(|[])> TopEntity
+  			; debug(!"3")
+ 
+ make-model-tree: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+	where not (<?Application(_, _)> ast)
+	where fatal-err-msg(|"This builder is only supported on the application file") 
+  	
+  make-node-of-entity(|stopEntities): entityname -> Node(entityname,childs) //todo: subclasses are ignored for now
+  	where not ( <fetch(?entityname)> stopEntities ) //this is to not loop while making a tree(ofcourse then it is not a tree anymore)
+  	where	properties := <all-properties> entityname
+  			; types := <map(get-property-type; srt-to-type)>
+  			; childtypes := <filter(IsEntity); uniq>
+  			; stopEntities' := [entityname| stopEntities]
+  			; childs := <filter(make-node-of-entity(|stopEntities'))> childtypes   
+  			

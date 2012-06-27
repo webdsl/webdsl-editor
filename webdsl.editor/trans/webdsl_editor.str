@@ -13,6 +13,7 @@ imports
   entity-extraction/generate-entity-files
   entity-extraction/generate-entity-pages
   webservices-generation/json
+  webservices-generation/model-tree
   
 signature constructors
   FILE : Term -> Term
