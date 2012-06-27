@@ -90,13 +90,9 @@ rules//transformation
 	 			<+ ?PropertyNoAnno(name, _, type)
 	 			<+ ?DerivedProperty(name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
-	 		; if <?"test18"> name then debug(!"1") else id end
 	 		; pre := <property-to-value-array-pre(|)> (name,type)
-	 		; if <?"test18"> name then debug(!"2") else id end
 	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), name) else exp := Var($[array[name]]) end	
-	 		; if <?"test18"> name then debug(!"3") else id end
 	 		; value := <exp-to-value-statement> (exp, type)
-	 		; if <?"test18"> name then debug(!"4") else id end
 	 		; statements := 
 	 		  [If(
                 Eq(FieldAccess(Var("this"), name), Null())
@@ -156,13 +152,14 @@ rules//type transformation
  		
 
     property-to-value-array-pre: (name, GenericSort(sort, [t@SimpleSort(type)])) -> [ VarDeclInitInferred(arrayname, ThisCall("JSONArray", []))
-																	, ForStmtNoFilter( type, t, FieldAccess(Var("this"), name)
+																	, ForStmtNoFilter( varname, t, FieldAccess(Var("this"), name)
 				                    									, Block([ 
 				                    									  	Stat( Call( Var(arrayname), "put",
 				                             									value
 				                            								))]))]
 		where 	arrayname := $[array[name]]
-				; value := <exp-to-value-statement>(Var(type), t)
+				; varname := <new> type
+				; value := <exp-to-value-statement>(Var(varname), t)
 
 rules// not allowed types	
 	
