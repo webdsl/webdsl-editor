@@ -41,7 +41,35 @@ public class WTPJ2EEPreviewSetup  {
      public String j2eepreviewservername = 
          "J2EE Preview Server WebDSL v" + webdslversion; 
      
-     public void writeJ2EEPreviewConfigFile(String plugindir, IProgressMonitor monitor) throws CoreException{}
+     public void writeJ2EEPreviewConfigFile(String plugindir, IProgressMonitor monitor) throws CoreException{
+         IWorkspace workspace = ResourcesPlugin.getWorkspace();
+         IProject project = workspace.getRoot().getProject("Servers");
+         if(!project.exists()){
+             project.create(monitor);
+         }
+         if(!project.isOpen()){
+             project.open(monitor);
+         }
+         String fileName = project.getLocation()+"/"+j2eepreviewservername+" at localhost.launch";
+         if(fileExists(fileName)){
+             System.out.println("J2EE Preview configuration file already exists: "+fileName);
+             return;
+         }
+         StringBuffer configFile = new StringBuffer();
+         configFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+         configFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.preview.launchConfigurationType\">\n");
+         configFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"true\"/>\n");
+         configFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Xss8m -Xms48m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
+         configFile.append("\t<stringAttribute key=\"server-id\" value=\""+j2eepreviewserverid+"\"/>\n");
+         configFile.append("</launchConfiguration>\n");
+         try {
+            writeStringToFile(configFile.toString(), fileName);
+            System.out.println("created J2EE Preview configuration file: "+fileName);
+         } catch (IOException e) {
+            e.printStackTrace();
+         }
+         refreshProject(project);
+     }
      
      public IRuntimeType getJ2EEPreviewRuntimeType(){
          return getRuntimeType("J2EE Preview");

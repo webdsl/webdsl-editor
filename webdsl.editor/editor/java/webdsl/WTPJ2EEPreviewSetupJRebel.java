@@ -46,7 +46,7 @@ public class WTPJ2EEPreviewSetupJRebel extends WTPJ2EEPreviewSetup {
         //configFile.append("\t\t<listEntry value=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#10;&lt;runtimeClasspathEntry containerPath=&quot;org.eclipse.jdt.launching.JRE_CONTAINER&quot; path=&quot;1&quot; type=&quot;4&quot;/&gt;&#10;\"/>\n");
         //configFile.append("\t</listAttribute>\n");
         configFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"true\"/>\n");
-        configFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Drebel.log=true ${jrebel_args}\"/>\n");
+        configFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Drebel.log=true ${jrebel_args} -Xss8m -Xms48m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
         configFile.append("\t<stringAttribute key=\"server-id\" value=\""+j2eepreviewserverid+"\"/>\n");
         configFile.append("</launchConfiguration>\n");
         try {
