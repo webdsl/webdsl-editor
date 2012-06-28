@@ -6,11 +6,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.wst.server.core.IServer;
 
-public final class WebDSLProjectBuilderWTPJ2EEPreview extends WebDSLProjectBuilder{
+public class WebDSLProjectBuilderWTPJ2EEPreview extends WebDSLProjectBuilder{
 
     @Override
     protected void initWtpServerConfig(String plugindir, IProject project, String projectname, IProgressMonitor monitor) throws CoreException{
-        WTPJ2EEPreviewSetup.initWtpServerConfig(plugindir,project,projectname,monitor);
+        WTPJ2EEPreviewSetup.getInstance().initWtpServerConfig(plugindir,project,projectname,monitor);
     }
     
     @Override

@@ -48,7 +48,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     public SelectedDatabase getSelectedDatabase() { return selectedDatabase; }
     
     public enum SelectedServer {
-        WTPTOMCAT, EXTERNALTOMCAT, CONSOLETOMCAT, WTPJ2EEPREVIEW
+        WTPTOMCAT, EXTERNALTOMCAT, CONSOLETOMCAT, WTPJ2EEPREVIEW, WTPJ2EEPREVIEWJREBEL
     }
     protected SelectedServer selectedServer = SelectedServer.WTPTOMCAT; 
     public SelectedServer getSelectedServer() { return selectedServer; }
@@ -344,6 +344,17 @@ public class WebDSLEditorWizardPage extends WizardPage {
         bWTPTestServer.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
                 selectedServer = SelectedServer.WTPJ2EEPREVIEW;
+                inputTomcatPath.setEnabled(false);
+            }
+            public void widgetDefaultSelected(SelectionEvent e) {
+            }
+        });
+
+        Button bWTPTestServerJRebel = new Button(serverselectGroup, SWT.RADIO);
+        bWTPTestServerJRebel.setText("WTP J2EE Preview with JRebel (requires a license and manual installation of JRebel plugin http://update.zeroturnaround.com/update-site)");
+        bWTPTestServerJRebel.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                selectedServer = SelectedServer.WTPJ2EEPREVIEWJREBEL;
                 inputTomcatPath.setEnabled(false);
             }
             public void widgetDefaultSelected(SelectionEvent e) {

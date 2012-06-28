@@ -17,55 +17,41 @@ import static webdsl.WTPUtils.*;
 
 public class WTPJ2EEPreviewSetup  {
    
+    //singleton, want to be able to subclass and override methods
+    private static final WTPJ2EEPreviewSetup instance = new WTPJ2EEPreviewSetup();
+    protected WTPJ2EEPreviewSetup() {}
+    public static WTPJ2EEPreviewSetup getInstance() {
+        return instance;
+    }
+    
      /*
       * add version to server instance String, otherwise builds break after
       * updating the plugin, due to stale references in 
       * -workspace-/.metadata/.plugins/org.eclipse.wst.server.core/
       * to the tomcat installation of the previous version
       */
-     public static String webdslversion = getWebDSLVersion();
+     public String webdslversion = getWebDSLVersion();
          
-     public static String j2eepreviewruntimeid = 
+     public String j2eepreviewruntimeid = 
          "webdsl_j2eepreviewruntime" + webdslversion; 
-     public static String j2eepreviewruntimename = 
+     public String j2eepreviewruntimename = 
          "Runtime J2EE Preview WebDSL v" + webdslversion; 
-     public static String j2eepreviewserverid = 
+     public String j2eepreviewserverid = 
          "webdsl_j2eepreviewserver" + webdslversion; 
-     public static String j2eepreviewservername = 
+     public String j2eepreviewservername = 
          "J2EE Preview Server WebDSL v" + webdslversion; 
-    /* 
-     public static String writeJ2EEPreviewConfigFile(String plugindir){
-         IWorkspace workspace = ResourcesPlugin.getWorkspace();
-         IProject project = workspace.getRoot().getProject("Servers");
-         String fileName = project.getLocation()+"/"+j2eepreviewservername+" at localhost.launch";
-         if(fileExists(fileName)){
-             System.out.println("J2EE Preview configuration file already exists: "+fileName);
-             return fileName;
-         }
-         StringBuffer configFile = new StringBuffer();
-         configFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-         configFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.preview.launchConfigurationType\">\n");
-         configFile.append("\t<stringAttribute key=\"server-id\" value=\""+j2eepreviewserverid+"\"/>\n");
-         configFile.append("</launchConfiguration>\n");
-         try {
-            writeStringToFile(configFile.toString(), fileName);
-            System.out.println("created J2EE Preview configuration file: "+fileName);
-         } catch (IOException e) {
-            e.printStackTrace();
-         }
-         refreshProject(project);
-         return fileName;
-     }*/
      
-     public static IRuntimeType getJ2EEPreviewRuntimeType(){
+     public void writeJ2EEPreviewConfigFile(String plugindir, IProgressMonitor monitor) throws CoreException{}
+     
+     public IRuntimeType getJ2EEPreviewRuntimeType(){
          return getRuntimeType("J2EE Preview");
      }
      
-     public static IRuntime getWebDSLJ2EEPreviewRuntime(){
+     public IRuntime getWebDSLJ2EEPreviewRuntime(){
          return getRuntime(j2eepreviewruntimeid);
      }
 
-     public static IRuntime createWebDSLJ2EEPreviewRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
+     public IRuntime createWebDSLJ2EEPreviewRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
              IRuntimeType tomcat6runtimetype = getJ2EEPreviewRuntimeType();
              IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(j2eepreviewruntimeid, monitor);
              rwc.setName(j2eepreviewruntimename);
@@ -77,7 +63,7 @@ public class WTPJ2EEPreviewSetup  {
      /**
       * add J2EE Preview runtime for webdsl plugin if not created yet
       */
-     public static IRuntime getOrCreateWebDSLJ2EEPreviewRuntime(String plugindir, IProgressMonitor monitor)throws CoreException{
+     public IRuntime getOrCreateWebDSLJ2EEPreviewRuntime(String plugindir, IProgressMonitor monitor)throws CoreException{
          IRuntime runtime = getWebDSLJ2EEPreviewRuntime();
          if(runtime == null){
              runtime = createWebDSLJ2EEPreviewRuntime(plugindir,monitor);
@@ -87,11 +73,11 @@ public class WTPJ2EEPreviewSetup  {
      }
      
      
-     public static IServer getWebDSLJ2EEPreviewServer(IProject project,IProgressMonitor monitor){
+     public IServer getWebDSLJ2EEPreviewServer(IProject project,IProgressMonitor monitor){
          return getServer(project, j2eepreviewserverid, monitor);
      }
      
-     public static IServer createWebDSLJ2EEPreviewServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
+     public IServer createWebDSLJ2EEPreviewServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
          IRuntime runtime = getOrCreateWebDSLJ2EEPreviewRuntime(plugindir,monitor);
          IRuntimeType runtimetype = getJ2EEPreviewRuntimeType();
          IServerType st = getCompatibleServerType(runtimetype);
@@ -104,20 +90,20 @@ public class WTPJ2EEPreviewSetup  {
          
          copyKeystoreFile(project, plugindir);         
 
-         //writeJ2EEPreviewConfigFile(plugindir);
+         writeJ2EEPreviewConfigFile(plugindir, monitor);
          server.publish(IServer.PUBLISH_CLEAN, monitor);
          
          return server;
      }
      
-     public static void copyKeystoreFile(IProject project, String plugindir){
+     public void copyKeystoreFile(IProject project, String plugindir){
         System.out.println("TODO: check https support in J2EE Preview server");
      }
      
      /**
       * add J2EE Preview server for webdsl plugin of not created yet
       */
-     public static IServer getOrCreateWebDSLJ2EEPreviewServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
+     public IServer getOrCreateWebDSLJ2EEPreviewServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
          IServer server = getWebDSLJ2EEPreviewServer(project,monitor);
          if(server==null){
              server = createWebDSLJ2EEPreviewServer(project, plugindir, monitor);
@@ -126,7 +112,7 @@ public class WTPJ2EEPreviewSetup  {
          return server;
      }
 
-     public static void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
+     public void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
          IServer server = getOrCreateWebDSLJ2EEPreviewServer(project,plugindir,monitor);
          addProjectModuleToServer(project,server,monitor);
      }

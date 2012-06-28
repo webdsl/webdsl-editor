@@ -18,24 +18,31 @@ import static webdsl.WTPUtils.*;
 
 public class WTPTomcatSetup  {
    
+    //singleton, want to be able to subclass and override methods
+    private static final WTPTomcatSetup instance = new WTPTomcatSetup();
+    protected WTPTomcatSetup() {}
+    public static WTPTomcatSetup getInstance() {
+        return instance;
+    }
+    
      /*
       * add version to server instance String, otherwise builds break after
       * updating the plugin, due to stale references in 
       * -workspace-/.metadata/.plugins/org.eclipse.wst.server.core/
       * to the tomcat installation of the previous version
       */
-     public static String webdslversion = 
+     public String webdslversion = 
          getWebDSLVersion();
-     public static String tomcatruntimeid = 
+     public String tomcatruntimeid = 
          "webdsl_tomcat6runtime" + webdslversion; 
-     public static String tomcatruntimename = 
+     public String tomcatruntimename = 
          "Runtime Tomcat v6.0 WebDSL v" + webdslversion; 
-     public static String tomcatserverid = 
+     public String tomcatserverid = 
          "webdsl_tomcat6server" + webdslversion; 
-     public static String tomcatservername = 
+     public String tomcatservername = 
          "Tomcat v6.0 Server WebDSL v" + webdslversion; 
      
-     public static String writeTomcatConfigFile(String plugindir){
+     public String writeTomcatConfigFile(String plugindir){
          IWorkspace workspace = ResourcesPlugin.getWorkspace();
          String tomcatdir = plugindir+"webdsl-template/tomcat/tomcat";
          IProject project = workspace.getRoot().getProject("Servers");
@@ -72,15 +79,15 @@ public class WTPTomcatSetup  {
          return fileName;
      }
      
-     public static IRuntimeType getTomcatRuntimeType(){
+     public IRuntimeType getTomcatRuntimeType(){
          return getRuntimeType("Apache Tomcat v6.0");
      }
      
-     public static IRuntime getWebDSLTomcatRuntime(){
+     public IRuntime getWebDSLTomcatRuntime(){
          return getRuntime(tomcatruntimeid);
      }
 
-     public static IRuntime createWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
+     public IRuntime createWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
              IRuntimeType tomcat6runtimetype = getTomcatRuntimeType();
              IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(tomcatruntimeid, monitor);
              rwc.setLocation(Path.fromOSString(plugindir+"/webdsl-template/tomcat/tomcat"));
@@ -94,7 +101,7 @@ public class WTPTomcatSetup  {
      /**
       * add tomcat 6 runtime for webdsl plugin if not created yet
       */
-     public static IRuntime getOrCreateWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor)throws CoreException{
+     public IRuntime getOrCreateWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor)throws CoreException{
          IRuntime plugintomcat6runtime = getWebDSLTomcatRuntime();
          if(plugintomcat6runtime == null){
              plugintomcat6runtime = createWebDSLTomcatRuntime(plugindir,monitor);
@@ -104,11 +111,11 @@ public class WTPTomcatSetup  {
      }
      
      
-     public static IServer getWebDSLTomcatServer(IProject project,IProgressMonitor monitor){
+     public IServer getWebDSLTomcatServer(IProject project,IProgressMonitor monitor){
          return getServer(project, tomcatserverid, monitor);
      }
      
-     public static IServer createWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
+     public IServer createWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
          IRuntime plugintomcat6runtime = getOrCreateWebDSLTomcatRuntime(plugindir,monitor);
          IRuntimeType tomcat6runtimetype = getTomcatRuntimeType();
          IServerType st = getCompatibleServerType(tomcat6runtimetype);
@@ -127,7 +134,7 @@ public class WTPTomcatSetup  {
          return plugintomcat6server;
      }
      
-     public static void copyKeystoreFile(IProject project, String plugindir){
+     public void copyKeystoreFile(IProject project, String plugindir){
         try {
             copyFile(plugindir+"/webdsl-template/template-java-servlet/tomcat/.keystore",project.getWorkspace().getRoot().getLocation()+"/Servers/.keystore");
         } catch (IOException e) {
@@ -138,7 +145,7 @@ public class WTPTomcatSetup  {
      /**
       * add tomcat 6 server for webdsl plugin of not created yet
       */
-     public static IServer getOrCreateWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
+     public IServer getOrCreateWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
          IServer plugintomcat6server = getWebDSLTomcatServer(project,monitor);
          if(plugintomcat6server==null){
              plugintomcat6server = createWebDSLTomcatServer(project, plugindir, monitor);
@@ -147,7 +154,7 @@ public class WTPTomcatSetup  {
          return plugintomcat6server;
      }
      
-     public static void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
+     public void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
          IServer plugintomcat6server = getOrCreateWebDSLTomcatServer(project,plugindir,monitor);
          addProjectModuleToServer(project,plugintomcat6server,monitor);
      }
