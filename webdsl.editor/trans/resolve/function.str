@@ -15,16 +15,16 @@ rules // actual lookup
     where f := <traverse-hierarchy(find-entity-func-in-class | ent)>
           
   find-entity-func-in-class: (x_class, (nm, arg*)) -> f-annotated
-    where <resolve-function-call-to-decl> (SimpleSort(x_class), nm, <map(type-of)> arg*)
+    where <resolve-function-call-to-decl> (SimpleSort(x_class), <strip-annos> nm, <map(type-of)> arg*)
         ; f-annotated := <add-anno(|FromEntity(x_class))>
         
   // Resolve global function
   find-global-func: (nm, arg*) -> f
-    where f := <resolve-function-call-to-decl> (None(), nm, <map(type-of)> arg*)
+    where f := <resolve-function-call-to-decl> (None(), <strip-annos> nm, <map(type-of)> arg*)
 
   // Native function
   find-entity-func(|ent): (nm, arg*) -> f-annotated
-    where f := <resolve-function-call-to-decl> (ClassSort(ent), nm, <map(type-of)> arg*)
+    where f := <resolve-function-call-to-decl> (ClassSort(ent), <strip-annos> nm, <map(type-of)> arg*)
         ; where(anno := FromEntity(ent))
         ; f-annotated := <add-anno(|anno)>
   
