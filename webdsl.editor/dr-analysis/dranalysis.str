@@ -75,40 +75,40 @@ rules   // dr prefixes
   get-dr-prefixes = !["bagof-", "all-keys-", "once-", "bigbagof-"]
   
   remove-dr-prefix = ?x
-  	; get-dr-prefixes; filter(\prefix -> <strip-prefix(|prefix)> x\)
-  	; Hd
+    ; get-dr-prefixes; filter(\prefix -> <strip-prefix(|prefix)> x\)
+    ; Hd
   
   strip-prefix(|prefix) = explode-string; <left-match> (<id>, <explode-string> prefix); implode-string
-  	
+    
 rules   // graph utils
   
   // Return list of nodes reachable by one edge from start
   find-connected(|start) =
-  	filter(?(start, <id>))
+    filter(?(start, <id>))
   
   get-all-connected(|start) =
-  		?edges
-  	; {| Reachable:
-  		<repeat( 
-  			 filter(
-  				\node -> 
-  					<find-connected(|node); not(?[])> edges
-  				\)
-  		  ; flatten-list
-  		  ; remove-all(Reachable)   // prevent infinite loop
-  		  ; not(?[])
-  		  ; map(\node -> node with rules(Reachable : node -> node)\)
-  		)>	[start]
-  		; all-keys-Reachable;reverse => reachable-nodes
-  	|}
-  	; <flatten-list> reachable-nodes
-  	; ![start | <id>]
-  	; uniq
-  	  
- 	extract-reachable(|starts): edges -> (nodes, edges2)
- 		with	nodes := <map(\x -> <get-all-connected(|x)> edges\); flatten-list> starts
- 		    ; edges2 := <filter({x,y: ?(x,y); where(<fetch-elem(?x)> nodes); where(<fetch-elem(?y)> nodes)})> edges
- 		    
+      ?edges
+    ; {| Reachable:
+      <repeat( 
+         filter(
+          \node -> 
+            <find-connected(|node); not(?[])> edges
+          \)
+        ; flatten-list
+        ; remove-all(Reachable)   // prevent infinite loop
+        ; not(?[])
+        ; map(\node -> node with rules(Reachable : node -> node)\)
+      )>	[start]
+      ; all-keys-Reachable;reverse => reachable-nodes
+    |}
+    ; <flatten-list> reachable-nodes
+    ; ![start | <id>]
+    ; uniq
+      
+   extract-reachable(|starts): edges -> (nodes, edges2)
+     with	nodes := <map(\x -> <get-all-connected(|x)> edges\); flatten-list> starts
+         ; edges2 := <filter({x,y: ?(x,y); where(<fetch-elem(?x)> nodes); where(<fetch-elem(?y)> nodes)})> edges
+         
   rename-strategy-declare = rules(
     RenameStrategy: "emit-webdsl-code-no-declare" -> "emit-webdsl-code-no-rename"
   )
@@ -136,7 +136,10 @@ rules     // main
     
     ; <isect> (created-drs, typecheck-nodes)
     ; uniq; sort-list(LSort(string-gt))
+    ; add-dynamic-rules-not-in-generator-library 
     ; write-to
+       
+    add-dynamic-rules-not-in-generator-library = !["AccessControlEnabledMarker"|<id>] //rule in libwebdsl-front   
         
 rules       // output
   
