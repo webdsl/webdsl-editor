@@ -6,17 +6,15 @@ imports
 	libstratego-sglr
 	libwebdsl-generator
   	libwebdsl-front
+  	
   	entity-extraction/generate-entity-files
-
+	
+	webservices-generation/overlays
+		
   	util
   	lib/-
 
-overlays  
-	AllEntityProperties1 =    [VersionProperty1(), IdProperty1(), NameProperty1()]    
-	
-	IdProperty1 =    Property("id", Simple(), SimpleSort("UUID"), []){IsGeneratedProperty()}  
-	VersionProperty1 =    Property("version", Simple(), SimpleSort("Int"), []){IsGeneratedProperty()}  
-	NameProperty1 =    DerivedProperty("name", Simple(), SimpleSort("String"), [], []){IsGeneratedProperty()}
+
 	
 rules //builder
 	
