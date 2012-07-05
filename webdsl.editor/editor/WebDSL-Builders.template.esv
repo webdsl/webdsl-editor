@@ -46,6 +46,7 @@ builders
   builder 	: "Generate entity pages"			  = generate-entity-pages
   builder   : "Generate JSON Functions"			  = generate-json-functions-for-entities
   builder   : "Show model tree"			  		  = make-model-tree (openeditor)
+  builder   : "Generate Mobl model"				  = generate-mobl-model (openeditor)
   
 //  pretty-print : pp-webdsl-to-string
 

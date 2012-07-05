@@ -1,0 +1,64 @@
+module webservices-generation/model-to-mobl
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+
+  	util 
+  	lib/-
+  	
+  	lib/mobl/mobl
+  	lib/mobl/editor-common.generated
+  	
+  	entity-extraction/generate-entity-pages
+  	webservices-generation/overlays
+ 
+rules 
+
+  generate-mobl-model: (selected, position, ast@Application(_, _), path, project-path) -> ("test.mobl", <Hd;pp-mobl-string>result)
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  	where	dirname := "webservices/mobl"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity);?"Project")> entities
+  			; completeEntities := <map(make-entity-with-properties)> filteredEntities   
+  			// ; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
+  			; result := <map(entity-to-mobl-entity; make-valid-page-from-mobl-entity(|dirname))> completeEntities
+  			  
+  			// ; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
+  			// ; <refresh-workspace-file> $[[project-path]/[dirname]]   
+
+rules //make page
+	
+  make-valid-page-from-mobl-entity(|dirname) : e@EntityNoSuper(_, name, _) -> page
+  	where 	page := Module($[[<string-replace(|"/","::")>dirname]::[name]], [e])
+
+rules //lookup  			   
+  
+  make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)
+  	where	props := [VersionProperty1()|<all-properties> entityname]
+  	
+  	
+rules //transform
+	
+  entity-to-mobl-entity: EntityNoSuper(name, props) -> moblEntity
+  	where	cleanedProps := <map(try(remove-derive-from-property))> props
+  			; simpleprops := <filter(is-simple-prop)> cleanedProps
+  			; props' := <filter(property-to-mobl-property)>
+  			; moblEntity := EntityNoSuper(None(), name, props')
+ 
+  property-to-mobl-property: Property(name, sort, type, annos) -> result
+  	where 	newType := <type-to-mobl-type> type
+  		  	; result := Property([], name, newType, [])
+ 
+  property-to-mobl-property: PropertyNoAnno(name, sort, type) -> result
+  	where 	newType := <type-to-mobl-type> type
+  		  	; result := PropertyNoAnnos([], name, newType)
+  	
+  type-to-mobl-type : SimpleSort(type) -> SimpleType("String")
+   where 	<fetch(?type)> ToMoblStringTypes
+   

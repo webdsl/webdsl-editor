@@ -8,3 +8,7 @@ overlays
 	IdProperty1 =    Property("id", Simple(), SimpleSort("UUID"), []){IsGeneratedProperty()}  
 	VersionProperty1 =    Property("version", Simple(), SimpleSort("Int"), []){IsGeneratedProperty()}  
 	NameProperty1 =    DerivedProperty("name", Simple(), SimpleSort("String"), [], []){IsGeneratedProperty()}
+	
+	ToMoblStringTypes = ["String", "Email", "UUID", "Text", "WikiText", "URL", "Time", "Date"]
+	ToMoblNumTypes = ["Float", "Int", "Long"]
+	ToMoblForbiddenTypes = ["Secret", "Patch", "Image", "File"]

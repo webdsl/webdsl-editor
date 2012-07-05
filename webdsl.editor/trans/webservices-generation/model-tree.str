@@ -14,7 +14,7 @@ signature constructors
 	Node : entity * list(node) -> node 
 rules
 	
-  make-model-tree: (selected, position, ast@Application(_, _), path, project-path) -> ("test.result",result)
+  make-model-tree: (selected, position, ast@Application(_, _), path, project-path) -> ("model.tree",result)
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	TopEntity := <collect-all(\DeriveWebServices(name)->name\);Hd> ast
