@@ -150,12 +150,20 @@
         <run class="webdsl.WebDSLProjectBuilderWTPTomcat"/>
       </builder>
     </extension>
-    <!-- or use: <buildCommand><name>webdsl.editor.builderJ2EEPreview</name></buildCommand> -->
+    <!-- in .project use: <buildCommand><name>webdsl.editor.builderJ2EEPreview</name></buildCommand> -->
     <extension id="builderJ2EEPreview"
     name="WebDSL Project Builder J2EE Preview"
     point="org.eclipse.core.resources.builders">
       <builder hasNature="false">
         <run class="webdsl.WebDSLProjectBuilderWTPJ2EEPreview"/>
+      </builder>
+    </extension>
+    <!-- in .project use: <buildCommand><name>webdsl.editor.builderJ2EEPreviewJRebel</name></buildCommand> -->
+    <extension id="builderJ2EEPreviewJRebel"
+    name="WebDSL Project Builder J2EE Preview with JRebel"
+    point="org.eclipse.core.resources.builders">
+      <builder hasNature="false">
+        <run class="webdsl.WebDSLProjectBuilderWTPJ2EEPreviewJRebel"/>
       </builder>
     </extension>
     

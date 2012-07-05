@@ -166,6 +166,10 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
                 out.write("rootapp=true\n");
             }
             out.write("indexdir=searchindex\n");
+            if(selectedServer == SelectedServer.WTPJ2EEPREVIEWJREBEL){
+                out.write("compile-units-cache=true\n");
+                out.write("jrebel=true\n");
+            }
             out.close(); 
         } 
         catch (IOException e) { 
@@ -183,7 +187,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         createDirs(project.getLocation()+"/.settings");
         
         writeBuildXmlFile(project, selectedServer);
-        if(selectedServer==SelectedServer.WTPTOMCAT || selectedServer==SelectedServer.WTPJ2EEPREVIEW){
+        if(selectedServer==SelectedServer.WTPTOMCAT || selectedServer==SelectedServer.WTPJ2EEPREVIEW || selectedServer==SelectedServer.WTPJ2EEPREVIEWJREBEL){
           writeBuildXmlLaunchFile(project, appName, plugindir);
         }
         else{
@@ -288,11 +292,14 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          ant.append("\t<property name=\"webdsl-java-cp\" value=\"${plugindir}/include/webdsl.jar\"/>\n");
          ant.append("\t<property name=\"webdslexec\" value=\"java\"/>\n");
          ant.append("\t<!-- command-line build only uses .servletapp, plugin build also uses WebContent to deploy with WTP -->\n");         
-         if(selectedServer==SelectedServer.WTPTOMCAT || selectedServer==SelectedServer.WTPJ2EEPREVIEW){
+         if(selectedServer==SelectedServer.WTPTOMCAT || selectedServer==SelectedServer.WTPJ2EEPREVIEW || selectedServer==SelectedServer.WTPJ2EEPREVIEWJREBEL){
            ant.append("\t<property name=\"generate-dir\" value=\"WebContent\"/>\n");
          }
          else{
            ant.append("\t<property name=\"generate-dir\" value=\".servletapp\"/>\n");
+         }
+         if(selectedServer==SelectedServer.WTPJ2EEPREVIEWJREBEL){
+           ant.append("\t<property name=\"disable-forced-eclipse-build\" value=\"true\"/>\n"); 
          }
          ant.append("\t<property name=\"webcontentdir\" value=\"${currentdir}/${generate-dir}\"/>\n");
          ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build-eclipse-plugin-entry.xml\"/>\n");
@@ -585,6 +592,9 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          }
          if(selectedServer==SelectedServer.WTPJ2EEPREVIEW){
              projectFile.append("\t\t<buildCommand><name>webdsl.editor.builderJ2EEPreview</name></buildCommand>\n");
+         }
+         if(selectedServer==SelectedServer.WTPJ2EEPREVIEWJREBEL){
+             projectFile.append("\t\t<buildCommand><name>webdsl.editor.builderJ2EEPreviewJRebel</name></buildCommand>\n");
          }
          //clean trigger
          projectFile.append("\t\t<buildCommand>\n");
