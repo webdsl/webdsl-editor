@@ -18,29 +18,34 @@ imports
  
 rules 
 
-  generate-mobl-model: (selected, position, ast@Application(_, _), path, project-path) -> ("test.mobl", <pp-mobl-string> result)
+  generate-mobl-model: (selected, position, ast@Application(_, _), path, project-path) -> None()
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties); debug(!"test2")> filteredEntities   
-  			// ; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
+  			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties)> filteredEntities   
   			; result := <map(entity-to-mobl-entity); make-valid-page-from-mobl-entities(|dirname)> completeEntities
-  			  
-  			// ; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
-  			// ; <refresh-workspace-file> $[[project-path]/[dirname]]   
+  			; module-to-moblfile(|dirname, "model")
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]   
  
+rules // file stuff
+	
+  module-to-moblfile(|dirname, file): mod -> mod
+  	where	<file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[file].mobl]
+	  		; <write-mobl-ast-to-file(|filename)> mod  
+	  		  
 rules //make page
 	
   make-valid-page-from-mobl-entities(|dirname) : entities -> page
-  	where 	page := Module($[[<string-replace(|"/","::")>dirname]::model], entities)
+  	where 	page := Module($[[<string-replace(|"/", "::")> dirname]::model], entities)
   
 rules //lookup  			   
   
   make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)
-  	where	props := <concat> [[VersionProperty1()], <all-properties> entityname, <debug(!"test3")><bagof-ExtraInverseProperty> entityname]
+  	where	props := <concat> [[VersionProperty1()], <all-properties> entityname, <bagof-ExtraInverseProperty> entityname]
   
   check-searchable-anno: property ->  SimpleAnno("searchable")
    	where 	<is-searchable-prop> property  
@@ -84,14 +89,15 @@ rules //generation
   				ExtraInverseAnno: (class, propertyname) -> InverseAnno(newPropertyName)
   			)
   
-   generate-inverse-property(|class): property	-> PropertyNoAnno(name, Ref() , SimpleSort(class))
+   generate-inverse-property(|class): property -> PropertyNoAnno(name, Ref() , SimpleSort(class))
     where 	proptype := <get-property-type; ?GenericSort("Set", _)> property
     		; name := $[generatedPropertyForInverse_[class]_[<get-property-name> property]] 
    
-   // generate-inverse-property(|class): property	-> PropertyNoAnno(name, Ref() , GenericSort("List", SimpleSort(class)))
-   //  where 	proptype := <get-property-type; ?GenericSort("List", _)> property
-   //  		; name := $[generatedPropertyForInverse_[class]_[<get-property-name> property]] 
-   //  		  
+   generate-inverse-property(|class): property -> Property(name, Ref() , GenericSort("List", [SimpleSort(class)]), [InverseAnno(class, propertyname)])
+    where 	proptype := <get-property-type; ?GenericSort("List", _)> property
+    		; propertyname := <get-property-name> property
+    		; name := $[generatedPropertyForInverse_[class]_[propertyname]] 
+    		  
 rules //transform 
 
   entity-to-mobl-entity: EntityNoSuper(name, props) -> moblEntity
@@ -120,20 +126,20 @@ rules //transform
   			; length; int-gt(|0) 
     
 rules // type transformations  	
-  type-to-mobl-type : SimpleSort(type) -> SimpleType("String")
+  type-to-mobl-type: SimpleSort(type) -> SimpleType("String")
    	where 	<fetch(?type)> ToMoblStringTypes
   
-  type-to-mobl-type : SimpleSort(type) -> SimpleType("Num")
+  type-to-mobl-type: SimpleSort(type) -> SimpleType("Num")
    	where 	<fetch(?type)> ToMoblNumTypes
 
-  type-to-mobl-type : SimpleSort("Bool") -> SimpleType("Bool")
+  type-to-mobl-type: SimpleSort("Bool") -> SimpleType("Bool")
  
-  type-to-mobl-type : SimpleSort("DateTime") -> SimpleType("DateTime")  
+  type-to-mobl-type: SimpleSort("DateTime") -> SimpleType("DateTime")  
    
-  type-to-mobl-type : SimpleSort(type) -> SimpleType(type)
+  type-to-mobl-type: SimpleSort(type) -> SimpleType(type)
    	where 	<IsEntity> type
    	where not (<is-builtin-entity> type)
   
-  type-to-mobl-type : GenericSort(_, type) -> GenericType("Collection", [paramtype])  
+  type-to-mobl-type: GenericSort(_, type) -> GenericType("Collection", [paramtype])  
    	where	<Hd; is-entity-type> type
    		 	; paramtype := <Hd; type-to-mobl-type> type 

@@ -11,29 +11,34 @@ strategies
   parse-mobl-file =
     parse-file(
       strsglr-perror, strsglr-report-parse-error
-    | <import-term(include/MoBL.tbl)>
+    | <import-term(lib/mobl/MoBL.tbl)>
     )
 
   // parse-string = parse-mobl-string
   parse-mobl-string =
     parse-string(
       strsglr-report-parse-error
-    | <import-term(include/MoBL.tbl)>
+    | <import-term(lib/mobl/MoBL.tbl)>
     )
   
   // parse-stream = parse-mobl-stream
   parse-mobl-stream =
     parse-stream(
       strsglr-report-parse-error
-    | <import-term(include/MoBL.tbl)>
+    | <import-term(lib/mobl/MoBL.tbl)>
     )
 
   pp-mobl-string =
-    ast2abox(|[<import-term(include/MoBL.generated.pp.af)>,
-               <import-term(include/MoBL.pp.af)>]);
-    box2text-string(|100)
+    ast2abox(|[<import-term(lib/mobl/MoBL.generated.pp.af)>,
+               <import-term(lib/mobl/MoBL.pp.af)>])
+               ;box2text-string(|100)
 
-strategies
+ 
+rules
+	
+	write-mobl-ast-to-file(|filename) : ast -> ast
+	with 	text := <pp-mobl-string> ast 
+	  		; <text-to-file(|filename)> text
   
   /**
    * Processes an import during semantic analysis.
