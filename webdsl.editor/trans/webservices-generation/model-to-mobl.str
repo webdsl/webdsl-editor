@@ -18,47 +18,84 @@ imports
  
 rules 
 
-  generate-mobl-model: (selected, position, ast@Application(_, _), path, project-path) -> ("test.mobl", <Hd;pp-mobl-string>result)
+  generate-mobl-model: (selected, position, ast@Application(_, _), path, project-path) -> ("test.mobl", <pp-mobl-string> result)
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity);?"Project")> entities
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; completeEntities := <map(make-entity-with-properties)> filteredEntities   
   			// ; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
-  			; result := <map(entity-to-mobl-entity; make-valid-page-from-mobl-entity(|dirname))> completeEntities
+  			; result := <map(entity-to-mobl-entity); make-valid-page-from-mobl-entities(|dirname)> completeEntities
   			  
   			// ; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
   			// ; <refresh-workspace-file> $[[project-path]/[dirname]]   
-
+ 
 rules //make page
 	
-  make-valid-page-from-mobl-entity(|dirname) : e@EntityNoSuper(_, name, _) -> page
-  	where 	page := Module($[[<string-replace(|"/","::")>dirname]::[name]], [e])
-
+  make-valid-page-from-mobl-entities(|dirname) : entities -> page
+  	where 	page := Module($[[<string-replace(|"/","::")>dirname]::model], entities)
+  
 rules //lookup  			   
   
   make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)
   	where	props := [VersionProperty1()|<all-properties> entityname]
-  	
-  	
-rules //transform
-	
+  
+  check-searchable-anno: property ->  SimpleAnno("searchable")
+   	where 	<is-searchable-prop> property  
+  
+  check-inverse-anno: Property(_, _, _, annos) ->  InverseAnno(name)
+    where	<fetch-elem(?InverseAnno(_, name))> annos
+    
+  check-inverse-anno(|class): property ->  InverseAnno(otherprop)
+  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where 	<get-property-type; ?GenericSort(_,_)> property
+    		; (otherEnity, otherprop) := <InverseProperty> (class, <get-property-name> property)
+
+rules //transform 
+
   entity-to-mobl-entity: EntityNoSuper(name, props) -> moblEntity
   	where	cleanedProps := <map(try(remove-derive-from-property))> props
-  			; simpleprops := <filter(is-simple-prop)> cleanedProps
-  			; props' := <filter(property-to-mobl-property)>
+  			; props' := <filter(property-to-mobl-property(|name))>
   			; moblEntity := EntityNoSuper(None(), name, props')
  
-  property-to-mobl-property: Property(name, sort, type, annos) -> result
+  property-to-mobl-property(|class): p@Property(name, sort, type, annos) -> result
   	where 	newType := <type-to-mobl-type> type
-  		  	; result := Property([], name, newType, [])
+  			; if (newannos := <annos-to-mobl-annos(|class)> p) 
+  				then  result := Property([], name, newType, newannos) 
+  				else  result := PropertyNoAnnos([], name, newType) 
+  			end
  
-  property-to-mobl-property: PropertyNoAnno(name, sort, type) -> result
+  property-to-mobl-property(|class): p@PropertyNoAnno(name, sort, type) -> result
   	where 	newType := <type-to-mobl-type> type
-  		  	; result := PropertyNoAnnos([], name, newType)
-  	
+  		  	; if (newannos := <annos-to-mobl-annos(|class)> p) 
+  				then  result := Property([], name, newType, newannos) 
+  				else  result := PropertyNoAnnos([], name, newType) 
+  			end
+  
+  annos-to-mobl-annos(|class): property -> result
+  	where 	anno* := [<check-searchable-anno <+ !None()> property|[]]
+  			; anno'' := [< check-inverse-anno <+ check-inverse-anno(|class) <+ !None()> property|anno*]
+  			; result := <filter(not(?None()))>
+  			; length; int-gt(|0) 
+ 
+ 
+rules // type transformations  	
   type-to-mobl-type : SimpleSort(type) -> SimpleType("String")
-   where 	<fetch(?type)> ToMoblStringTypes
+   	where 	<fetch(?type)> ToMoblStringTypes
+  
+  type-to-mobl-type : SimpleSort(type) -> SimpleType("Num")
+   	where 	<fetch(?type)> ToMoblNumTypes
+
+  type-to-mobl-type : SimpleSort("Bool") -> SimpleType("Bool")
+ 
+  type-to-mobl-type : SimpleSort("DateTime") -> SimpleType("DateTime")  
    
+  type-to-mobl-type : SimpleSort(type) -> SimpleType(type)
+   	where 	<IsEntity> type
+   	where not (<is-builtin-entity> type)
+  
+  type-to-mobl-type : GenericSort(_, type) -> GenericType("Collection", [paramtype])  
+   	where	<Hd; is-entity-type> type
+   		 	; paramtype := <Hd; type-to-mobl-type> type 
