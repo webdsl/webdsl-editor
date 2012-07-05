@@ -1,0 +1,438 @@
+module MoBL
+
+signature
+  constructors
+                                   : BracketCharacter -> BracketLiteral_BracketCharacter1
+                                   : BracketLiteral -> BracketLiteral_BracketCharacter1
+    HtmlDatabindArg                : Exp -> HtmlArg
+    HtmlArg                        : HTMLID * Exp -> HtmlArg
+    ControlCallNoArgs              : LimitedExp * List(ScreenElem) -> ScreenElem
+    ControlCallNoBody              : LimitedExp * List(NamedExp) -> ScreenElem
+    ControlCall                    : LimitedExp * List(NamedExp) * List(ScreenElem) -> ScreenElem
+    When                           : Exp * List(ScreenElem) * List(ScreenElem) -> ScreenElem
+    WhenNoElse                     : Exp * List(ScreenElem) -> ScreenElem
+    ListInferred                   : LValue * Exp * List(ScreenElem) -> ScreenElem
+    List                           : LValue * Type * Exp * List(ScreenElem) -> ScreenElem
+    ScreenString                   : STRING -> ScreenElem
+    Script                         : List(Statement) -> ScreenElem
+                                   : FunctionDef -> ScreenElem
+    DeriveDeclInferred             : ID * Exp -> ScreenElem
+    DeriveDecl                     : ID * Type * Exp -> ScreenElem
+    VarDeclInferred                : ID * Exp -> ScreenElem
+    VarDecl                        : ID * Type * Exp -> ScreenElem
+                                   : ControlDefinition -> ScreenElem
+    NamedHtmlShort                 : ID * HTMLID * List(HtmlArg) -> ScreenElem
+    NamedHtml                      : ID * HTMLID * List(HtmlArg) * List(ScreenElem) * HTMLID -> ScreenElem
+    HtmlShort                      : HTMLID * List(HtmlArg) -> ScreenElem
+    Html                           : HTMLID * List(HtmlArg) * List(ScreenElem) * HTMLID -> ScreenElem
+    Control                        : List(MetaAnno) * QId * List(FArg) * List(ScreenElem) -> ControlDefinition
+    SetAnd                         : SetExp * SetExp -> SetExp
+    SetNotIn                       : ID * LimitedSetExp -> SetExp
+    SetIn                          : ID * LimitedSetExp -> SetExp
+    SetGeq                         : ID * LimitedSetExp -> SetExp
+    SetGt                          : ID * LimitedSetExp -> SetExp
+    SetLeq                         : ID * LimitedSetExp -> SetExp
+    SetLt                          : ID * LimitedSetExp -> SetExp
+    SetNotEq                       : ID * LimitedSetExp -> SetExp
+    SetEq                          : ID * LimitedSetExp -> SetExp
+    OrderDescending                : ID -> OrderExp
+    OrderAscending                 : ID -> OrderExp
+    OrderNonSpecific               : ID -> OrderExp
+    OffsetFilter                   : Exp -> Filter
+    LimitFilter                    : Exp -> Filter
+    PrefetchFilter                 : List(ID) -> Filter
+    OrderByFilter                  : OrderExp -> Filter
+    WhereFilter                    : SetExp -> Filter
+    PropVal                        : ID * Exp -> PropVal
+    NamedExp                       : ID * Exp -> NamedExp
+                                   : Exp -> NamedExp
+    Indexer                        : Exp * Exp -> LimitedExp
+    FieldAccess                    : Exp * ID -> LimitedExp
+    MethodCall                     : Exp * ID * List(NamedExp) -> LimitedExp
+    Brackets                       : Exp -> LimitedExp
+    Var                            : QId -> LimitedExp
+    Call                           : QId * List(NamedExp) -> LimitedExp
+                                   : LimitedExp -> LimitedSetExp
+    This                           : LimitedSetExp
+    Null                           : LimitedSetExp
+    False                          : LimitedSetExp
+    True                           : LimitedSetExp
+    Num                            : NUMBER -> LimitedSetExp
+    String                         : STRING -> LimitedSetExp
+    LIndexer                       : Exp * Exp -> LValue
+    LTuple                         : LValue * List(LValue) -> LValue
+    LFieldAccess                   : Exp * ID -> LValue
+                                   : QId -> LValue
+                                   : FunctionDef -> Statement
+    Async                          : List(Statement) -> Statement
+    ScreenReturn                   : Statement
+    Return                         : Statement
+    ScreenReturn                   : Exp -> Statement
+    Return                         : Exp -> Statement
+    Block                          : List(Statement) -> Statement
+    While                          : Exp * List(Statement) -> Statement
+    ForInferred                    : LValue * Exp * List(Statement) -> Statement
+    For                            : LValue * Type * Exp * List(Statement) -> Statement
+    IfNoElse                       : Exp * Statement -> Statement
+    If                             : Exp * Statement * Statement -> Statement
+    ExpStat                        : Exp -> Statement
+    Assignment                     : LValue * Exp -> Statement
+    VarDeclInferred                : ID * Exp -> Statement
+    VarDecl                        : ID * Type * Exp -> Statement
+    StaticSyncFunctionNoReturnType : List(MetaAnno) * QId * List(FArg) * List(Statement) -> FunctionDef
+    StaticSyncFunction             : List(MetaAnno) * QId * List(FArg) * Type * List(Statement) -> FunctionDef
+    StaticFunctionNoReturnType     : List(MetaAnno) * QId * List(FArg) * List(Statement) -> FunctionDef
+    StaticFunction                 : List(MetaAnno) * QId * List(FArg) * Type * List(Statement) -> FunctionDef
+    SyncFunctionNoReturnType       : List(MetaAnno) * QId * List(FArg) * List(Statement) -> FunctionDef
+    SyncFunction                   : List(MetaAnno) * QId * List(FArg) * Type * List(Statement) -> FunctionDef
+    FunctionNoReturnType           : List(MetaAnno) * QId * List(FArg) * List(Statement) -> FunctionDef
+    Function                       : List(MetaAnno) * QId * List(FArg) * Type * List(Statement) -> FunctionDef
+                                   : String -> OperatorMethodId
+                                   : String -> TermOperatorMethodId
+                                   : String -> CompareMethodId
+                                   : String -> BoolMethodId
+    UriVar                         : ID -> UriPart
+    UriPart                        : FILENAME -> UriPart
+    UriPath                        : List(UriPart) -> UriPath
+    QuotedPath                     : STRING -> Path
+    AbsolutePath                   : List(FILENAME) -> Path
+    Path                           : List(FILENAME) -> Path
+    FunctionType                   : List(NFType) * NFType -> Type
+                                   : NFType -> Type
+    DynamicType                    : NFType
+    ArrayType                      : Type -> NFType
+    TupleType                      : List(Type) -> NFType
+    GenericType                    : QId * List(Type) -> NFType
+    SimpleType                     : QId -> NFType
+    FArgOptional                   : ID * Type * Exp -> FArg
+    FArg                           : ID * Type -> FArg
+    QId                            : QId * ID -> QId
+                                   : ID -> QId
+    JSIndex                        : JSExp -> JSIndexerSubscript
+    JSPropVal                      : JSExp * JSExp -> JSPropVal
+    JSPropVal                      : JSID * JSExp -> JSPropVal
+    JSVar                          : JSID -> VarJSExp
+    JSAsyncFunctionExp             : List(JSID) * List(JSStat) -> JSExp
+    JSFunctionExp                  : List(JSID) * List(JSStat) -> JSExp
+    JSPropAccess                   : JSExp * JSIndexerSubscript -> JSExp
+    JSAsyncCall                    : JSExp * List(JSExp) -> JSExp
+    JSCall                         : JSExp * List(JSExp) -> JSExp
+    JSFieldAccess                  : JSExp * JSID -> JSExp
+    JSOp                           : JSExp * JSOperatorMethodId * JSExp -> JSExp
+    JSOp                           : JSExp * JSTermOperatorMethodId * JSExp -> JSExp
+    JSOp                           : JSExp * JSCompareMethodId * JSExp -> JSExp
+    JSOp                           : JSExp * JSBoolMethodId * JSExp -> JSExp
+    JSBracket                      : JSExp -> JSExp
+    JSChoice                       : JSExp * JSExp * JSExp -> JSExp
+    JSIn                           : JSExp * JSExp -> JSExp
+    JSTypeOf                       : JSExp -> JSExp
+    JSNot                          : JSExp -> JSExp
+    JSDec                          : JSExp -> JSExp
+    JSInc                          : JSExp -> JSExp
+    JSObj                          : List(JSPropVal) -> JSExp
+    JSNew                          : JSExp * List(JSExp) -> JSExp
+    JSArrayCons                    : List(JSExp) -> JSExp
+    JSAssign                       : JSLVal * JSAssignOp * JSExp -> JSExp
+                                   : VarJSExp -> JSExp
+    JSNull                         : JSExp
+    JSThis                         : JSExp
+    JSFalse                        : JSExp
+    JSTrue                         : JSExp
+    JSIntLit                       : JSHexIntegerLiteral -> JSExp
+    JSIntLit                       : JSDecimalLiteral -> JSExp
+    JSStringLit                    : JSSTRING -> JSExp
+    JSRegex                        : Pattern * Option(JSID) -> JSExp
+    JSLPropAccess                  : JSExp * JSExp -> JSLVal
+    JSLVar                         : JSID -> JSLVal
+    JSLFieldAccess                 : JSExp * JSID -> JSLVal
+    JSDefaultCase                  : List(JSStat) -> Case
+    JSCase                         : JSExp * List(JSStat) -> Case
+    JSAsyncFunctionDecl            : JSID * List(JSID) * List(JSStat) -> JSStat
+    JSFunctionDecl                 : JSID * List(JSID) * List(JSStat) -> JSStat
+    JSBlock                        : List(JSStat) -> JSStat
+    JSExpStat                      : JSExp -> JSStat
+    JSDelete                       : JSExp -> JSStat
+    JSReturn                       : JSStat
+    JSReturn                       : JSExp -> JSStat
+    JSThrow                        : JSExp -> JSStat
+    JSBreak                        : JSStat
+    JSSwitch                       : JSExp * List(Case) -> JSStat
+    JSTryCatch                     : List(JSStat) * JSID * List(JSStat) -> JSStat
+    JSWhile                        : JSExp * JSStat -> JSStat
+    JSIfNoElse                     : JSExp * JSStat -> JSStat
+    JSIf                           : JSExp * JSStat * JSStat -> JSStat
+    JSForIn                        : JSID * JSExp * JSStat -> JSStat
+    JSFor                          : JSStat * JSExp * JSExp * JSStat -> JSStat
+    JSVarDecl                      : JSID * JSExp -> JSStat
+    JSVarDeclNoInit                : List(JSID) -> JSStat
+    JSModule                       : List(JSStat) -> JSModule
+                                   : String -> JSAssignOp
+                                   : String -> JSOperatorMethodId
+                                   : String -> JSTermOperatorMethodId
+                                   : String -> JSCompareMethodId
+                                   : String -> JSBoolMethodId
+    DeleteMethod                   : HttpMethod
+    PutMethod                      : HttpMethod
+    PostMethod                     : HttpMethod
+    GetMethod                      : HttpMethod
+    DebugSetting                   : ServerSetting
+    DatabaseSetting                : STRING * STRING * STRING * STRING -> ServerSetting
+    buildfarmPlatforms             : List(PLATFORM) -> NativeSetting
+    buildfarmPassword              : STRING -> NativeSetting
+    buildfarmUsername              : STRING -> NativeSetting
+    NativeSettings                 : List(NativeSetting) -> Setting
+    StyleVarSetting                : StyleVar * StyleExp -> Setting
+    LoadingHtmlSetting             : STRING -> Setting
+    DebugSetting                   : Setting
+    OfflineSetting                 : Setting
+    ReleaseOutputSetting           : STRING -> Setting
+    OutputSetting                  : STRING -> Setting
+    HtmlSetting                    : FILENAME -> Setting
+    LibSetting                     : Path -> Setting
+    StdLibSetting                  : Path -> Setting
+    VersionSetting                 : STRING -> Setting
+    IconSetting                    : Path -> Setting
+    DatabaseSetting                : STRING -> Setting
+    TitleSetting                   : STRING -> Setting
+    Application                    : ID * List(Definition) -> Start
+    Module                         : QId * List(Definition) -> Start
+    ServerApplication              : ID * List(ServerSetting) * List(Definition) -> Start
+    Configuration                  : List(Setting) -> Start
+                                   : String -> JSHexIntegerLiteral
+                                   : String -> JSDecimalLiteral
+                                   : String -> JSSTRING
+                                   : String -> JSID
+                                   : String -> PLATFORM
+    PercentageUnit                 : Unit
+    SUnit                          : Unit
+    PtUnit                         : Unit
+    EmUnit                         : Unit
+    PxUnit                         : Unit
+                                   : StyleExps -> StyleExpsTL
+    StyleExpsCS                    : List(StyleExp) -> StyleExpsTL
+    StyleExps                      : List(StyleExp) -> StyleExps
+    StyleCall                      : STYLEPROPID * List(StyleExps) -> StyleExp
+    StylePath                      : FILENAME * List(FILENAME) -> StyleExp
+    ImportData                     : Path -> StyleExp
+    StyleFieldAccess               : StyleVar * ID -> StyleExp
+    StyleMul                       : StyleExp * StyleExp -> StyleExp
+    StyleSub                       : StyleExp * StyleExp -> StyleExp
+    StyleAdd                       : StyleExp * StyleExp -> StyleExp
+                                   : StyleVar -> StyleExp
+    StylePropVal                   : STYLEID * StyleExp -> StyleExp
+    NumUnit                        : NUMBER * Unit -> StyleExp
+    Num                            : NUMBER -> StyleExp
+    String                         : STRING -> StyleExp
+    StyleId                        : STYLEID -> StyleExp
+    Color                          : COLOR -> StyleExp
+    StyleSelectorWithPseudoArg     : QId * STYLEPROPID * STYLEPROPID -> StyleSelector
+    StyleSelectorWithPseudo        : QId * STYLEPROPID -> StyleSelector
+    StyleSelector                  : QId -> StyleSelector
+    StyleElemRecover               : QId -> StyleElem
+    StyleMixinCall                 : QId * List(StyleExps) -> StyleElem
+    StyleProperty                  : STYLEPROPID * StyleExpsTL -> StyleElem
+    StyleVar                       : STYLEID -> StyleVar
+    StyleFArg                      : STYLEID -> StyleFArg
+                                   : EntityBodyDecl -> ExternalMemberDecl
+    ExternalSyncMethod             : List(MetaAnno) * ID * List(FArg) * Type -> ExternalMemberDecl
+    ExternalStaticSyncMethod       : List(MetaAnno) * ID * List(FArg) * Type -> ExternalMemberDecl
+    ExternalMethod                 : List(MetaAnno) * ID * List(FArg) * Type -> ExternalMemberDecl
+    ExternalStaticMethod           : List(MetaAnno) * ID * List(FArg) * Type -> ExternalMemberDecl
+                                   : String -> STYLEID
+                                   : String -> STYLEPROPID
+                                   : String -> COLOR
+    RegexId                        : RegexID -> RegexId
+                                   : String -> RegexID
+                                   : String -> ControlValue
+                                   : String -> FourHexValue
+                                   : String -> TwoHexValue
+                                   : String -> OctalValue
+                                   : String -> BackReference
+                                   : String -> Integer
+    DoubleQuote                    : QuotablePatternSymbol
+                                   : String -> QuotablePatternSymbol
+    Quoted                         : QuotablePatternSymbol -> AtomCharacter
+    Space                          : AtomCharacter
+    BackReference                  : BackReference -> AtomCharacter
+    EndInputFinalBoundry           : AtomCharacter
+    EndInputBoundry                : AtomCharacter
+    PrevMatchEndBoundry            : AtomCharacter
+    InputBeginBoundry              : AtomCharacter
+    NonWordBoundry                 : AtomCharacter
+    WordBoundry                    : AtomCharacter
+    ControlCharacter               : ControlValue -> AtomCharacter
+    NonDigitChar                   : AtomCharacter
+    DigitChar                      : AtomCharacter
+    NonWhiteSpaceChar              : AtomCharacter
+    WhiteSpaceChar                 : AtomCharacter
+    NonWordChar                    : AtomCharacter
+    WordChar                       : AtomCharacter
+    Escape                         : AtomCharacter
+    Alarm                          : AtomCharacter
+    Formfeed                       : AtomCharacter
+    Return                         : AtomCharacter
+    Newline                        : AtomCharacter
+    Tab                            : AtomCharacter
+    DecHexChar                     : FourHexValue -> AtomCharacter
+    HexHexChar                     : TwoHexValue -> AtomCharacter
+    OctalChar                      : OctalValue -> AtomCharacter
+    DoubleQuote                    : AtomCharacter
+    Quoted                         : QuotablePatternSymbol -> BracketCharacter
+    Space                          : BracketCharacter
+    BackReference                  : BackReference -> BracketCharacter
+    EndInputFinalBoundry           : BracketCharacter
+    EndInputBoundry                : BracketCharacter
+    PrevMatchEndBoundry            : BracketCharacter
+    InputBeginBoundry              : BracketCharacter
+    NonWordBoundry                 : BracketCharacter
+    WordBoundry                    : BracketCharacter
+    ControlCharacter               : ControlValue -> BracketCharacter
+    NonDigitChar                   : BracketCharacter
+    DigitChar                      : BracketCharacter
+    NonWhiteSpaceChar              : BracketCharacter
+    WhiteSpaceChar                 : BracketCharacter
+    NonWordChar                    : BracketCharacter
+    WordChar                       : BracketCharacter
+    Escape                         : BracketCharacter
+    Alarm                          : BracketCharacter
+    Formfeed                       : BracketCharacter
+    Return                         : BracketCharacter
+    Newline                        : BracketCharacter
+    Tab                            : BracketCharacter
+    DecHexChar                     : FourHexValue -> BracketCharacter
+    HexHexChar                     : TwoHexValue -> BracketCharacter
+    OctalChar                      : OctalValue -> BracketCharacter
+    DoubleQuote                    : BracketCharacter
+                                   : String -> Modifiers
+                                   : String -> AllChars
+                                   : String -> AtomLiteral
+                                   : String -> BracketLiteral
+    BracketCharacter               : BracketCharacter -> BracketItem
+    BracketLiteral                 : BracketLiteral -> BracketItem
+    Union                          : CharacterClass -> BracketItem
+    Range                          : BracketLiteral_BracketCharacter1 * BracketLiteral_BracketCharacter1 -> BracketItem
+    NegatedBracketList             : List(BracketItem) -> CharacterClass
+    BracketList                    : List(BracketItem) -> CharacterClass
+    QuotedAtom                     : AllChars -> Atom
+    AtomCharacter                  : AtomCharacter -> Atom
+    AtomLiteral                    : AtomLiteral -> Atom
+    CharacterClass                 : CharacterClass -> Atom
+    LineEnd                        : Atom
+    LineStart                      : Atom
+    SingleCharacter                : Atom
+    Empty                          : Atom
+    RegexCapture                   : Pattern * RegexId -> Atom
+    PythonCapture                  : RegexId * Pattern -> Atom
+    NegativeLookbehind             : Pattern -> Atom
+    PositiveLookbehind             : Pattern -> Atom
+    NegativeLookahead              : Pattern -> Atom
+    PositiveLookahead              : Pattern -> Atom
+    NonCapture                     : Pattern -> Atom
+    Capture                        : Pattern -> Atom
+    PossessiveOneOrMore            : Quantifier
+    PossessiveZeroOrMore           : Quantifier
+    PossessiveOnceOrNot            : Quantifier
+    PossessiveLowerUpperBound      : Integer * Integer -> Quantifier
+    PossessiveLowerBound           : Integer -> Quantifier
+    PossessiveExactBound           : Integer -> Quantifier
+    ReluctantOneOrMore             : Quantifier
+    ReluctantZeroOrMore            : Quantifier
+    ReluctantOnceOrNot             : Quantifier
+    ReluctantLowerUpperBound       : Integer * Integer -> Quantifier
+    ReluctantLowerBound            : Integer -> Quantifier
+    ReluctantExactBound            : Integer -> Quantifier
+    GreedyOneOrMore                : Quantifier
+    GreedyZeroOrMore               : Quantifier
+    GreedyOnceOrNot                : Quantifier
+    GreedyLowerUpperBound          : Integer * Integer -> Quantifier
+    GreedyLowerBound               : Integer -> Quantifier
+    GreedyExactBound               : Integer -> Quantifier
+    QuantifiedAtom                 : Atom * Quantifier -> Piece
+    SingleAtom                     : Atom -> Piece
+    Pieces                         : List(Piece) -> Branche
+    TupleBranch                    : Pattern * Pattern -> Pattern
+    SingleBranch                   : Branche -> Pattern
+    SetComp                        : LimitedExp * List(Filter) -> Exp
+    ImportData                     : Path -> Exp
+    AnonymousFunction              : List(FArg) * Type * List(Statement) -> Exp
+    AnonymousFunctionNoReturnType  : List(FArg) * List(Statement) -> Exp
+    AnonymousControl               : List(FArg) * List(ScreenElem) -> Exp
+    Callback                       : List(Statement) -> Exp
+    AsyncCall                      : List(Exp) -> Exp
+    Tuple                          : Exp * List(Exp) -> Exp
+    List                           : List(Exp) -> Exp
+    EntityCons                     : Type * List(PropVal) -> Exp
+    CollectionCons                 : QId * List(Type) * List(Exp) -> Exp
+    Choice                         : Exp * Exp * Exp -> Exp
+    BinMethodCall                  : Exp * OperatorMethodId * Exp -> Exp
+    BinMethodCall                  : Exp * TermOperatorMethodId * Exp -> Exp
+    BinMethodCall                  : Exp * CompareMethodId * Exp -> Exp
+    BinMethodCall                  : Exp * BoolMethodId * Exp -> Exp
+                                   : LimitedSetExp -> Exp
+    Not                            : Exp -> Exp
+    RegExp                         : Pattern * Modifiers -> Exp
+                                   : PropVal -> ResourceElem
+    Resource                       : List(MetaAnno) * ID * List(FArg) * Type * List(ResourceElem) -> ServiceElem
+                                   : PropVal -> ServiceElem
+    DecoratorAnno                  : Exp -> MetaAnno
+    PersistableAnno                : MetaAnno
+    WhenAnno                       : Exp -> MetaAnno
+    DocAnno                        : STRING -> MetaAnno
+    SocketEventAnno                : STRING -> MetaAnno
+    ServiceAnno                    : HttpMethod * UriPath -> MetaAnno
+    SyncEntityAnno                 : UriPath -> MetaAnno
+    InverseAnno                    : ID -> Anno
+    SimpleAnno                     : ID -> Anno
+                                   : FunctionDef -> EntityBodyDecl
+    PropertyNoAnnos                : List(MetaAnno) * ID * Type -> EntityBodyDecl
+    Property                       : List(MetaAnno) * ID * Type * List(Anno) -> EntityBodyDecl
+                                   : ControlDefinition -> Definition
+    Screen                         : List(MetaAnno) * QId * List(FArg) * Type * List(ScreenElem) -> Definition
+    ScreenNoReturnType             : List(MetaAnno) * QId * List(FArg) * List(ScreenElem) -> Definition
+                                   : Statement -> Definition
+    ModuleJavascriptFor            : QId * QId * JSModule -> Definition
+    JavascriptFor                  : QId * JSModule -> Definition
+    ModuleJavascript               : QId * JSModule -> Definition
+    Javascript                     : JSModule -> Definition
+    Mixin                          : QId -> Definition
+    Resource                       : Path -> Definition
+    Load                           : Path -> Definition
+    Import                         : QId -> Definition
+    DynamicImport                  : QId -> Definition
+    MiddlewareUse                  : Exp -> Definition
+    ExternalStyle                  : List(MetaAnno) * List(StyleSelector) -> Definition
+    StyleVarDecl                   : StyleVar * StyleExp -> Definition
+    StyleMixin                     : List(MetaAnno) * QId * List(StyleFArg) * List(StyleElem) -> Definition
+    Style                          : List(MetaAnno) * List(StyleSelector) * List(StyleElem) -> Definition
+    ExternalVarDecl                : QId * Type -> Definition
+    ExternalSyncFunction           : List(MetaAnno) * QId * List(FArg) * Type -> Definition
+    ExternalFunction               : List(MetaAnno) * QId * List(FArg) * Type -> Definition
+    ExternalEntity                 : List(MetaAnno) * QId * Type * List(EntityBodyDecl) -> Definition
+    ExternalScreen                 : List(MetaAnno) * QId * List(FArg) * Type -> Definition
+    ExternalControl                : List(MetaAnno) * QId * List(FArg) -> Definition
+    ExternalGenericType            : List(MetaAnno) * QId * List(ID) * List(ExternalMemberDecl) -> Definition
+    ExternalType                   : List(MetaAnno) * QId * Type * List(ExternalMemberDecl) -> Definition
+    ExternalTypeNoSuper            : List(MetaAnno) * QId * List(ExternalMemberDecl) -> Definition
+    Type                           : List(MetaAnno) * QId * Type * List(EntityBodyDecl) -> Definition
+    TypeNoSuper                    : List(MetaAnno) * QId * List(EntityBodyDecl) -> Definition
+    Service                        : List(MetaAnno) * QId * List(ServiceElem) -> Definition
+    EntityNoSuper                  : List(MetaAnno) * QId * List(EntityBodyDecl) -> Definition
+    Entity                         : List(MetaAnno) * QId * Type * List(EntityBodyDecl) -> Definition
+                                   : String -> STRING
+                                   : String -> NUMBER
+                                   : String -> FILENAME
+                                   : String -> HTMLID
+                                   : String -> ID
+
+
+signature
+  constructors
+    Some : a -> Option(a)
+    None : Option(a)
+
+
+signature
+  constructors
+    Cons : a * List(a) -> List(a)
+    Nil  : List(a)
+    Conc : List(a) * List(a) -> List(a)
