@@ -25,7 +25,7 @@ rules
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; completeEntities := <map(make-entity-with-properties)> filteredEntities   
+  			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties); debug(!"test2")> filteredEntities   
   			// ; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
   			; result := <map(entity-to-mobl-entity); make-valid-page-from-mobl-entities(|dirname)> completeEntities
   			  
@@ -40,7 +40,7 @@ rules //make page
 rules //lookup  			   
   
   make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)
-  	where	props := [VersionProperty1()|<all-properties> entityname]
+  	where	props := <concat> [[VersionProperty1()], <all-properties> entityname, <debug(!"test3")><bagof-ExtraInverseProperty> entityname]
   
   check-searchable-anno: property ->  SimpleAnno("searchable")
    	where 	<is-searchable-prop> property  
@@ -52,7 +52,46 @@ rules //lookup
   	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where 	<get-property-type; ?GenericSort(_,_)> property
     		; (otherEnity, otherprop) := <InverseProperty> (class, <get-property-name> property)
+  
+ check-inverse-anno(|class): property ->  anno
+  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where 	<get-property-type; ?GenericSort(_,_)> property
+    		; propname := <get-property-name> property
+   			; anno := <ExtraInverseAnno> (class, propname)
+    where not	(<InverseProperty> (class, propname))
+   
 
+rules //generation
+	
+  generate-extra-properties-for-collections: entityname -> entityname
+	where	props := <all-properties> entityname
+			; propswithoutinvers := <filter(generic-type-has-no-inverse-anno(|entityname))>
+			; map(declare-extra-prop(|entityname))
+
+  generic-type-has-no-inverse-anno(|class): property ->  property
+  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where 	<get-property-type; ?GenericSort(_,_)> property
+    		; propname := <get-property-name> property
+    where not	(<InverseProperty> (class, propname))
+    
+  declare-extra-prop(|class): property -> property
+  	where 	entity := <get-property-type; srt-to-type> property
+  			; propertyname := <get-property-name> property
+  			; newProperty := <generate-inverse-property(|class)> property
+  			; newPropertyName := <get-property-name> newProperty
+  			; rules(
+  				ExtraInverseProperty:+ entity -> newProperty
+  				ExtraInverseAnno: (class, propertyname) -> InverseAnno(newPropertyName)
+  			)
+  
+   generate-inverse-property(|class): property	-> PropertyNoAnno(name, Ref() , SimpleSort(class))
+    where 	proptype := <get-property-type; ?GenericSort("Set", _)> property
+    		; name := $[generatedPropertyForInverse_[class]_[<get-property-name> property]] 
+   
+   // generate-inverse-property(|class): property	-> PropertyNoAnno(name, Ref() , GenericSort("List", SimpleSort(class)))
+   //  where 	proptype := <get-property-type; ?GenericSort("List", _)> property
+   //  		; name := $[generatedPropertyForInverse_[class]_[<get-property-name> property]] 
+   //  		  
 rules //transform 
 
   entity-to-mobl-entity: EntityNoSuper(name, props) -> moblEntity
@@ -79,8 +118,7 @@ rules //transform
   			; anno'' := [< check-inverse-anno <+ check-inverse-anno(|class) <+ !None()> property|anno*]
   			; result := <filter(not(?None()))>
   			; length; int-gt(|0) 
- 
- 
+    
 rules // type transformations  	
   type-to-mobl-type : SimpleSort(type) -> SimpleType("String")
    	where 	<fetch(?type)> ToMoblStringTypes
