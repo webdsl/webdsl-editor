@@ -1278,10 +1278,10 @@
    LengthAnno  -- KW["length="] _1,
    FormatAnno  -- KW["format="] _1,
 
-   NativeClass -- KW["native"] KW["class"] _1 _2 _3 KW["{"] _4 KW["}"],
+   NativeClass -- H[ KW["native"] KW["class"] _1 _2 _3 ] KW["{"] V is=2[ _4] KW["}"],
    NativeClassAlias -- KW["as"] _1,
    NativeClassProperty -- _1 KW[":"] _2,
-   NativeClassFunction -- _1 _2 KW["("] _3 KW[")"] _4,
+   NativeClassFunction --H[ _1 _2 KW["("] _3 KW[")"] _4],
    NativeClassFunctionReturn -- KW[":"] _1,
    NativeClassConstructor -- KW["constructor"] KW["("] _1 KW[")"],
    NativeClassSuper -- KW[":"] _1,
@@ -1533,7 +1533,7 @@
    NativeClassFunction.3:iter-star-sep                    -- _1 KW[","],
    NativeClass.4:iter-star                                -- _1,
    ServiceFunction.2:iter-star-sep                        -- _1 KW[","],
-   ServiceFunction                                        -- KW["service"] _1 KW["("] _2 KW[")"] _3,
+   ServiceFunction                                        -- V[ H[KW["service"] _1 KW["("] _2 KW[")"]] _3],
    ServiceFunction.2:iter-star-sep                        -- _1 KW[","]
 
 ]
