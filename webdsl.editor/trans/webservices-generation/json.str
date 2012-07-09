@@ -21,7 +21,7 @@ rules //builder
   generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> None()
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-  	where	dirname := ".webservices/json"
+  	where	dirname := "webservices/json"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
