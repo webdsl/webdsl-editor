@@ -14,8 +14,6 @@ imports
   	util
   	lib/-
 
-
-	
 rules //builder
 	
   generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> None()
@@ -40,7 +38,7 @@ rules// lookup
   	where 	props1 := <concat> [<all-properties> entityName, AllEntityProperties1()]
   			; props* := <filter(get-arguments; Hd; ?"name"); length; ?2; !props1; filter(not(NameProperty1())) <+ id> props1 //check for overwriting of nameProperty
   			  
-rules//file generation
+rules//file generation 
 	
 	props-to-jsonfile(|dirname): t@(name,props) -> t
   	with	<file-exists> $[[<project-path>]/[dirname]]

@@ -73,6 +73,10 @@ rules // file IO
 	with 	text := <pp-webdsl-string> ast //todo: changeback to pp from compiler  
 	  		; <text-to-file(|filename)> text
   
+  make-valid-page-from-defs(|moduleName): defs -> page
+  	where 	<is-list> defs
+  			; page := ModuleDefs(moduleName, defs, [])
+  			  
   create-dir-in-workspace : dirname -> dirname
      with 	dirs := <string-tokenize(|['/'])> dirname
      		; base := <split-init-last; Fst; separate-by(|"/"); concat-strings> dirs

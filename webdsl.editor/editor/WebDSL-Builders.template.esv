@@ -47,7 +47,7 @@ builders
   builder   : "Generate JSON Functions"			  = generate-json-functions-for-entities
   builder   : "Show model tree"			  		  = make-model-tree (openeditor)
   builder   : "Generate Mobl model"				  = generate-mobl-model (openeditor)
-  
+  builder	: "Generate Webservices"			  = generate-webservices (openeditor)
 //  pretty-print : pp-webdsl-to-string
 
 //  refactoring : "Rename Entity" = rename-entity /*(source)*/ (cursor)

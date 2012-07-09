@@ -2,13 +2,47 @@ module webservices-generation/overlays
 
 imports
 	  	lib/-
-overlays
+	  	include/-
+overlays// super properties
 	AllEntityProperties1 =    [VersionProperty1(), IdProperty1(), NameProperty1()]    
 	
 	IdProperty1 =    Property("id", Simple(), SimpleSort("UUID"), []){IsGeneratedProperty()}  
 	VersionProperty1 =    Property("version", Simple(), SimpleSort("Int"), []){IsGeneratedProperty()}  
 	NameProperty1 =    DerivedProperty("name", Simple(), SimpleSort("String"), [], []){IsGeneratedProperty()}
-	
+
+overlays// mobl stuff		
 	ToMoblStringTypes = ["String", "Email", "UUID", "Text", "WikiText", "URL", "Time", "Date"]
 	ToMoblNumTypes = ["Float", "Int", "Long"]
 	ToMoblForbiddenTypes = ["Secret", "Patch", "Image", "File"]
+	
+overlays//forward/redirect code
+	NativeClassDispatchServletHelper =
+		NativeClass(
+	      	"DispatchServletHelper"
+	    	, NativeClassAlias("DispatchServletHelper")
+	    	, NativeClassSuper("DispatchServlet")
+	    	, [ NativeClassFunction(None(), "getResponse", [], NativeClassFunctionReturn(NativeSimpleType("HttpServletResponse")))
+	      		, NativeClassFunction(None(), "forwardRequest", [NativeSimpleType("String")], None())
+	      		, NativeClassFunction(NativeClassFunctionStatic(), "get", [], NativeClassFunctionReturn(NativeSimpleType("DispatchServlet")))
+	      	]
+	    )
+rules//
+	GetDispatchServletHelper =
+		!Function(
+	     	"getDispatchServletHelper"
+	    	, []
+	    	, SimpleSort("DispatchServletHelper")
+	    	, Block(
+	        	[ VarDeclInitInferred("servlet", Call(Var("DispatchServletHelper"), "get", []))
+	        	, If(
+	            	IsA(Var("servlet"), SimpleSort("DispatchServletHelper"))
+	          		, Block([Return(Cast(Var("servlet"), SimpleSort("DispatchServletHelper")))])
+	          		, Block([Return(Null())])
+	          	)
+	        	]
+	      	)
+	    )
+overlays//  prefix
+	
+	ServicePrefix = "webservice_generated_"
+		
