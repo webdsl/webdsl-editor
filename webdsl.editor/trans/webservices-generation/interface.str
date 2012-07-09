@@ -71,5 +71,6 @@ rules// generation
     					, VarDeclInitInferred("message", String("This is a test service"))
     					, Stat(Call( Var("json"), "put", [String("errors"), Var("errors")]))
     					, Stat(Call( Var("json"), "put", [String("result"), Var("message")]))
+    					, Return(Var("json"))
    	 			]))	   
     
