@@ -45,4 +45,12 @@ rules//
 overlays//  prefix
 	
 	ServicePrefix = "webservice_generated_"
-		
+
+overlays // service init and exit
+	
+	InitService =  	[VarDeclInitInferred("json", ThisCall("JSONObject", []))
+    				, VarDeclInitInferred("errors", ThisCall("JSONArray", []))]		
+rules	
+ 	ExitService = 	![Stat(Call( Var("json"), "put", [String("errors"), Var("errors")]))
+    				, Stat(Call( Var("json"), "put", [String("result"), Var("result")]))
+    				, Return(Var("json"))]
