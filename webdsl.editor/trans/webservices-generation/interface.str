@@ -11,6 +11,7 @@ imports
 	
 	webservices-generation/overlays
 	webservices-generation/mobl/mapper
+	webservices-generation/mobl/sync-services
 		 
   	util 
   	lib/-
@@ -26,9 +27,11 @@ rules
   	where	dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
   			; make-mobl-mapper-for-all-entities  
-  			; TopEntity := <collect-one(\DeriveWebServices(name)->name\)> ast  
+  			; TopEntity := <collect-one(\DeriveWebServices(name)->name\)> ast
+  			
   			; TL := <generate-top-level-webservice>
-  			; testservice :=  <generate-test-webservice>   
+  			; testservice :=  <generate-test-webservice>  
+  			; <generate-mobl-services> TopEntity   
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>]
 			; defs' := <concat> [modules, defs]

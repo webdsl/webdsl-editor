@@ -18,7 +18,7 @@ rules
   			  	make-valid-page-from-mobl-defs(|dirname, "mapper")>filteredEntities
   			; module-to-moblfile(|dirname, "mapper")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
-		
+		 
  
   make-mobl-mapper-for-entity: name -> mapper
 	where 	mapper :=	

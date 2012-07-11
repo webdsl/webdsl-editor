@@ -1,0 +1,36 @@
+module webservices-generation/mobl/sync-services
+imports 
+	  	lib/mobl/MoBL
+  		lib/mobl/editor-common.generated 
+  		webservices-generation/mobl/model-to-mobl
+     
+  	  	util 
+	  	lib/-
+rules 
+	
+  generate-mobl-services: TopLevelEntity -> TopLevelEntity
+	where  dirname := "webservices/mobl"
+  			; <create-dir-in-workspace> dirname  
+  			// ; entities := <all-keys-EntDecl> None()	  
+  			// ; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; <generate-mobl-top-level-service> TopLevelEntity
+  			; result := <bundle-services; 
+  			  	add-elem-to-list(|Import(QId(QId("webservices", "mobl"), "mapper"))); 
+  			  	make-valid-page-from-mobl-defs(|dirname, "sync")> dirname
+  			; module-to-moblfile(|dirname, "sync")
+  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+	
+
+  bundle-services: x -> result
+ 	where 	resources := <bagof-ServiceMobl>None()
+ 			;result := [Service([], "Sync", resources)]
+
+  generate-mobl-top-level-service: entityname -> entityname
+  	where 	service := 
+  				Resource([], "getTopLevelEntities", [], SimpleType("void"), 
+	  				[ PropVal("uri", String("\"/webservices/getTopLevelEntities\""))
+	          		, PropVal("method", String("\"PUT\""))
+	          		, PropVal("data", Call(QId("mobl", "JSON"), []))
+	          		, PropVal("mapper", Var($[[entityname]Mapper]))
+          		])
+          	; rules (ServiceMobl:+= service)
