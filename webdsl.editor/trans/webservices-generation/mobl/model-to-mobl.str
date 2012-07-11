@@ -1,4 +1,4 @@
-module webservices-generation/model-to-mobl
+module webservices-generation/mobl/model-to-mobl
 
 imports
 	fact-extraction/datalog

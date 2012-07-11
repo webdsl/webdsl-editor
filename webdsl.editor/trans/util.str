@@ -102,8 +102,10 @@ rules // check for builtin-entities
      		  	"ValidationExceptionMultiple"
      		  ]
      		; <fetch(?name)> builtin-entities  
-rules
-  
+rules //helper 
+	add-elem-to-list(|elem): list -> [elem | list]
+		where <is-list> list
+rules 
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
     with

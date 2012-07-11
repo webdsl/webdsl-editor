@@ -1,0 +1,34 @@
+module webservices-generation/mobl/mapper
+imports 
+	  	lib/mobl/mobl
+  		lib/mobl/editor-common.generated 
+  		webservices-generation/mobl/model-to-mobl
+     
+  	  	util 
+	  	lib/-
+rules 
+	
+  make-mobl-mapper-for-all-entities: x-> x
+  	where	dirname := "webservices/mobl"
+  			; <create-dir-in-workspace> dirname  
+  			; entities := <all-keys-EntDecl> None()	  
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; result := <map( make-mobl-mapper-for-entity); 
+  			  	add-elem-to-list(|Import(QId(QId("webservices", "mobl"), "model"))); 
+  			  	make-valid-page-from-mobl-defs(|dirname, "mapper")>filteredEntities
+  			; module-to-moblfile(|dirname, "mapper")
+  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+		
+ 
+  make-mobl-mapper-for-entity: name -> mapper
+	where 	mapper :=	
+				Function([] , $[[name]Mapper]
+    				, [FArg("json", SimpleType("JSON"))]
+    				, SimpleType("void")
+    				, [ If( FieldAccess(Var("json"), "errors"), 
+    				  	Block([ ExpStat(Call("log", [FieldAccess(Var("json"), "errors")]))])
+        				, Block(
+        				  	[For( "json", SimpleType("JSON"), Var("json")
+              					, [ ExpStat( MethodCall( Var(name), "fromSelectJSON", [Var("json")]))]
+             	 )]))])
+             	 

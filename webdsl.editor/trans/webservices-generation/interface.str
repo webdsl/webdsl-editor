@@ -10,6 +10,7 @@ imports
   	entity-extraction/generate-entity-files
 	
 	webservices-generation/overlays
+	webservices-generation/mobl/mapper
 		 
   	util 
   	lib/-
@@ -24,6 +25,7 @@ rules
         	  
   	where	dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
+  			; make-mobl-mapper-for-all-entities  
   			; TopEntity := <collect-one(\DeriveWebServices(name)->name\)> ast  
   			; TL := <generate-top-level-webservice>
   			; testservice :=  <generate-test-webservice>   
@@ -43,19 +45,16 @@ rules// generation
 	where 	services := <bagof-Service>
 			; services' := <map(\x -> String(x)\)> services
 		  	; function := 
-		  	  	Function("getAvialableServices", [], GenericSort("List", [SimpleSort("String")])
+		  	  	Function("getAvialableServices", [], GenericSort("Set", [SimpleSort("String")])
     				, Block(
-        			[Return(ListCreation(services'))]
+        			[Return(SetCreation(services'))]
       		))
       		
   generate-interface-service: x -> service
   	where 	service := 
   				ServiceFunction("webservices", [Arg("service", SimpleSort("String"))]
     			, Block(
-       				[ If(
-            			LargerThanOrEqual(
-              				Call(ThisCall("getAvialableServices", []), "indexOf", [Var("service")]), Int("0")
-            			)
+       				[ If( InColl(Var("service"), ThisCall("getAvialableServices", []))
           				, Block([ Stat( Call( ThisCall("getDispatchServletHelper", []), "forwardRequest"
                   			, [Add(Add(String($[/[ServicePrefix()]]), Var("service")), String("/"))]
                  		))])

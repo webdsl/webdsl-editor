@@ -16,9 +16,9 @@ imports
  
   webservices-generation/json
   webservices-generation/model-tree
-  webservices-generation/model-to-mobl 
+  webservices-generation/mobl/model-to-mobl 
   webservices-generation/interface
-  webservices-generation/mapper
+
 signature constructors
   FILE : Term -> Term
   
