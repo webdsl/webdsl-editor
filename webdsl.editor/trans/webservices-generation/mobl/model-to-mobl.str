@@ -10,7 +10,7 @@ imports
   	util 
   	lib/-
   	
-  	lib/mobl/mobl
+  	lib/mobl/MoBL
   	lib/mobl/editor-common.generated
   	
   	entity-extraction/generate-entity-pages

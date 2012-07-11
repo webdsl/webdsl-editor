@@ -1,10 +1,10 @@
 module webservices-generation/mobl/mapper
 imports 
-	  	lib/mobl/mobl
+	  	lib/mobl/MoBL
   		lib/mobl/editor-common.generated 
   		webservices-generation/mobl/model-to-mobl
      
-  	  	util 
+  	  	util  
 	  	lib/-
 rules 
 	
