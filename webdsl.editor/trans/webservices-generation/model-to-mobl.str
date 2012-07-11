@@ -26,7 +26,7 @@ rules
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties)> filteredEntities   
-  			; result := <map(entity-to-mobl-entity); make-valid-page-from-mobl-entities(|dirname)> completeEntities
+  			; result := <map(entity-to-mobl-entity); make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
   			; module-to-moblfile(|dirname, "model")
   			; <refresh-workspace-file> $[[project-path]/[dirname]]   
   			  
@@ -41,11 +41,6 @@ rules // file stuff
   			; filename := $[[<project-path>]/[dirname]/[file].mobl]
 	  		; <write-mobl-ast-to-file(|filename)> mod  
 	  		  
-rules //make page
-	
-  make-valid-page-from-mobl-entities(|dirname) : entities -> page
-  	where 	page := Module($[[<string-replace(|"/", "::")> dirname]::model], entities)
-  
 rules //lookup  			   
   
   make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)

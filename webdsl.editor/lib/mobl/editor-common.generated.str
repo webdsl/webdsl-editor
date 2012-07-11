@@ -37,9 +37,12 @@ strategies
 rules
 	
 	write-mobl-ast-to-file(|filename) : ast -> ast
-	with 	text := <pp-mobl-string> ast 
-	  		; <text-to-file(|filename)> text
+		with 	text := <pp-mobl-string> ast 
+	  			; <text-to-file(|filename)> text
   
+	make-valid-page-from-mobl-defs(|dirname, modname) : defs -> page
+  		where 	<is-list> defs
+  				; page := Module($[[<string-replace(|"/", "::")> dirname]::[[modname]]], defs)
   /**
    * Processes an import during semantic analysis.
    * Ensures proper caching of files and prevents

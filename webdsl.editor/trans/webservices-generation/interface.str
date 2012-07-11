@@ -14,23 +14,29 @@ imports
   	util 
   	lib/-
 
-rules 
+overlays
+	DirServices = "webservices/services"
+rules
+	 
   generate-webservices: (selected, position, ast@Application(_, _), path, project-path) -> None()
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         	  
-  	where	dirname := "webservices/services"
+  	where	dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
   			; TopEntity := <collect-one(\DeriveWebServices(name)->name\)> ast  
-  			// ; tL := <generate-top-level-webservice>
-  			; testservice :=  <generate-test-webservice>
-  			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>, testservice]
-			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs
+  			; TL := <generate-top-level-webservice>
+  			; testservice :=  <generate-test-webservice>   
+  			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
+  			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>]
+			; defs' := <concat> [modules, defs]
+			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
 			; <write-ast-to-file(|$[[dirname]/interface.app])> result
 			  	
   generate-webservices: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
 	where not (<?Application(_, _)> ast)
 	where fatal-err-msg(|"This builder is only supported on the application file")
+	
 rules// generation
 	
   generate-available-services-function: x -> function
@@ -75,28 +81,21 @@ rules// generation
    	 			))
   generate-test-webservice: x -> service
   	where 	service := <generate-service(|"test")> [VarDeclInitInferred("result", String("This is a test service"))]
+  			; service-to-file(|"test") 
   	
-//   generate-top-level-webservice: TopEntity -> service
-//   	where 	rules (Service:+= "getTopLevelEntities")
-//   		    ; service := 
-//   		      	ServiceFunction($[[ServicePrefix]getTopLevelEntities, []
-// 					, Block(
-//     					[ VarDeclInitInferred("json", ThisCall("JSONObject", []))
-//     					, VarDeclInitInferred("errors", ThisCall("JSONArray", []))
-//     					, VarDeclInitInferred("result", ThisCall("JSONArray", []))
-//     					, ForStmtNoFilter("ent", SimpleSort(TopEntity), Call(Var(TopEntity), "all", [])
-//       						, Block(
-//           						[ Stat(Call(Var("result"), "put", [Call(Var("ent"), "toSimpleJSON", [])]    				
-//               			))]))
-//     					, Stat(Call(Var("json"), "put", [String("errors"), Var("errors")]))
-//     , Stat(
-//         Call(
-//           Var("json")
-//         , "put"
-//         , [String("\"result\""), Var("message")]
-//         )
-//       )
-//     ]
-//   )
-// )
-//   		      	
+  generate-top-level-webservice: TopEntity -> service
+  	where	varname := <new> "ent"
+  	where 	body := [VarDeclInitInferred("result", ThisCall("JSONArray", []))
+    				, ForStmtNoFilter(varname, SimpleSort(TopEntity), Call(Var(TopEntity), "all", [])
+      					, Block(
+          					[ Stat(Call(Var("result"), "put", [Call(Var(varname), "toSimpleJSON", [])]))]
+          				))
+              		]
+            ; service := <generate-service(|"getTopLevelEntities")> body
+        	; service-to-file(|"getTopLevelEntities") 
+        	     
+  service-to-file(|name): service -> service
+  	where 	modname := $[[DirServices()]/[name]]
+  			; ast := <make-valid-page-from-defs(|modname)>[service]
+  			; write-ast-to-file(|$[[modname].app])
+  	// where ast 		  	      	
