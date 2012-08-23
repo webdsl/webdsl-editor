@@ -25,7 +25,7 @@ rules //builder
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
   			; result:= <map(props-to-jsonfile(|dirname))> properties
-  			; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
+  			; <main-file-to-file(generate-main-model-file(|dirname, [<MakeJSONFromRefFunction>None()])|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
   generate-json-functions-for-entities: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
@@ -132,7 +132,7 @@ rules//type transformation
                           											, [Call(Var("DateType"), "getDefaultDateFormat", [])]
                           										)]                      											 
  	
- 	exp-to-value-statement: (exp, type) -> [FieldAccess(exp, "id")]
+ 	exp-to-value-statement: (exp, type) -> [ThisCall("makeJSONObjectFromEntityRef", [exp])]
  		where <is-entity-type> type
  	
  	exp-to-value-statement: (exp, GenericSort(_, _)) -> [exp]

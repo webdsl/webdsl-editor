@@ -21,7 +21,7 @@ rules //builder
   			; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
   			; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
   			; <map(entity-to-file(|dirname))> cleanedEntities
-  			; <main-file-to-file(generate-main-model-file|dirname)> filteredEntities  
+  			; <main-file-to-file(generate-main-model-file(|dirname, [])|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
 generate-entity-files: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
@@ -44,15 +44,15 @@ rules // file stuff
 	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
 	  		   ; write-ast-to-file(|filename)> e  
 	  		    
- generate-main-model-file(|moduleName): entitynames -> mainAST
+ generate-main-model-file(|moduleName, extradefs): entitynames -> mainAST
    where 	sortednames := <string-sort> entitynames
    			; modules := <map(\entityName ->Imports( $[[moduleName]/[entityName]] )\)> sortednames
-   			; mainAST := ModuleDefs($[[moduleName]/main], [modules], [])
+   			; mainAST := ModuleDefs($[[moduleName]/main], <concat>[modules, extradefs], [])
   
  main-file-to-file(main-genaration|dirname): entitynames -> entitynames
   where		<file-exists> $[[<project-path>]/[dirname]]
   			; filename := $[[<project-path>]/[dirname]/main.app]
-	  		; <main-genaration(|dirname)
+	  		; <main-genaration
 	  		  ; write-ast-to-file(|filename)> entitynames
 	  		       			  
 rules //entity manipulation

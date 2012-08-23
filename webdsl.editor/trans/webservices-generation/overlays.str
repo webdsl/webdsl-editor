@@ -54,3 +54,12 @@ rules
  	ExitService = 	![Stat(Call( Var("json"), "put", [String("errors"), Var("errors")]))
     				, Stat(Call( Var("json"), "put", [String("result"), Var("result")]))
     				, Return(Var("json"))]
+    				  
+rules // for json
+	
+	MakeJSONFromRefFunction = 	
+		!Function("makeJSONObjectFromEntityRef", [Arg("ent", SimpleSort("Entity"))], SimpleSort("JSONObject")
+			, Block(
+    			[ VarDeclInitInferred("json", ThisCall("JSONObject", []))
+    			, Stat(Call(Var("json"), "put", [String("id"), FieldAccess(Var("ent"), "id")]))
+    			, Return(Var("json"))]))

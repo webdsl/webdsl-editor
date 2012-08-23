@@ -12,6 +12,7 @@ imports
 	webservices-generation/overlays
 	webservices-generation/mobl/mapper
 	webservices-generation/mobl/sync-services
+	webservices-generation/sync-services
 		 
   	util 
   	lib/-
@@ -31,7 +32,8 @@ rules
   			; make-mobl-mapper-for-all-entities  
   			; TL := <generate-top-level-webservice>
   			; testservice :=  <generate-test-webservice>  
-  			; generate-mobl-services   
+  			; generate-mobl-services
+  			; generate-sync-services   
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>]
 			; defs' := <concat> [modules, defs]
@@ -81,6 +83,7 @@ rules// generation
 					, Block(
 					  	body'
    	 			))
+   	 			
   generate-test-webservice: x -> service
   	where 	service := <generate-service(|"test")> [VarDeclInitInferred("result", String("This is a test service"))]
   			; service-to-file(|"test") 

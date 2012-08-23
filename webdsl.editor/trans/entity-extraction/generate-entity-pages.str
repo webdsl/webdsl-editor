@@ -75,7 +75,7 @@ rules //page stuf
 rules //main page
 	
  generate-main-page-file(|moduleName): entitynames -> mainAST
-   where 	 <generate-main-model-file(|moduleName); ?ModuleDefs(_, modules, _)> entitynames
+   where 	 <generate-main-model-file(|moduleName, []); ?ModuleDefs(_, modules, _)> entitynames
    			; sortednames := <string-sort> entitynames
    			; entitylinks := <map(enityname-to-pagelink; pagelink-to-par)> sortednames
    			; page := DefinePage([], "showEntities", [], None(), 

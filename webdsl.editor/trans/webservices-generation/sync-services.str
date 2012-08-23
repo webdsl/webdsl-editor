@@ -1,0 +1,32 @@
+module webservices-generation/sync-services
+imports 
+    	webservices-generation/interface
+  	  	util 
+	  	lib/-
+rules 
+	
+  generate-sync-services: x -> x
+	where 	entities := <all-keys-EntDecl> None()	  
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; <map(generate-sync-service)> filteredEntities
+   
+	
+  generate-sync-service: entityname -> entityname
+  	where 	name := $[sync[entityname]]  
+  			; body := 
+  			  		[ VarDeclInitInferred("request", ThisCall("JSONArray", [ThisCall("readRequestBody", [])]))
+					, VarDeclInitInferred("result", ThisCall("JSONArray", []))
+    				, ForCountStmt("count", Int("0"), Call(Var("request"), "length", [])
+      					, Block([ Stat( Call( Var("result"), "put", [ Call(
+                    		Cast( 
+                    			ThisCall( "loadEntity", [ String(entityname), 
+                    			Call(
+                    				Call(
+	                    				Call(Var("request"), "getJSONObject", [Var("count")])
+	                    				, "getString"
+	                            		, [String("id")])
+	                            	, "parseUUID", [])])
+                    			, SimpleSort(entityname))
+                  			, "toJSON", [])]))]))]
+            ; service := <generate-service(|name)> body
+        	; service-to-file(|name) 
