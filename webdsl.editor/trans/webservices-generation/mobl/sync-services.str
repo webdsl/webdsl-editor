@@ -2,9 +2,11 @@ module webservices-generation/mobl/sync-services
 imports 
 	  	lib/mobl/MoBL
   		lib/mobl/editor-common.generated 
+  		
   		webservices-generation/mobl/model-to-mobl
   		webservices-generation/mobl/unsynced-functions
-     
+     	webservices-generation/model-tree
+  	  	
   	  	util 
 	  	lib/-
 rules 
@@ -17,12 +19,14 @@ rules
   			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity))> None()	
   			; <map(generate-mobl-sync-service)> entities
   			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
+  			; totalsyncfunction := <generate-mobl-total-sync-function>  
   			; service := <bundle-services> None()
-  			; result := <concat> [[Import(QId(QId("webservices", "mobl"), "mapper")), Import(QId(QId("webservices", "mobl"), "model"))], service, syncfunctions]
+  			; imports :=   [Import(QId(QId("webservices", "mobl"), "mapper")), Import(QId(QId("webservices", "mobl"), "model")), Import(QId(QId("webservices", "mobl"), "unsync"))]
+  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction]]
   			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
   			; module-to-moblfile(|dirname, "sync")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
-	
+	 
 
   bundle-services: x -> result
  	where 	resources := <bagof-ServiceMobl>None()
@@ -67,15 +71,42 @@ rules // generation of sync-functions
  	where topEntity := <TopEntity; Fst>
  	where not( <?topEntity> entity )
  	where	statement := 
- 				ExpStat(MethodCall(Var("Sync"), $[sync[entity]]
+ 	 			ExpStat(MethodCall(Var("Sync"), $[sync[entity]]
       				, [ MethodCall( MethodCall(Var(entity), "all", [])
           				, "selectJSON", [List([String("\"id\""), String("\"version\"")])])]))
  
  get-all-mobl-objects-of-entity-statement: entity -> statement
  	where	topEntity := <TopEntity; Fst>
  			; <?topEntity> entity
- 	 		; statement := 
+ 	 		; statement :=  
  				 ExpStat(MethodCall( Var("Sync"), $[sync[entity]]
 				  	, [ MethodCall(MethodCall( MethodCall(Var(entity), "all", [])
 				        , "filter", [String("\"sync\""), String("\"=\""), String("\"true\"")])
 				      	, "selectJSON", [List([String("\"id\""), String("\"version\"")])])]))
+	
+ generate-mobl-total-sync-function:	x -> function
+ 	where 	calls := <Fst; generate-list-sync-calls> <TopEntity>
+ 			; statements := <concat> [ [VarDeclInferred("begin", Call("now", []))], 
+ 										calls, 
+ 										[ExpStat(
+     										Call("log", [ BinMethodCall(String("\"totaltime:\""), "+"
+          										, MethodCall(Brackets(BinMethodCall(Brackets(BinMethodCall(
+          					  						Call("now", []), "-", Var("begin"))), "/", Num("1000"))), "toString", []))]))]
+ 								  	 ] 
+ 			; function := 
+ 			  	FunctionNoReturnType([], "syncAll" , [], statements) 		      	  
+   
+ generate-list-sync-calls: TopEntity -> list
+ 	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); uniq> TopEntity
+ 			; while := While(Not(Var("allsynced")), <map(make-unsynced-check); add-elem-to-list(|Assignment("allsynced", True()))> orderedentities )
+ 			; list := <concat>[<map(make-sync-call)> orderedentities,[VarDeclInferred("allsynced", False()), while]]
+ 
+ make-sync-call: entityname -> call
+ 	where call := ExpStat(Call($[syncAll[entityname]], []))
+ 	
+ make-unsynced-check: entityname -> check 
+ 	where check := IfNoElse(Call($[nrUnsynced[entityname]], []) , 
+ 		Block([ExpStat(Call($[syncUnsynced[entityname]], [])), Assignment("allsynced", False())]))
+ 	 
+ 
+
