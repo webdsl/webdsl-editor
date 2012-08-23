@@ -15,18 +15,23 @@ imports
   	
   	entity-extraction/generate-entity-pages
   	webservices-generation/overlays
+  	webservices-generation/mobl/simple-view 
  
 rules 
 
   generate-mobl-model: (selected, position, ast@Application(_, _), path, project-path) -> None()
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-  	where	dirname := "webservices/mobl"
-  			; <create-dir-in-workspace> dirname 
+  	where	
+  			 topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  			; rules (TopEntity := topEntity )
+  			; dirname := "webservices/mobl"
+  			; <create-dir-in-workspace> dirname
+  			; <Fst; generate-top-level-SyncProperty> topEntity 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties)> filteredEntities   
-  			; result := <map(entity-to-mobl-entity); make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
+  			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties)> filteredEntities 
+  			; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
   			; module-to-moblfile(|dirname, "model")
   			; <refresh-workspace-file> $[[project-path]/[dirname]]   
   			  
@@ -44,11 +49,13 @@ rules // file stuff
 rules //lookup  			   
   
   make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)
-  	where	props := <concat> [[VersionProperty1()], <all-properties> entityname, <bagof-ExtraInverseProperty> entityname]
+  	where	props := <concat> [[VersionProperty1()], <all-properties> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
   
   check-searchable-anno: property ->  SimpleAnno("searchable")
    	where 	<is-searchable-prop> property  
-  
+  			; <get-property-type; ?SimpleSort(type)> property
+  			; <fetch-elem(?type)> ToMoblStringTypes()  
+  			  
   check-inverse-anno: Property(_, _, _, annos) ->  InverseAnno(name)
     where	<fetch-elem(?InverseAnno(_, name))> annos
     
@@ -88,6 +95,10 @@ rules //generation
   				ExtraInverseAnno: (class, propertyname) -> InverseAnno(newPropertyName)
   			)
   
+   generate-top-level-SyncProperty: entityname -> entityname
+   	where	property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
+   			; rules( ExtraProperty:+ entityname -> property)
+   
    generate-inverse-property(|class): property -> PropertyNoAnno(name, Ref() , SimpleSort(class))
     where 	proptype := <get-property-type; ?GenericSort("Set", _)> property
     		; name := $[generatedPropertyForInverse_[class]_[<get-property-name> property]] 

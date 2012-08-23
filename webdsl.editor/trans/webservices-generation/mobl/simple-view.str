@@ -1,0 +1,129 @@
+module webservices-generation/mobl/simple-view
+imports 
+	  	lib/mobl/MoBL
+  		lib/mobl/editor-common.generated 
+  		webservices-generation/mobl/model-to-mobl
+     
+  	  	util  
+	  	lib/-
+rules 
+	
+  make-mobl-model-viewers: moblentities-> moblentities
+  	where	dirname := "webservices/mobl"
+  			; <create-dir-in-workspace> dirname  
+  			// ; entities := <all-keys-EntDecl> None()	  
+  			// ; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; templates := <SimpleViewStandaardDefs> None()
+  			; views := <map(make-simple-view-for-mobl-entity)> moblentities
+  			; defs := <concat>[templates, views]
+  			; result :=  < make-valid-page-from-mobl-defs(|dirname, "simpleView")> defs
+  			; module-to-moblfile(|dirname, "simpleView")
+  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+
+rules 
+	
+  make-simple-view-for-mobl-entity: EntityNoSuper(_, name, props) -> result
+	where 	properties := <add-elem-to-list(|IdMoblProperty()); filter(mobl-property-to-view)> props
+			; result := 
+				Control([], $[show[name]Simple], [FArg(ArgumentVarName(), SimpleType(name))]
+				, [ ControlCall( Var("header"), [String($["[name]"])]
+	    			, [ ControlCallNoBody( Var("backButton"), [ String("\"back\"") 
+	          			, NamedExp("onclick", Callback([ExpStat(Call("back", []))]))])])
+	  			, ControlCallNoArgs(Var("group"), properties)])
+  
+  mobl-property-to-view: Property(_, name, type, _) -> view
+  	where view:= <type-to-view> (name, type) 
+  	
+  mobl-property-to-view: PropertyNoAnnos(_, name, type) -> view
+  	where view:= <type-to-view> (name, type) 
+  	
+rules// transform types to viewcalls
+	
+  type-to-view : (name, SimpleType("String")) -> result
+  	where result := 
+  			ControlCallNoBody(Var("showField"), [String($["[name]"]), FieldAccess(Var(ArgumentVarName()), name)])
+  
+  type-to-view : (name, SimpleType(type)) -> result
+  	where 	<fetch-elem(?type)> ["Bool", "Num"]
+  		 	; result := 
+  				ControlCallNoBody(Var("showField"), [String($["[name]"]), MethodCall(FieldAccess(Var(ArgumentVarName()), name),"toString",[])])
+  
+  type-to-view : (name, SimpleType("DateTime")) -> result
+  	where  	result := 
+  				ControlCallNoBody(Var("showField"), [String($["[name]"]), MethodCall(FieldAccess(Var(ArgumentVarName()), name),"toDateString",[])])
+
+  type-to-view : (name, SimpleType(type)) -> result
+  	where not	( <string-starts-with(|"generatedPropertyForInverse")> name 
+  				 	<+  <fetch-elem(?type)> ["Bool", "String", "Num", "DateTime"])
+  	where  	result := 
+  				ControlCallNoBody(Var("showEntityField"), [String($["[name]"]), FieldAccess(Var(ArgumentVarName()), name),Var($[show[type]Simple])])
+
+ type-to-view : (name, GenericType(_, [SimpleType(type)])) -> result
+  	where not	( <string-starts-with(|"generatedPropertyForInverse")> name )
+  	where  	result := 
+  				ControlCallNoBody(Var("showEntitiesField"), [String($["[name]"]), FieldAccess(Var(ArgumentVarName()), name),Var($[show[type]Simple])])
+
+overlays
+	
+	ArgumentVarName = "ent" 
+	IdMoblProperty = PropertyNoAnnos([],"id",SimpleType("String"))
+  			
+rules //overlays 
+	
+	SimpleViewStandaardDefs = 
+			![ Import(QId(QId("webservices", "mobl"), "model"))
+			, Import(QId(QId("mobl", "ui"), "generic"))
+			, ScreenNoReturnType([], "showControl"
+  				, [ FArg("viewer", GenericType("Control1", [GenericType("Entity", [DynamicType()])]))
+    				, FArg("value", GenericType("Entity", [DynamicType()]))]
+  				, [ControlCallNoBody(Var("viewer"), [Var("value")])]
+  			)
+			, ScreenNoReturnType( [], "showControlList"
+  				, [ FArg("viewer", GenericType( "Control3"
+			        	, [ SimpleType("String")
+			          	, GenericType("Collection", [GenericType("Entity", [DynamicType()])])
+			          	, GenericType("Control1", [SimpleType("Dynamic")])
+			          	] 
+        			))
+    				, FArg("headerName", SimpleType("String"))
+    				, FArg("values", GenericType("Collection", [GenericType("Entity", [DynamicType()])]))
+    				, FArg("dviewer", GenericType("Control1", [SimpleType("Dynamic")]))]
+   				, [ ControlCallNoBody(Var("viewer"), [Var("headerName"), Var("values"), Var("dviewer")])])
+   			, Control([], "showField"
+   			  	, [FArg("name", SimpleType("String")), FArg("value", SimpleType("String"))]
+				, [ ControlCallNoArgs( Var("item"), 
+					[ ControlCallNoBody( Var("label"), [Var("name"), NamedExp("style", Var("textFieldLabelStyle"))])
+      				, ControlCallNoBody(Var("textField"), [Var("value"), NamedExp("disabled", True())])])])
+			, Control([], "showEntityField"
+	  			, [ FArg("name", SimpleType("String"))
+	    			, FArg("value", GenericType("Entity", [DynamicType()]))
+	    			, FArg("viewer", GenericType("Control1", [GenericType("Entity", [DynamicType()])]))]
+	  			, [ WhenNoElse( Var("value") 
+	       			, [ ControlCall( Var("item")
+	      				, [NamedExp( "onclick", Callback( [ExpStat(Call("showControl", [Var("viewer"), Var("value")]))]))]
+	          			, [ControlCallNoBody(Var("label"), [Var("name")])])])])
+			, Control( [], "showEntitiesField"
+	  			, [ FArg("name", SimpleType("String"))
+	    			, FArg("values", GenericType("Collection", [GenericType("Entity", [DynamicType()])]))
+	    			, FArg( "viewer" , GenericType("Control1", [GenericType("Entity", [DynamicType()])]))]
+	  			, [ WhenNoElse(Var("values")
+	      			, [ ControlCall( Var("item")
+	      			 	, [ NamedExp("onclick", Callback( [ ExpStat( Call( "showControlList", 
+	      			 	  	[Var("showEntitiesList"), Var("name"), Var("values"), Var("viewer")]))]))]
+	          		, [ControlCallNoBody(Var("label"), [Var("name")])])])])
+			, Control([], "showEntitiesList"
+  				, [ FArg("headerName", SimpleType("String"))
+    				, FArg("values", GenericType("Collection", [GenericType("Entity", [DynamicType()])])) 
+    				, FArg("viewer", GenericType("Control1", [GenericType("Entity", [DynamicType()])]))]
+  				, [ ControlCall(Var("header"), [Var("headerName")]
+      				, [ ControlCallNoBody(Var("backButton"), [ String("\"back\"")
+            			, NamedExp("onclick", Callback([ExpStat(Call("back", []))]))])])
+    			, ListInferred( "value", Var("values")
+    			  	, [ ControlCall(Var("item")
+						, [ NamedExp("onclick", Callback([ExpStat(Call("showControl", [Var("viewer"), Var("value")]))]))]
+          				, [ControlCallNoBody(Var("label"), [FieldAccess(Var("value"), "id")])])])])
+			, Javascript(JSModule( 
+			  	[ JSExpStat( JSAssign( JSLFieldAccess(JSVar("__ns"), "back"), "="
+        			, JSFunctionExp([], [JSExpStat(JSCall(JSFieldAccess(JSVar("history"), "back"), []))])))]))
+        	, ExternalFunction([], "back", [], SimpleType("void"))		  
+			]
