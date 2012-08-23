@@ -27,7 +27,7 @@ rules
   	where	dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
   			; make-mobl-mapper-for-all-entities  
-  			; TopEntity := <collect-one(\DeriveWebServices(name)->name\)> ast
+  			; TopEntity := <collect-one(\DeriveWebServices(ent, prop)->ent\)> ast
   			
   			; TL := <generate-top-level-webservice>
   			; testservice :=  <generate-test-webservice>  

@@ -19,6 +19,7 @@ signature
     DeriveDeclInferred             : ID * Exp -> ScreenElem
     DeriveDecl                     : ID * Type * Exp -> ScreenElem
     VarDeclInferred                : ID * Exp -> ScreenElem
+    VarDeclInferredContrElem	   : ID * Exp -> ScreenElem // this element is added for disfunctioning of the PP
     VarDecl                        : ID * Type * Exp -> ScreenElem
                                    : ControlDefinition -> ScreenElem
     NamedHtmlShort                 : ID * HTMLID * List(HtmlArg) -> ScreenElem

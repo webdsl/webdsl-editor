@@ -3,6 +3,7 @@ imports
 	  	lib/mobl/MoBL
   		lib/mobl/editor-common.generated 
   		webservices-generation/mobl/model-to-mobl
+  		webservices-generation/mobl/sync-view
      
   	  	util  
 	  	lib/-
@@ -11,11 +12,10 @@ rules
   make-mobl-model-viewers: moblentities-> moblentities
   	where	dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname  
-  			// ; entities := <all-keys-EntDecl> None()	  
-  			// ; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; templates := <SimpleViewStandaardDefs> None()
   			; views := <map(make-simple-view-for-mobl-entity)> moblentities
-  			; defs := <concat>[templates, views]
+  			; syncView := <make-mobl-sync-view>
+  			; defs := <concat>[templates, views, [syncView]]
   			; result :=  < make-valid-page-from-mobl-defs(|dirname, "simpleView")> defs
   			; module-to-moblfile(|dirname, "simpleView")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
