@@ -24,14 +24,14 @@ rules
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         	  
-  	where	dirname := DirServices()
+  	where	 topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  			; rules (TopEntity := topEntity )
+  			; dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
   			; make-mobl-mapper-for-all-entities  
-  			; TopEntity := <collect-one(\DeriveWebServices(ent, prop)->ent\)> ast
-  			
   			; TL := <generate-top-level-webservice>
   			; testservice :=  <generate-test-webservice>  
-  			; <generate-mobl-services> TopEntity   
+  			; generate-mobl-services   
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>]
 			; defs' := <concat> [modules, defs]
@@ -85,9 +85,10 @@ rules// generation
   	where 	service := <generate-service(|"test")> [VarDeclInitInferred("result", String("This is a test service"))]
   			; service-to-file(|"test") 
   	
-  generate-top-level-webservice: TopEntity -> service
-  	where	varname := <new> "ent"
-  	where 	body := [VarDeclInitInferred("result", ThisCall("JSONArray", []))
+  generate-top-level-webservice: x -> service
+ 	where 	varname := <new> "ent"
+ 			; (TopEntity, prop) := <TopEntity>
+  			; body := [VarDeclInitInferred("result", ThisCall("JSONArray", []))
     				, ForStmtNoFilter(varname, SimpleSort(TopEntity), Call(Var(TopEntity), "all", [])
       					, Block(
           					[ Stat(Call(Var("result"), "put", [Call(Var(varname), "toSimpleJSON", [])]))]

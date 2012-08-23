@@ -8,10 +8,12 @@ imports
 	  	lib/-
 rules 
 	
-  generate-mobl-services: TopLevelEntity -> TopLevelEntity
+  generate-mobl-services: x -> x
 	where  dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname
-  			; <generate-mobl-top-level-service> TopLevelEntity
+  			; generate-mobl-top-level-service
+  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity))> None()	
+  			; <map(generate-mobl-sync-service)> entities
   			; result := <bundle-services; 
   			  	add-elem-to-list(|Import(QId(QId("webservices", "mobl"), "mapper"))); 
   			  	make-valid-page-from-mobl-defs(|dirname, "sync")> dirname
@@ -23,12 +25,23 @@ rules
  	where 	resources := <bagof-ServiceMobl>None()
  			;result := [Service([], "Sync", resources)]
 
-  generate-mobl-top-level-service: entityname -> entityname
-  	where 	service := 
+  generate-mobl-top-level-service: x -> x
+  	where	(name,prop) := <TopEntity> 	
+  			; service := 
   				Resource([], "getTopLevelEntities", [], SimpleType("void"), 
 	  				[ PropVal("uri", String("\"webservice/getTopLevelEntities\""))
 	          		, PropVal("method", String("\"PUT\""))
 	          		, PropVal("data", GreedyExactBound([])) // greedy is hack for empty obj {}
-	          		, PropVal("mapper", Var($[[entityname]Mapper]))
+	          		, PropVal("mapper", Var($[[name]Mapper]))
           		])
           	; rules (ServiceMobl:+= service)
+  
+  generate-mobl-sync-service: entity -> entity
+  	where  service := 
+  				Resource([], $[sync[entity]], [FArg("arg", SimpleType("JSON"))], SimpleType("void"), 
+	  				[ PropVal("uri", String($["webservice/sync[entity]"]))
+	          		, PropVal("method", String("\"PUT\""))
+	          		, PropVal("data", MethodCall(Var("JSON"), "stringify", [Var("arg")]))
+	          		, PropVal("mapper", Var($[[entity]Mapper]))
+          		])
+           ; rules (ServiceMobl:+= service)	
