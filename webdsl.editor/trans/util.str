@@ -105,6 +105,23 @@ rules // check for builtin-entities
 rules //helper 
 	add-elem-to-list(|elem): list -> [elem | list]
 		where <is-list> list
+		
+rules //bf-collect
+          					  		
+     bf-collect(s|acc): [x|xs] -> result
+     	where  	coll := <s> x
+     			; childeren := <get-arguments> x
+     			; result := <concat; bf-collect(s|[coll|acc])> [xs, childeren]   
+     			  
+     bf-collect(s|acc): [x|xs] -> result
+     	where not (<s> x)
+     	where 	childeren := <get-arguments> x
+     			; result := <concat; bf-collect(s|acc)> [xs, childeren]   
+     	 		
+   	 bf-collect(s|acc) : [] -> <reverse> acc   
+   	 
+   	 bf-collect(s) : x -> <bf-collect(s|[])> [x]
+   	 	where not(<is-list> x)  
 rules 
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
