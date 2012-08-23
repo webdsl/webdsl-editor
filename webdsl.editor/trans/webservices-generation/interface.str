@@ -55,7 +55,7 @@ rules// generation
       		
   generate-interface-service: x -> service
   	where 	service := 
-  				ServiceFunction("webservices", [Arg("service", SimpleSort("String"))]
+  				ServiceFunction("webservice", [Arg("service", SimpleSort("String"))]
     			, Block(
        				[ If( InColl(Var("service"), ThisCall("getAvialableServices", []))
           				, Block([ Stat( Call( ThisCall("getDispatchServletHelper", []), "forwardRequest"

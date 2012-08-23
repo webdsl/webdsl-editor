@@ -15,7 +15,7 @@ rules
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; result := <map( make-mobl-mapper-for-entity); 
   			  	add-elem-to-list(|Import(QId(QId("webservices", "mobl"), "model"))); 
-  			  	make-valid-page-from-mobl-defs(|dirname, "mapper")>filteredEntities
+  			  	make-valid-page-from-mobl-defs(|dirname, "mapper")> filteredEntities
   			; module-to-moblfile(|dirname, "mapper")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
 		 
@@ -25,10 +25,11 @@ rules
 				Function([] , $[[name]Mapper]
     				, [FArg("json", SimpleType("JSON"))]
     				, SimpleType("void")
-    				, [ If( FieldAccess(Var("json"), "errors"), 
+    				, [ If( BinMethodCall( FieldAccess(Var("json"), "errors"), "&&"
+							, BinMethodCall( FieldAccess(FieldAccess(Var("json"), "errors"), "length"), ">", Num("0"))), 
     				  	Block([ ExpStat(Call("log", [FieldAccess(Var("json"), "errors")]))])
         				, Block(
-        				  	[For( "json", SimpleType("JSON"), Var("json")
+        				  	[For( "json", SimpleType("JSON"), FieldAccess(Var("json"), "result")
               					, [ ExpStat( MethodCall( Var(name), "fromSelectJSON", [Var("json")]))]
              	 )]))])
              	 

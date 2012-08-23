@@ -10,9 +10,7 @@ rules
 	
   generate-mobl-services: TopLevelEntity -> TopLevelEntity
 	where  dirname := "webservices/mobl"
-  			; <create-dir-in-workspace> dirname  
-  			// ; entities := <all-keys-EntDecl> None()	  
-  			// ; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; <create-dir-in-workspace> dirname
   			; <generate-mobl-top-level-service> TopLevelEntity
   			; result := <bundle-services; 
   			  	add-elem-to-list(|Import(QId(QId("webservices", "mobl"), "mapper"))); 
@@ -28,9 +26,9 @@ rules
   generate-mobl-top-level-service: entityname -> entityname
   	where 	service := 
   				Resource([], "getTopLevelEntities", [], SimpleType("void"), 
-	  				[ PropVal("uri", String("\"/webservices/getTopLevelEntities\""))
+	  				[ PropVal("uri", String("\"webservice/getTopLevelEntities\""))
 	          		, PropVal("method", String("\"PUT\""))
-	          		, PropVal("data", Call(QId("mobl", "JSON"), []))
+	          		, PropVal("data", GreedyExactBound([])) // greedy is hack for empty obj {}
 	          		, PropVal("mapper", Var($[[entityname]Mapper]))
           		])
           	; rules (ServiceMobl:+= service)
