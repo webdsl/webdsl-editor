@@ -9,8 +9,16 @@ imports
   typecheck/import		// for ExtraWarnings
   trans/-
   lib/-
-  fact-extraction/-
   
+  //for builders
+  entity-extraction/generate-entity-files
+  entity-extraction/generate-entity-pages
+ 
+  webservices-generation/json
+  webservices-generation/model-tree
+  webservices-generation/mobl/model-to-mobl 
+  webservices-generation/interface
+
 signature constructors
   FILE : Term -> Term
   

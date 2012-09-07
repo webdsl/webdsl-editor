@@ -1,0 +1,112 @@
+module webservices-generation/mobl/sync-services
+imports 
+	  	lib/mobl/MoBL
+  		lib/mobl/editor-common.generated 
+  		
+  		webservices-generation/mobl/model-to-mobl
+  		webservices-generation/mobl/unsynced-functions
+     	webservices-generation/model-tree
+  	  	
+  	  	util 
+	  	lib/-
+rules 
+	
+  generate-mobl-services: x -> x
+	where  dirname := "webservices/mobl"
+  			; <create-dir-in-workspace> dirname
+  			; generate-mobl-unsynced-functions  
+  			; generate-mobl-top-level-service
+  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity))> None()	
+  			; <map(generate-mobl-sync-service)> entities
+  			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
+  			; totalsyncfunction := <generate-mobl-total-sync-function>  
+  			; service := <bundle-services> None()
+  			; imports :=   [Import(QId(QId("webservices", "mobl"), "mapper")), Import(QId(QId("webservices", "mobl"), "model")), Import(QId(QId("webservices", "mobl"), "unsync"))]
+  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction]]
+  			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
+  			; module-to-moblfile(|dirname, "sync")
+  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+	 
+
+  bundle-services: x -> result
+ 	where 	resources := <bagof-ServiceMobl>None()
+ 			;result := [Service([], "Sync", resources)]
+
+  generate-mobl-top-level-service: x -> x
+  	where	(name,prop) := <TopEntity> 	
+  			; service :=  
+  				Resource([], "getTopLevelEntities", [], SimpleType("void"), 
+	  				[ PropVal("uri", String("\"webservice/getTopLevelEntities\""))
+	          		, PropVal("method", String("\"PUT\""))
+	           		, PropVal("data", GreedyExactBound([])) // greedy is hack for empty obj {}
+	          		, PropVal("mapper", Var($[[name]Mapper]))
+          		])
+          	; rules (ServiceMobl:+= service)
+  
+  generate-mobl-sync-service: entity -> entity
+  	where  service := 
+  				Resource([], $[sync[entity]], [FArg("arg", SimpleType("JSON"))], SimpleType("void"), 
+	  				[ PropVal("uri", String($["webservice/sync[entity]"]))
+	          		, PropVal("method", String("\"PUT\""))
+	          		, PropVal("data", MethodCall(Var("JSON"), "stringify", [Var("arg")]))
+	          		, PropVal("mapper", Var($[[entity]Mapper]))
+          		])
+           ; rules (ServiceMobl:+= service)
+             
+rules // generation of sync-functions
+	 
+ generate-mobl-sync-functions: entity -> function
+ 	where	objectsstatement := <get-all-mobl-objects-of-entity-statement>			
+ 		 	; function :=
+ 			FunctionNoReturnType([], $[syncAll[entity]], []
+				, [ VarDeclInferred("begin", Call("now", []))
+  					, objectsstatement
+          			, ExpStat( Call( "log"
+      					, [ BinMethodCall(String($["time needed for syncing [entity]: "]), "+"
+          					, MethodCall(Brackets(BinMethodCall(Brackets(BinMethodCall(
+          					  	Call("now", []), "-", Var("begin")))
+                				, "/", Num("1000"))), "toString", []))]))])
+ 
+ get-all-mobl-objects-of-entity-statement: entity -> statement
+ 	where topEntity := <TopEntity; Fst>
+ 	where not( <?topEntity> entity )
+ 	where	statement := 
+ 	 			ExpStat(MethodCall(Var("Sync"), $[sync[entity]]
+      				, [ MethodCall( MethodCall(Var(entity), "all", [])
+          				, "selectJSON", [List([String("\"id\""), String("\"version\"")])])]))
+ 
+ get-all-mobl-objects-of-entity-statement: entity -> statement
+ 	where	topEntity := <TopEntity; Fst>
+ 			; <?topEntity> entity
+ 	 		; statement :=  
+ 				 ExpStat(MethodCall( Var("Sync"), $[sync[entity]]
+				  	, [ MethodCall(MethodCall( MethodCall(Var(entity), "all", [])
+				        , "filter", [String("\"sync\""), String("\"=\""), String("\"true\"")])
+				      	, "selectJSON", [List([String("\"id\""), String("\"version\"")])])]))
+	
+ generate-mobl-total-sync-function:	x -> function
+ 	where 	calls := <Fst; generate-list-sync-calls> <TopEntity>
+ 			; statements := <concat> [ [VarDeclInferred("begin", Call("now", []))], 
+ 										calls, 
+ 										[ExpStat(
+     										Call("log", [ BinMethodCall(String("\"totaltime:\""), "+"
+          										, MethodCall(Brackets(BinMethodCall(Brackets(BinMethodCall(
+          					  						Call("now", []), "-", Var("begin"))), "/", Num("1000"))), "toString", []))]))]
+ 								  	 ] 
+ 			; function := 
+ 			  	FunctionNoReturnType([], "syncAll" , [], statements) 		      	  
+   
+ generate-list-sync-calls: TopEntity -> list
+ 	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); uniq> TopEntity
+ 			; while := While(Not(Var("allsynced")), <map(make-unsynced-check); add-elem-to-list(|Assignment("allsynced", True()))> orderedentities )
+ 			; list := <concat>[<map(make-sync-call)> orderedentities,[VarDeclInferred("allsynced", False()), while]]
+ 
+ make-sync-call: entityname -> call
+ 	where call := ExpStat(Call($[syncAll[entityname]], []))
+ 	
+ make-unsynced-check: entityname -> check 
+ 	where check := IfNoElse(Call($[nrUnsynced[entityname]], []) , 
+ 		Block([ExpStat(Call($[syncUnsynced[entityname]], [])), Assignment("allsynced", False())]))
+ 	 
+ 
+

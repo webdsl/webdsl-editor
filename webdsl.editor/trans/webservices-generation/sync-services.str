@@ -1,0 +1,46 @@
+module webservices-generation/sync-services
+imports 
+    	webservices-generation/interface
+  	  	util 
+	  	lib/-
+rules 
+	
+  generate-sync-services: x -> x
+	where 	entities := <all-keys-EntDecl> None()	  
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; <map(generate-sync-service)> filteredEntities
+   
+	
+  generate-sync-service: entityname -> entityname
+  	where 	name := $[sync[entityname]]
+  			; forcountbody := 	Block([ 
+  			  						VarDeclInitInferred( "entity", Cast( ThisCall(  "loadEntity"
+      									, [ String(entityname)
+      									  	, Call(Call(Call(Var("request"), "getJSONObject", [Var("count")]) 
+      									  	  	, "getString", [String("id")]), "parseUUID", [])])
+    									, SimpleSort("Issue")))
+									, If( LargerThan(FieldAccess(Var("entity"), "version")
+    									, Call( Call( Call(Var("request"), "getJSONObject", [Var("count")]), 
+    									  	"getString", [String("version")]), "parseInt", []))
+    									, Block([ Stat(Call( Var("result"), "put", [Call(Var("entity"), "toJSON", [])]))])
+  										, Block([ Stat(Call( Var("result"), "put", [Call(Var("entity"), "toMinimalJSON", [])]))]))
+								])
+//optimasation 1  				
+  			// forcountbody :=  Block([ Stat( Call( Var("result"), "put", [ Call(
+     //                		Cast( 
+     //                			ThisCall( "loadEntity", [ String(entityname), 
+     //                			Call(
+     //                				Call(
+	    //                 				Call(Var("request"), "getJSONObject", [Var("count")])
+	    //                 				, "getString"
+	    //                         		, [String("id")])
+	    //                         	, "parseUUID", [])])
+     //                			, SimpleSort(entityname))
+     //              			, "toJSON", [])]))])
+  			; body := 
+  			  		[ VarDeclInitInferred("request", ThisCall("JSONArray", [ThisCall("readRequestBody", [])]))
+					, VarDeclInitInferred("result", ThisCall("JSONArray", []))
+    				, ForCountStmt("count", Int("0"), Call(Var("request"), "length", [])
+      					, forcountbody)]
+            ; service := <generate-service(|name)> body
+        	; service-to-file(|name) 

@@ -60,8 +60,69 @@ rules   // Versioning
   
   editor-timestamp = import-term(include/editor.timestamp.aterm)
   
-rules
+rules // file IO
+	
+  text-to-file(|filename): text -> text
+    where(
+      file := <fopen> (filename, "w")
+      ; <fputs> (text, file)
+      ; <fclose> file
+    )
+    
+  write-ast-to-file(|filename) : ast -> ast
+	with 	text := <pp-webdsl-string> ast //todo: changeback to pp from compiler  
+	  		; <text-to-file(|filename)> text
   
+  make-valid-page-from-defs(|moduleName): defs -> page
+  	where 	<is-list> defs
+  			; page := ModuleDefs(moduleName, defs, [])
+  			  
+  create-dir-in-workspace : dirname -> dirname
+     with 	dirs := <string-tokenize(|['/'])> dirname
+     		; base := <split-init-last; Fst; separate-by(|"/"); concat-strings> dirs
+     		; if <?1><length>dirs then id else <create-dir-in-workspace> base end
+     		; dir := $[[<project-path>]/[dirname]]
+     		; if <file-exists> dir then id else <mkdir> dir end
+     		; <refresh-workspace-file> base
+     		  
+rules // check for builtin-entities
+  is-builtin-entity : entity -> entity
+   	where	(? EntityNoSuper(name, _) 
+     			<+ ?Entity(name, _, _))
+     			<+ is-string; ?name
+     		; builtin-entities := [
+     		  	"dummy_webdsl_entity",
+     		  	"Exception",
+     		  	"QueuedEmail",
+     		  	"RequestLogEntry",
+     		  	"SecurityContext",
+     		  	"SessionManager",
+     		  	"SessionMessage",
+     		  	"ValidationException",
+     		  	"ValidationExceptionMultiple"
+     		  ]
+     		; <fetch(?name)> builtin-entities  
+rules //helper 
+	add-elem-to-list(|elem): list -> [elem | list]
+		where <is-list> list
+		
+rules //bf-collect
+          					  		
+     bf-collect(s|acc): [x|xs] -> result
+     	where  	coll := <s> x
+     			; childeren := <get-arguments> x
+     			; result := <concat; bf-collect(s|[coll|acc])> [xs, childeren]   
+     			  
+     bf-collect(s|acc): [x|xs] -> result
+     	where not (<s> x)
+     	where 	childeren := <get-arguments> x
+     			; result := <concat; bf-collect(s|acc)> [xs, childeren]   
+     	 		
+   	 bf-collect(s|acc) : [] -> <reverse> acc   
+   	 
+   	 bf-collect(s) : x -> <bf-collect(s|[])> [x]
+   	 	where not(<is-list> x)  
+rules 
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
     with

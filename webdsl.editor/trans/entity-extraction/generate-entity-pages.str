@@ -1,0 +1,129 @@
+module entity-extraction/generate-entity-pages
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+  	util
+  	lib/-
+  	entity-extraction/generate-entity-files
+  	
+rules //builder 
+	
+  generate-entity-pages: (selected, position, ast@Application(_, _), path, project-path) -> None()
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  	where	dirname := "entity-pages"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
+  			; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
+  			; <map(entity-to-page(|dirname))> cleanedEntities
+  			; <main-file-to-file(generate-main-page-file|dirname)> filteredEntities  
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+
+  generate-entity-pages: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+	where not (<?Application(_, _)> ast)
+	where fatal-err-msg(|"This builder is only supported on the application file")
+	
+rules //page stuf  		
+		
+   entity-to-page(|dirname): e -> e
+  	with 	(? Entity(name, _, _) 
+     			<+ ?EntityNoSuper(name,_))	
+     		; <file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[name].app]
+	  		; <make-entity-page(|$[[dirname]/[name]])
+	  		   ; write-ast-to-file(|filename)> e
+	
+	make-entity-page(|modulename) : e -> result
+	 with  	((<?EntityNoSuper(name, props)> e 
+	 			; header := [Text(name)] )
+	 		<+ (<?Entity(name, super, props)> e 
+	 			; linksuper := <enityname-to-pagelink> super
+	 			; header := [Text($[[name] :[" "]]), linksuper] ) )
+	 		; properties := <filter(property-to-par)> props
+	 		; functions := <filter(function-to-par)> props
+	 		; result := ModuleDefs(modulename, 
+	 					[ DefinePage([], $[showEntity[name]], [], None(), 
+	 						[ TemplateCallBody("title", TemplateBody([Text(name)]))
+							, TemplateCallBody("header", TemplateBody(header))
+							, TemplateCallNoAssigns("group", [Text("Properties")], TemplateBody(properties))  
+							, TemplateCallNoAssigns("group", [Text("Functions")], TemplateBody(functions))
+							])
+	 					], [] )	
+	
+		
+	property-to-par: x -> par
+     where	<is-property-cons> x
+     		; sigProp := <try(remove-derive-from-property)> x
+     		; cleanProp := <try(remove-Anno-from-property)> sigProp
+     		; propertyString := <property-to-webdsl-ast-string-represatation> cleanProp
+			; par := TemplateCallBody("par", TemplateBody(propertyString))
+	
+	function-to-par: x -> par
+     where	<is-function-cons> x
+     		; sigFun := <remove-body-from-function> x
+     		; functionString := <function-to-webdsl-ast-string-represatation> sigFun
+			; par := TemplateCallBody("par", TemplateBody(functionString))
+	
+	pagelink-to-par: e@NavigateCall(t1, t2, t3) ->	TemplateCallBody("par", TemplateBody([e]))	  
+	
+rules //main page
+	
+ generate-main-page-file(|moduleName): entitynames -> mainAST
+   where 	 <generate-main-model-file(|moduleName, []); ?ModuleDefs(_, modules, _)> entitynames
+   			; sortednames := <string-sort> entitynames
+   			; entitylinks := <map(enityname-to-pagelink; pagelink-to-par)> sortednames
+   			; page := DefinePage([], "showEntities", [], None(), 
+	 						[ TemplateCallBody("title", TemplateBody([Text("Entities")]))
+							, TemplateCallNoAssigns("group", [Text("Entities")], TemplateBody(entitylinks))  
+							])
+   			; mainAST := ModuleDefs(moduleName, <concat> [modules, [page]], [] )	  
+
+rules //converting
+		
+	remove-derive-from-property: DerivedProperty(t1, t2, t3, t4, t5) -> Property(t1, t2, t3, t4)
+	
+	remove-derive-from-property: DerivedPropertyNoAnno(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3)
+	
+	remove-Anno-from-property: Property(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3) 	
+	
+	remove-body-from-function: Function(t1, t2, t3, t4) -> Function(t1, t2, t3,None())
+
+rules//custom way to pp  
+		
+	function-to-webdsl-ast-string-represatation: Function(t1, t2, t3, t4) -> result
+	 where 	begin := Text($[function [t1] ( ])
+	 		; params := <map(arg-to-webdsl-ast-string-represatation)> t2
+	 		; paramsSeperated := <separate-by(|Text(", ")) ; flatten-list> params
+			; inbetween := Text(" ) : ")	
+			; type := <sort-to-navigate <+ sort-to-text> t3
+			; result := <flatten-list> [begin, paramsSeperated, inbetween, type]  
+	
+	arg-to-webdsl-ast-string-represatation: Arg(name, type) -> result
+	 where 	begin := Text($[[name] :[" "]])
+			; typestring := <sort-to-navigate <+ sort-to-text> type
+			;  result := [begin, typestring]
+	
+	property-to-webdsl-ast-string-represatation: PropertyNoAnno(name, sort, type) -> result
+	 where 	begin := Text(name) 
+	 		; middle := Text(<pp-webdsl-to-string> sort) 
+	 		; typestring := <sort-to-navigate <+ sort-to-text> type
+	 		; result := <flatten-list> [begin, Text(" "), middle, Text(" "), typestring]
+	
+	sort-to-navigate: SimpleSort(t) -> <enityname-to-pagelink> t
+	 where  <IsEntity> t
+	 where not (<is-builtin-entity> t)
+	
+	sort-to-navigate: GenericSort(name, type) -> result
+	 where 	param := <Hd; sort-to-navigate> type
+		 	; result := [Text($[[name]<]), param, Text(">")]
+	
+	sort-to-text: x -> Text(<pp-webdsl-to-string> x) 
+	
+	enityname-to-pagelink: name -> NavigateCall(PageCall( $[showEntity[name]], []), [], [Text(name)])
+	 where 	<is-string> name 

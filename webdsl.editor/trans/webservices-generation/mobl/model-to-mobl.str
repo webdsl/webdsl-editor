@@ -1,0 +1,155 @@
+module webservices-generation/mobl/model-to-mobl
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+
+  	util 
+  	lib/-
+  	
+  	lib/mobl/MoBL
+  	lib/mobl/editor-common.generated
+  	
+  	entity-extraction/generate-entity-pages
+  	webservices-generation/overlays
+  	webservices-generation/mobl/simple-view 
+ 
+rules 
+
+  generate-mobl-model: (selected, position, ast@Application(_, _), path, project-path) -> None()
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  	where	
+  			 topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  			; rules (TopEntity := topEntity )
+  			; dirname := "webservices/mobl"
+  			; <create-dir-in-workspace> dirname
+  			; <Fst; generate-top-level-SyncProperty> topEntity 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties)> filteredEntities 
+  			; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
+  			; module-to-moblfile(|dirname, "model")
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]   
+  			  
+ generate-mobl-model: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+	where not (<?Application(_, _)> ast)
+	where fatal-err-msg(|"This builder is only supported on the application file")
+ 
+rules // file stuff
+	
+  module-to-moblfile(|dirname, file): mod -> mod
+  	where	<file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[file].mobl]
+	  		; <write-mobl-ast-to-file(|filename)> mod  
+	  		  
+rules //lookup  			   
+  
+  make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)
+  	where	props := <concat> [[VersionProperty1()], <all-properties> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
+  
+  check-searchable-anno: property ->  SimpleAnno("searchable")
+   	where 	<is-searchable-prop> property  
+  			; <get-property-type; ?SimpleSort(type)> property
+  			; <fetch-elem(?type)> ToMoblStringTypes()  
+  			  
+  check-inverse-anno: Property(_, _, _, annos) ->  InverseAnno(name)
+    where	<fetch-elem(?InverseAnno(_, name))> annos
+    
+  check-inverse-anno(|class): property ->  InverseAnno(otherprop)
+  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where 	<get-property-type; ?GenericSort(_,_)> property
+    		; (otherEnity, otherprop) := <InverseProperty> (class, <get-property-name> property)
+  
+ check-inverse-anno(|class): property ->  anno
+  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where 	<get-property-type; ?GenericSort(_,_)> property
+    		; propname := <get-property-name> property
+   			; anno := <ExtraInverseAnno> (class, propname)
+    where not	(<InverseProperty> (class, propname))
+   
+
+rules //generation
+	
+  generate-extra-properties-for-collections: entityname -> entityname
+	where	props := <all-properties> entityname
+			; propswithoutinvers := <filter(generic-type-has-no-inverse-anno(|entityname))>
+			; map(declare-extra-prop(|entityname))
+
+  generic-type-has-no-inverse-anno(|class): property ->  property
+  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where 	<get-property-type; ?GenericSort(_,_)> property
+    		; propname := <get-property-name> property
+    where not	(<InverseProperty> (class, propname))
+    
+  declare-extra-prop(|class): property -> property
+  	where 	entity := <get-property-type; srt-to-type> property
+  			; propertyname := <get-property-name> property
+  			; newProperty := <generate-inverse-property(|class)> property
+  			; newPropertyName := <get-property-name> newProperty
+  			; rules(
+  				ExtraInverseProperty:+ entity -> newProperty
+  				ExtraInverseAnno: (class, propertyname) -> InverseAnno(newPropertyName)
+  			)
+  
+   generate-top-level-SyncProperty: entityname -> entityname
+   	where	property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
+   			; rules( ExtraProperty:+ entityname -> property)
+   
+   generate-inverse-property(|class): property -> PropertyNoAnno(name, Ref() , SimpleSort(class))
+    where 	proptype := <get-property-type; ?GenericSort("Set", _)> property
+    		; name := $[generatedPropertyForInverse_[class]_[<get-property-name> property]] 
+   
+   generate-inverse-property(|class): property -> Property(name, Ref() , GenericSort("List", [SimpleSort(class)]), [InverseAnno(class, propertyname)])
+    where 	proptype := <get-property-type; ?GenericSort("List", _)> property
+    		; propertyname := <get-property-name> property
+    		; name := $[generatedPropertyForInverse_[class]_[propertyname]] 
+    		  
+rules //transform 
+
+  entity-to-mobl-entity: EntityNoSuper(name, props) -> moblEntity
+  	where	cleanedProps := <map(try(remove-derive-from-property))> props
+  			; props' := <filter(property-to-mobl-property(|name))>
+  			; moblEntity := EntityNoSuper(None(), name, props')
+ 
+  property-to-mobl-property(|class): p@Property(name, sort, type, annos) -> result
+  	where 	newType := <type-to-mobl-type> type
+  			; if (newannos := <annos-to-mobl-annos(|class)> p) 
+  				then  result := Property([], name, newType, newannos) 
+  				else  result := PropertyNoAnnos([], name, newType) 
+  			end
+ 
+  property-to-mobl-property(|class): p@PropertyNoAnno(name, sort, type) -> result
+  	where 	newType := <type-to-mobl-type> type
+  		  	; if (newannos := <annos-to-mobl-annos(|class)> p) 
+  				then  result := Property([], name, newType, newannos) 
+  				else  result := PropertyNoAnnos([], name, newType) 
+  			end
+  
+  annos-to-mobl-annos(|class): property -> result
+  	where 	anno* := [<check-searchable-anno <+ !None()> property|[]]
+  			; anno'' := [< check-inverse-anno <+ check-inverse-anno(|class) <+ !None()> property|anno*]
+  			; result := <filter(not(?None()))>
+  			; length; int-gt(|0) 
+    
+rules // type transformations  	
+  type-to-mobl-type: SimpleSort(type) -> SimpleType("String")
+   	where 	<fetch(?type)> ToMoblStringTypes
+  
+  type-to-mobl-type: SimpleSort(type) -> SimpleType("Num")
+   	where 	<fetch(?type)> ToMoblNumTypes
+
+  type-to-mobl-type: SimpleSort("Bool") -> SimpleType("Bool")
+ 
+  type-to-mobl-type: SimpleSort("DateTime") -> SimpleType("DateTime")  
+   
+  type-to-mobl-type: SimpleSort(type) -> SimpleType(type)
+   	where 	<IsEntity> type
+   	where not (<is-builtin-entity> type)
+  
+  type-to-mobl-type: GenericSort(_, type) -> GenericType("Collection", [paramtype])  
+   	where	<Hd; is-entity-type> type
+   		 	; paramtype := <Hd; type-to-mobl-type> type 

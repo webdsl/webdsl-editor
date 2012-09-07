@@ -304,7 +304,10 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     }
     
     public String getUrlRoot(IProject project){
+<<<<<<< HEAD
+=======
     	String port = getProperty(project, "httpport");
+>>>>>>> ebServices
         if(isRootApp(project)){
             return "http://localhost:" + port + "/";
         }

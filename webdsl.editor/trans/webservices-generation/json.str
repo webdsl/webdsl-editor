@@ -1,0 +1,176 @@
+module webservices-generation/json
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+  	
+  	entity-extraction/generate-entity-files
+	
+	webservices-generation/overlays
+		
+  	util
+  	lib/-
+
+rules //builder
+	
+  generate-json-functions-for-entities: (selected, position, ast@Application(_, _), path, project-path) -> None()
+  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  	where	dirname := "webservices/json"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
+  			; result:= <map(props-to-jsonfile(|dirname))> properties
+  			; <main-file-to-file(generate-main-model-file(|dirname, [<MakeJSONFromRefFunction>None()])|dirname)> filteredEntities  
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+
+  generate-json-functions-for-entities: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+	where not (<?Application(_, _)> ast)
+	where fatal-err-msg(|"This builder is only supported on the application file")
+	
+rules// lookup
+	
+  all-properties-including-entity-properties: entityName -> (entityName, props*)
+  	where 	props1 := <concat> [<all-properties> entityName, AllEntityProperties1()]
+  			; props* := <filter(get-arguments; Hd; ?"name"); length; ?2; !props1; filter(not(NameProperty1())) <+ id> props1 //check for overwriting of nameProperty
+  			  
+rules//file generation 
+	
+	props-to-jsonfile(|dirname): t@(name,props) -> t
+  	with	<file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[name].app]
+	  		; <make-valid-page-with-extends-entity(|$[[dirname]/[name]])
+	  		   ; write-ast-to-file(|filename)> t  
+	
+	make-valid-page-with-extends-entity(|dirname) : (entityName,props) ->
+		ModuleDefs(dirname, [ExtendEntity(entityName, functions)], [])
+	 where 	simpleJSONFunction := <build-simple-json-function> props
+	 		; JSONFunction := <build-json-function> props
+	 		; minimalJSONFunction := <build-minimal-json-function> props
+	 		; functions := [simpleJSONFunction , JSONFunction, minimalJSONFunction]
+	 		
+rules//transformation
+	
+	build-simple-json-function: props -> function
+	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
+	 		; return := [Return(Var("object"))]
+	 		; filterdProperties := <filter(where(is-simple-prop); not(?VersionProperty1() + ?NameProperty1()))> props  
+	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
+	 		; statements := <concat> [init, puts, return]
+	 		; function := Function("toSimpleJSON", [], SimpleSort("JSONObject"), Block(statements))
+	 
+	build-minimal-json-function: props -> function
+	 where 	debug(!"props")
+	 		; init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
+	 		; return := [Return(Var("object"))]
+	 		; filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons ))> props  
+	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
+	 		; statements := <concat> [init, puts, return]
+	 		; function := Function("toMinimalJSON", [], SimpleSort("JSONObject"), Block(statements))
+	 
+	build-json-function: props -> function
+	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
+	 		; return := [Return(Var("object"))]
+	 		; propertyStatements := <filter(property-to-json)> props
+	 		; statements := <concat> [init, propertyStatements, return]
+	 		; function := Function("toJSON", [], SimpleSort("JSONObject"), Block(statements))
+
+	property-to-json-without-null: property -> statements
+	 where	(?Property(name, _, type, _) 
+	 			<+ ?PropertyNoAnno(name, _, type)
+	 			<+ ?DerivedProperty(name, _, type, _, _)
+	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
+	 		; value := <exp-to-value-statement> (name,type)  
+	 		; statements := 
+	 		  [IfNoElse(
+                NotEq(FieldAccess(Var("this"), name), Null())
+              	, Block([<generate-json-put>(name, value)])
+              )]
+   
+   property-to-json: property -> statements
+	 where	(?Property(name, _, type, _) 
+	 			<+ ?PropertyNoAnno(name, _, type)
+	 			<+ ?DerivedProperty(name, _, type, _, _)
+	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
+	 		; pre := <property-to-value-array-pre(|)> (name,type)
+	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), name) else exp := Var($[array[name]]) end	
+	 		; value := <exp-to-value-statement> (exp, type)
+	 		; statements := 
+	 		  [If(
+                Eq(FieldAccess(Var("this"), name), Null())
+                , Block([<generate-json-put>(name,Cast(Null(), SimpleSort("Object")))])
+              	, Block(<concat>[pre, [<generate-json-put>(name, value)]])
+              )]
+  
+  generate-json-put: (name, value) -> 
+  	Stat( Call( Var("object")
+		, "put"
+	 	, [String($[[name]]), value]
+	))
+              	
+rules//type transformation
+	
+	exp-to-value-statement: (exp, SimpleSort(type)) -> [exp]
+		where not (<?"Time" <+ ?"Date" <+ ?"WikiText"> type)
+		where	<fetch(?type)> ToMoblStringTypes <+
+					<fetch(?type)> ToMoblNumTypes
+					
+	
+	exp-to-value-statement: (exp, SimpleSort("Bool")) -> [exp]
+	
+	
+	exp-to-value-statement: (exp, SimpleSort("WikiText")) -> [Call(exp, "format", [])]
+
+	exp-to-value-statement: (exp, SimpleSort("DateTime")) -> [Div(
+														                  Call(exp, "getTime", [])
+														                , Long("1000L")
+														           )]
+
+	exp-to-value-statement: (exp, SimpleSort("Time")) -> [Call(
+																	exp
+                          											, "format"
+                          											, [Call(Var("DateType"), "getDefaultTimeFormat", [])]
+                          										)]
+    
+    exp-to-value-statement: (exp, SimpleSort("Date")) -> [Call(
+																	exp
+                          											, "format"
+                          											, [Call(Var("DateType"), "getDefaultDateFormat", [])]
+                          										)]                      											 
+ 	
+ 	exp-to-value-statement: (exp, type) -> [ThisCall("makeJSONObjectFromEntityRef", [exp])]
+ 		where <is-entity-type> type
+ 	
+ 	exp-to-value-statement: (exp, GenericSort(_, _)) -> [exp]
+ 		
+
+    property-to-value-array-pre: (name, GenericSort(sort, [t@SimpleSort(type)])) -> [ VarDeclInitInferred(arrayname, ThisCall("JSONArray", []))
+																	, ForStmtNoFilter( varname, t, FieldAccess(Var("this"), name)
+				                    									, Block([ 
+				                    									  	Stat( Call( Var(arrayname), "put",
+				                             									value
+				                            								))]))]
+		where 	arrayname := $[array[name]]
+				; varname := <new> type
+				; value := <exp-to-value-statement>(Var(varname), t)
+
+rules// not allowed types	
+	
+	// exp-to-value-statement: (name, SimpleSort("Patch")) -> None()
+	// 	where fail
+	// 
+	// exp-to-value-statement: (name, SimpleSort("Secret")) -> None()
+	// 	where fail
+	// 
+	// exp-to-value-statement: (name, SimpleSort("Image")) -> None()
+	// 	where fail
+	// 
+	// exp-to-value-statement: (name, SimpleSort("File")) -> None()
+	// 	where fail
+
+	property-to-value-array-pre: (name, type ) -> []
+		where not (<?GenericSort(_, _)> type)

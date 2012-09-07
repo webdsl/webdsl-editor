@@ -42,8 +42,12 @@ builders
   builder   : "Extract Datalog"         = datalog-extraction (openeditor) (realtime) (meta)
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
-  
-  
+  builder 	: "Generate entity files"			  = generate-entity-files
+  builder 	: "Generate entity pages"			  = generate-entity-pages
+  builder   : "Generate JSON Functions"			  = generate-json-functions-for-entities
+  builder   : "Show model tree"			  		  = make-model-tree (openeditor)
+  builder   : "Generate Mobl model"				  = generate-mobl-model (openeditor)
+  builder	: "Generate Webservices"			  = generate-webservices (openeditor)
 //  pretty-print : pp-webdsl-to-string
 
 //  refactoring : "Rename Entity" = rename-entity /*(source)*/ (cursor)
