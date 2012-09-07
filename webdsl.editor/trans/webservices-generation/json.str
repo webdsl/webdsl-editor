@@ -50,7 +50,8 @@ rules//file generation
 		ModuleDefs(dirname, [ExtendEntity(entityName, functions)], [])
 	 where 	simpleJSONFunction := <build-simple-json-function> props
 	 		; JSONFunction := <build-json-function> props
-	 		; functions := [simpleJSONFunction , JSONFunction]
+	 		; minimalJSONFunction := <build-minimal-json-function> props
+	 		; functions := [simpleJSONFunction , JSONFunction, minimalJSONFunction]
 	 		
 rules//transformation
 	
@@ -61,6 +62,15 @@ rules//transformation
 	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
 	 		; statements := <concat> [init, puts, return]
 	 		; function := Function("toSimpleJSON", [], SimpleSort("JSONObject"), Block(statements))
+	 
+	build-minimal-json-function: props -> function
+	 where 	debug(!"props")
+	 		; init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
+	 		; return := [Return(Var("object"))]
+	 		; filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons ))> props  
+	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
+	 		; statements := <concat> [init, puts, return]
+	 		; function := Function("toMinimalJSON", [], SimpleSort("JSONObject"), Block(statements))
 	 
 	build-json-function: props -> function
 	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
