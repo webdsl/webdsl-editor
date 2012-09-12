@@ -149,7 +149,7 @@ rules//type transformation
  		
 
     property-to-value-array-pre: (name, GenericSort(sort, [t@SimpleSort(type)])) -> [ VarDeclInitInferred(arrayname, ThisCall("JSONArray", []))
-																	, ForStmtNoFilter( varname, t, FieldAccess(Var("this"), name)
+																	, ForStmt( varname, t, FieldAccess(Var("this"), name), None()
 				                    									, Block([ 
 				                    									  	Stat( Call( Var(arrayname), "put",
 				                             									value

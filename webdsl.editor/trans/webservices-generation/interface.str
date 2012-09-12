@@ -92,7 +92,7 @@ rules// generation
  	where 	varname := <new> "ent"
  			; (TopEntity, prop) := <TopEntity>
   			; body := [VarDeclInitInferred("result", ThisCall("JSONArray", []))
-    				, ForStmtNoFilter(varname, SimpleSort(TopEntity), Call(Var(TopEntity), "all", [])
+    				, ForStmt(varname, SimpleSort(TopEntity), Call(Var(TopEntity), "all", []), None()
       					, Block(
           					[ Stat(Call(Var("result"), "put", [Call(Var(varname), "toSimpleJSON", [])]))]
           				))
