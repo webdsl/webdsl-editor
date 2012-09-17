@@ -32,6 +32,7 @@
       <arg line="-i &quot;${webdsl.sources}/org/webdsl/dsl/generation/webdsl-generator.str&quot;" />
       <arg line="-I &quot;${webdsl.sources}&quot;" />
       <arg line="-I &quot;${webdsl.sources}/org/webdsl/dsl/syntax&quot;" />
+      <arg line="-I &quot;${webdsl.sources}/org/webdsl/dsl/syntax/mobl&quot;" />
       <arg line="-I &quot;${javafront.share}&quot;" /> <!-- TODO; remove -->
       <arg value="-o"/>
       <arg file="${dir}/bin/webdsl-generator-packed.str" />

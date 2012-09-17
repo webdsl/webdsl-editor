@@ -7,7 +7,7 @@ all : ../include/webdsl-typechecker-rules.aterm
 
 ../include/webdsl-typechecker-rules.aterm : bin/webdsl-generator-packed.str dranalysis
 bin/webdsl-generator-packed.str : packstratego
-	./packstratego -i $(WEBDSL_HOME)/org/webdsl/dsl/generation/webdsl-generator.str -I $(WEBDSL_HOME) -I $(WEBDSL_HOME)/org/webdsl/dsl/syntax -I $(NIX_PROFILE)/share/java-front -o $@
+	./packstratego -i $(WEBDSL_HOME)/org/webdsl/dsl/generation/webdsl-generator.str -I $(WEBDSL_HOME) -I $(WEBDSL_HOME)/org/webdsl/dsl/syntax  -I $(WEBDSL_HOME)/org/webdsl/dsl/syntax/mobl -I $(NIX_PROFILE)/share/java-front -o $@
 
 % : %.str
 	$(STRC) -i $< -o $@ -Cl stratego-lib -Cl strc $(XTC)
