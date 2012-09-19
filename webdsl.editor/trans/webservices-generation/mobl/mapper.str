@@ -14,22 +14,24 @@ rules
   			; entities := <all-keys-EntDecl> None()	  
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; result := <map( make-mobl-mapper-for-entity); 
-  			  	add-elem-to-list(|Import(QId(QId("webservices", "mobl"), "model"))); 
+  			  	add-elem-to-list(|mobl-def |[import webservices::mobl::model]|); 
   			  	make-valid-page-from-mobl-defs(|dirname, "mapper")> filteredEntities
   			; module-to-moblfile(|dirname, "mapper")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
 		 
  
-  make-mobl-mapper-for-entity: name -> mapper
-	where 	mapper :=	
-				Function([] , $[[name]Mapper]
-    				, [FArg("json", SimpleType("JSON"))]
-    				, SimpleType("void")
-    				, [ If( BinMethodCall( FieldAccess(Var("json"), "errors"), "&&"
-							, BinMethodCall( FieldAccess(FieldAccess(Var("json"), "errors"), "length"), ">", Num("0"))), 
-    				  	Block([ ExpStat(Call("log", [FieldAccess(Var("json"), "errors")]))])
-        				, Block(
-        				  	[For( "json", SimpleType("JSON"), FieldAccess(Var("json"), "result")
-              					, [ ExpStat( MethodCall( Var(name), "fromSelectJSON", [Var("json")]))]
-             	 )]))])
+  make-mobl-mapper-for-entity: x_name -> mapper
+	where 	x_functionName := $[[x_name]Mapper]
+            ; mapper := mobl-stat 
+              |[
+              	function x_functionName (json : JSON) {
+   		 			if (json.errors && json.errors.length > 0) {
+      					log(json.errors);
+    				} else {
+      					foreach(ent : JSON in json.result) {
+      						x_name.fromSelectJSON(ent);
+      					}
+    				}
+  				}	
+              ]|
              	 

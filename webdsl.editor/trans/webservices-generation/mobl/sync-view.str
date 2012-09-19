@@ -9,16 +9,19 @@ imports
 rules 
 	
   make-mobl-sync-view: x -> view
-  	where 	 (topEntity, nameprop) := <TopEntity>
-  			; view := 
-  				ScreenNoReturnType([], "syncSimpleView", []
-					, [ ControlCall(Var("header"), [String("\"Sync Entities\"")]
-    					, [ ControlCallNoBody(Var("backButton"), [ String("\"back\"") , NamedExp("onclick", Callback([ExpStat(Call("back", []))]))])])
-  					, VarDeclInferredContrElem("phrase", String("\"\""))
-  					, ControlCallNoBody(Var("searchBox"), [Var("phrase")])
-  					, ListInferred("ent"
-  					  	, MethodCall(MethodCall(Var(topEntity), "searchPrefix", [Var("phrase")]), "order" , [String($["[nameprop]"]), True()])
-    					, [ ControlCallNoArgs(Var("item"), [ ControlCallNoBody( Var("checkBox"), 
-    					  	[ FieldAccess(Var("ent"), "sync")
-              				, NamedExp("label", FieldAccess(Var("ent"), nameprop))])])])])
- 
+  	where 	 (topEntity, x_nameprop) := <TopEntity>
+            ; e_nameprop := $["[x_nameprop]"] 
+            ; se_vardecl := VarDeclInferredContrElem("phrase", String(""))   //hack for grammer problems make difference between vardecls				  
+ 			; view := mobl-def 
+ 			  |[
+ 			  	screen syncSimpleView() {
+    				header( "Sync Entities" ) {
+      					backButton( "back" , onclick = { back(); } )
+    				}
+    				se_vardecl
+    				searchBox ( phrase )
+    				list ( ent in Project.searchPrefix( phrase ).order( e_nameprop , true ) ) {
+      					item { checkBox ( ent . sync , label = ent . x_nameprop ) }
+    				}
+  				}
+ 			  ]|

@@ -22,108 +22,106 @@ rules
 
 rules 
 	
-  make-simple-view-for-mobl-entity: EntityNoSuper(_, name, props) -> result
-	where 	properties := <add-elem-to-list(|IdMoblProperty()); filter(mobl-property-to-view)> props
-			; result := 
-				Control([], $[show[name]Simple], [FArg(ArgumentVarName(), SimpleType(name))]
-				, [ ControlCall( Var("header"), [String($["[name]"])]
-	    			, [ ControlCallNoBody( Var("backButton"), [ String("\"back\"") 
-	          			, NamedExp("onclick", Callback([ExpStat(Call("back", []))]))])])
-	  			, ControlCallNoArgs(Var("group"), properties)])
-  
-  mobl-property-to-view: Property(_, name, type, _) -> view
-  	where view:= <type-to-view> (name, type) 
+  make-simple-view-for-mobl-entity: EntityNoSuper(_, x_name, props) -> result
+	where 	se_properties* := <add-elem-to-list(|IdMoblProperty()); filter(mobl-property-to-view)> props
+			; x_pagename := $[show[x_name]Simple]
+			; e_name := $["[x_name]"]  
+	  		; result :=	 mobl-def 
+	  		  |[ 
+	  		  	control x_pagename ( ent : x_name ) {
+	  		  		header ( e_name ) {
+      					backButton ( "back" , onclick = { back(); } )
+    				}
+    				group {
+    					se_properties*
+    				}
+    			}
+	  		  ]| 
+
+  mobl-property-to-view: Property(_, name, type, _) -> view 
+  	where 	view := <type-to-view> (name, type) 
   	
   mobl-property-to-view: PropertyNoAnnos(_, name, type) -> view
-  	where view:= <type-to-view> (name, type) 
+  	where 	view := <type-to-view> (name, type) 
   	
 rules// transform types to viewcalls
 	
-  type-to-view : (name, SimpleType("String")) -> result
-  	where result := 
-  			ControlCallNoBody(Var("showField"), [String($["[name]"]), FieldAccess(Var(ArgumentVarName()), name)])
-  
-  type-to-view : (name, SimpleType(type)) -> result
+  type-to-view : (x_name, SimpleType("String")) -> result
+  	where e_name := $["[x_name]"] 
+ 		  ; result := mobl-elem	|[showField(e_name,ent.x_name)]|
+ 		     
+  type-to-view : (x_name, SimpleType(type)) -> result
   	where 	<fetch-elem(?type)> ["Bool", "Num"]
-  		 	; result := 
-  				ControlCallNoBody(Var("showField"), [String($["[name]"]), MethodCall(FieldAccess(Var(ArgumentVarName()), name),"toString",[])])
-  
-  type-to-view : (name, SimpleType("DateTime")) -> result
-  	where  	result := 
-  				ControlCallNoBody(Var("showField"), [String($["[name]"]), MethodCall(FieldAccess(Var(ArgumentVarName()), name),"toDateString",[])])
+   		  	; e_name := $["[x_name]"] 
+   		  	; result := mobl-elem	|[showField(e_name,ent.x_name.toString())]|
 
-  type-to-view : (name, SimpleType(type)) -> result
-  	where not	( <string-starts-with(|"generatedPropertyForInverse")> name 
+  type-to-view : (x_name, SimpleType("DateTime")) -> result
+  	where 	e_name := $["[x_name]"] 
+			; result := mobl-elem	|[when(ent.x_name){showField(e_name,ent.x_name.toDateString())}]| 
+
+  type-to-view : (x_name, SimpleType(type)) -> result
+  	where not	( <string-starts-with(|"generatedPropertyForInverse")> x_name 
   				 	<+  <fetch-elem(?type)> ["Bool", "String", "Num", "DateTime"])
-  	where  	result := 
-  				ControlCallNoBody(Var("showEntityField"), [String($["[name]"]), FieldAccess(Var(ArgumentVarName()), name),Var($[show[type]Simple])])
+  	where  	e_name := $["[x_name]"] 
+			; x_pagename := $[show[type]Simple]
+			; result := mobl-elem	|[showEntityField(e_name,ent.x_name,x_pagename)]|
 
- type-to-view : (name, GenericType(_, [SimpleType(type)])) -> result
-  	where not	( <string-starts-with(|"generatedPropertyForInverse")> name )
-  	where  	result := 
-  				ControlCallNoBody(Var("showEntitiesField"), [String($["[name]"]), FieldAccess(Var(ArgumentVarName()), name),Var($[show[type]Simple])])
-
+ type-to-view : (x_name, GenericType(_, [SimpleType(type)])) -> result
+  	where not	( <string-starts-with(|"generatedPropertyForInverse")> x_name )
+  	where  	e_name := $["[x_name]"] 
+			; x_pagename := $[show[type]Simple]
+			; result := mobl-elem	|[showEntitiesField(e_name,ent.x_name,x_pagename)]|
+	
 overlays
 	
 	ArgumentVarName = "ent" 
-	IdMoblProperty = PropertyNoAnnos([],"id",SimpleType("String"))
+	IdMoblProperty = mobl-entBodyElem |[ id : String ]| 
   			
 rules //overlays 
-	
-	SimpleViewStandaardDefs = 
-			![ Import(QId(QId("webservices", "mobl"), "model"))
-			, Import(QId(QId("mobl", "ui"), "generic"))
-			, ScreenNoReturnType([], "showControl"
-  				, [ FArg("viewer", GenericType("Control1", [GenericType("Entity", [DynamicType()])]))
-    				, FArg("value", GenericType("Entity", [DynamicType()]))]
-  				, [ControlCallNoBody(Var("viewer"), [Var("value")])]
-  			)
-			, ScreenNoReturnType( [], "showControlList"
-  				, [ FArg("viewer", GenericType( "Control3"
-			        	, [ SimpleType("String")
-			          	, GenericType("Collection", [GenericType("Entity", [DynamicType()])])
-			          	, GenericType("Control1", [SimpleType("Dynamic")])
-			          	] 
-        			))
-    				, FArg("headerName", SimpleType("String"))
-    				, FArg("values", GenericType("Collection", [GenericType("Entity", [DynamicType()])]))
-    				, FArg("dviewer", GenericType("Control1", [SimpleType("Dynamic")]))]
-   				, [ ControlCallNoBody(Var("viewer"), [Var("headerName"), Var("values"), Var("dviewer")])])
-   			, Control([], "showField"
-   			  	, [FArg("name", SimpleType("String")), FArg("value", SimpleType("String"))]
-				, [ ControlCallNoArgs( Var("item"), 
-					[ ControlCallNoBody( Var("label"), [Var("name"), NamedExp("style", Var("textFieldLabelStyle"))])
-      				, ControlCallNoBody(Var("textField"), [Var("value"), NamedExp("disabled", True())])])])
-			, Control([], "showEntityField"
-	  			, [ FArg("name", SimpleType("String"))
-	    			, FArg("value", GenericType("Entity", [DynamicType()]))
-	    			, FArg("viewer", GenericType("Control1", [GenericType("Entity", [DynamicType()])]))]
-	  			, [ WhenNoElse( Var("value") 
-	       			, [ ControlCall( Var("item")
-	      				, [NamedExp( "onclick", Callback( [ExpStat(Call("showControl", [Var("viewer"), Var("value")]))]))]
-	          			, [ControlCallNoBody(Var("label"), [Var("name")])])])])
-			, Control( [], "showEntitiesField"
-	  			, [ FArg("name", SimpleType("String"))
-	    			, FArg("values", GenericType("Collection", [GenericType("Entity", [DynamicType()])]))
-	    			, FArg( "viewer" , GenericType("Control1", [GenericType("Entity", [DynamicType()])]))]
-	  			, [ WhenNoElse(Var("values")
-	      			, [ ControlCall( Var("item")
-	      			 	, [ NamedExp("onclick", Callback( [ ExpStat( Call( "showControlList", 
-	      			 	  	[Var("showEntitiesList"), Var("name"), Var("values"), Var("viewer")]))]))]
-	          		, [ControlCallNoBody(Var("label"), [Var("name")])])])])
-			, Control([], "showEntitiesList"
-  				, [ FArg("headerName", SimpleType("String"))
-    				, FArg("values", GenericType("Collection", [GenericType("Entity", [DynamicType()])])) 
-    				, FArg("viewer", GenericType("Control1", [GenericType("Entity", [DynamicType()])]))]
-  				, [ ControlCall(Var("header"), [Var("headerName")]
-      				, [ ControlCallNoBody(Var("backButton"), [ String("\"back\"")
-            			, NamedExp("onclick", Callback([ExpStat(Call("back", []))]))])])
-    			, ListInferred( "value", Var("values")
-    			  	, [ ControlCall(Var("item")
-						, [ NamedExp("onclick", Callback([ExpStat(Call("showControl", [Var("viewer"), Var("value")]))]))]
-          				, [ControlCallNoBody(Var("label"), [FieldAccess(Var("value"), "id")])])])])
-			, Javascript(JSModule( 
-			  	[ JSExpStat( JSAssign( JSLFieldAccess(JSVar("__ns"), "back"), "="
-        			, JSFunctionExp([], [JSExpStat(JSCall(JSFieldAccess(JSVar("history"), "back"), []))])))]))
-        	, ExternalFunction([], "back", [], SimpleType("void"))		  
-			]
+	SimpleViewStandaardDefs = ! mobl-def* 
+	|[
+		import webservices::mobl::model
+		import mobl::ui::generic
+		screen showControl (viewer : Control1< Entity<?> >, value : Entity<?>) {
+		  viewer(value)
+		}
+		screen showControlList (viewer : Control3 <String, Collection < Entity<?> >, Control1<Dynamic> >, headerName : String, values : Collection< Entity<?> >, dviewer : Control1<Dynamic>) {
+		  viewer(headerName, values, dviewer)
+		}
+		control showField (name : String, value : String) {
+		  item {
+		    label(name, style = textFieldLabelStyle)
+		    textField(value, disabled = true)
+		  }
+		}
+		control showEntityField (name : String, value : Entity<?>, viewer : Control1< Entity<?> >) {
+		  when ( value ) {
+		    item( onclick = { showControl(viewer,value); } ) {
+		      label( name )
+		    }
+		  }
+		}
+		control showEntitiesField(name : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
+		  when ( values ) {
+		    item( onclick = { showControlList(showEntitiesList,name,values,viewer); } ) {
+		      label( name )
+		    }
+		  }
+		}
+		control showEntitiesList (headerName : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
+		  header( headerName ) {
+			backButton( "back", onclick = { back(); } )
+		  }
+		  list ( value in values ) {
+		    item( onclick = { showControl(viewer,value); } ) {
+		      label( value . id )
+		    }
+		  }
+		}  
+		<javascript>
+	 	  __ns.back = function() {
+		    history.back();
+		  };
+		</javascript>
+	    external function back () : void
+	]| 

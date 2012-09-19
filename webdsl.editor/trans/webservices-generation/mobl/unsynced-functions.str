@@ -12,7 +12,12 @@ rules
   generate-mobl-unsynced-functions: x -> x
 	where  dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname
-  			; imports := [Import(QId(QId("webservices", "mobl"), "model")), Import(QId(QId("webservices", "mobl"), "sync")), Import(QId(QId("mobl", "ui"), "generic"))]
+  			; imports :=  mobl-def* 
+  			  |[
+  			  	import webservices::mobl::model
+  			  	import webservices::mobl::sync
+  			  	import mobl::ui::generic
+  			  ]|  
   			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity)); string-sort> None()	
   			; nr-functions := <map(generate-mobl-unsynced-nrfunction)> entities
   			; elem-functions := <map(generate-mobl-unsynced-elemfunction)> entities
@@ -26,53 +31,69 @@ rules
 rules // function generation
   
   generate-mobl-unsynced-nrfunction: entityname -> function
-  	where	function := 
-  			  	Function( [], $[nrUnsynced[entityname]], [], SimpleType("Num") , 
-  			  		[Return(MethodCall(Call($[getUnsynced[entityname]], []), "count", []))])
+  	where	x_functionname := $[nrUnsynced[entityname]]
+      		; x_functioncall := $[getUnsynced[entityname]]	
+      		; function := mobl-def 
+      		|[
+      			function x_functionname() : Num {
+      				return x_functioncall().count();
+      			}
+      		]|
       						  
-   generate-mobl-unsynced-elemfunction: entityname -> function
-  	where 	(entityname, _) := <TopEntity>
-  			; function := 
-  			  	Function( [], $[getUnsynced[entityname]], [], GenericType("Collection", [SimpleType(entityname)]) , 
-  			  		[ Return(MethodCall(MethodCall(MethodCall(Var(entityname), "all", [])
-          				, "filter", [String("\"version\""), String("\"=\""), Num("0")] ) 
-          				  , "filter", [String("\"sync\""), String("\"=\""), True()]))]) 
+   generate-mobl-unsynced-elemfunction: x_entityname -> function
+  	where 	(x_entityname, _) := <TopEntity>
+  			; x_functionname := $[getUnsynced[x_entityname]]
+          	; t_entity := x_entityname  	
+          	; function := mobl-def 
+          	  |[
+          	  	function x_functionname() : Collection<t_entity> {
+          	  		return 	x_entityname.all().filter("version", "=", 0).filter("sync", "=", true);
+          	  	}
+          	  ]|			     
   
-  generate-mobl-unsynced-elemfunction: entityname -> function
-  	where not((entityname, _) := <TopEntity>)
-  	where	function := 
-  			  	Function( [], $[getUnsynced[entityname]], [], GenericType("Collection", [SimpleType(entityname)])  , 
-  			  		[ Return(MethodCall(MethodCall(Var(entityname), "all", [])
-          				, "filter", [String("\"version\""), String("\"=\""), Num("0")] ))])
+  generate-mobl-unsynced-elemfunction: x_entityname -> function
+  	where not((x_entityname, _) := <TopEntity>)
+  	where	x_functionname := $[getUnsynced[x_entityname]]
+          	; t_entity := x_entityname  	
+          	; function := mobl-def 
+          	  |[
+          	  	function x_functionname() : Collection<t_entity> {
+          	  		return 	x_entityname.all().filter("version", "=", 0);
+          	  	}
+          	  ]|			
 
 rules// syncing
 	
   generate-mobl-sync-functions-unsynced: entity -> function
- 	where	objectsstatement := 	
- 				ExpStat(MethodCall( Var("Sync"), $[sync[entity]]
-  					, [MethodCall(Call($[getUnsynced[entity]], []), "selectJSON", [List([String("\"id\""), String("\"version\"")])])]))
- 		 	; function :=
- 			FunctionNoReturnType([], $[syncUnsynced[entity]], []
-				, [ VarDeclInferred("begin", Call("now", []))
-  					, objectsstatement
-          			, ExpStat( Call( "log"
-      					, [ BinMethodCall(String($["time needed for syncing unsynced [entity]: "]), "+"
-          					, MethodCall(Brackets(BinMethodCall(Brackets(BinMethodCall(
-          					  	Call("now", []), "-", Var("begin")))
-                				, "/", Num("1000"))), "toString", []))]))])
+ 	where	x_functionname := $[syncUnsynced[entity]]
+           	; x_functioncall := $[getUnsynced[entity]]
+           	; x_servicecall := $[sync[entity]]  
+           	; e_logstring := $["time needed for syncing unsynced [entity]: "]  
+           	; function := mobl-def 
+             |[
+             	function x_functionname(){
+             		var begin = now();
+             		Sync.x_servicecall(x_functioncall().selectJSON(["id","version"]));
+             		log(e_logstring + ((now() - begin) / 1000 ).toString());
+             	}
+             ]|     				  
 
 rules// control 
 	
   generate-mobl-unsynced-overview-control: entities -> control
-  	where 	body := <map(generate-mobl-unsynced-entity-label); add-elem-to-list(|Html("h3", [], [ScreenString("\"Unsynced\"")], "h3"))>
-  			; control := 
-		  		Control([], "statusUnsyncedEntities", [], [ ControlCallNoArgs( Var("group")
-		  		, body)])
+  	where 	se_body* := <map(generate-mobl-unsynced-entity-label)>
+		  	; control := mobl-def 
+		  	  |[
+		  	  	control statusUnsyncedEntities() {
+		  	  		group {
+		  	  			<h3>"Unsynced"</h3>
+		  	  			se_body*
+		  	  		}
+		  	  	}
+		  	  ]|	  
 	 	  		
   generate-mobl-unsynced-entity-label: entityname -> label
-   	where 	label := 
-   				Html("p", [],
-   					[ControlCallNoBody( Var("label")
-						, [BinMethodCall(String($["[entityname]: "]), "+", Call($[nrUnsynced[entityname]], []))])]
-					, "p" )  
+   	where	e_entity := $["[entityname]: "]
+			; x_functionname :=  $[nrUnsynced[entityname]] 		  
+			; label := mobl-elem |[<p>label(e_entity + x_functionname())</p>]|		  
 		 

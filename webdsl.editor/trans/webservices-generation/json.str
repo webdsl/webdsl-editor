@@ -110,18 +110,18 @@ rules//transformation
               
    
    property-to-json: property -> statements
-	 where	(?Property(name, _, type, _) 
-	 			<+ ?PropertyNoAnno(name, _, type)
-	 			<+ ?DerivedProperty(name, _, type, _, _)
-	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
-	 		; stat_pre := <property-to-value-array-pre(|)> (name,type) 
-	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), name) else exp := Var($[array[name]]) end	
+	 where	(?Property(x_name, _, type, _) 
+	 			<+ ?PropertyNoAnno(x_name, _, type)
+	 			<+ ?DerivedProperty(x_name, _, type, _, _)
+	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	 		; stat_pre := <property-to-value-array-pre(|)> (x_name,type) 
+	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), x_name) else exp := Var($[array[x_name]]) end	
 	 		; value := <exp-to-value-statement> (exp, type)
-	 		; stat_else :=  <generate-json-put>(name, value)
-	 		; stat_if :=  <generate-json-put> (name, exp|[null as JSONObject]|)
+	 		; stat_else :=  <generate-json-put>(x_name, value)
+	 		; stat_if :=  <generate-json-put> (x_name, exp|[null as JSONObject]|)
 			; statements := webdsl 
 			  |[
-              	if (this.name == null) {
+              	if (this.x_name == null) {
               		stat_if
               	} else {
               		stat_pre
