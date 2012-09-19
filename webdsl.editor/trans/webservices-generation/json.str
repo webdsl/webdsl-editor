@@ -46,71 +46,91 @@ rules//file generation
 	  		; <make-valid-page-with-extends-entity(|$[[dirname]/[name]])
 	  		   ; write-ast-to-file(|filename)> t  
 	
-	make-valid-page-with-extends-entity(|dirname) : (entityName,props) ->
-		ModuleDefs(dirname, [ExtendEntity(entityName, functions)], [])
-	 where 	simpleJSONFunction := <build-simple-json-function> props
-	 		; JSONFunction := <build-json-function> props
-	 		; minimalJSONFunction := <build-minimal-json-function> props
-	 		; functions := [simpleJSONFunction , JSONFunction, minimalJSONFunction]
-	 		
+	make-valid-page-with-extends-entity(|dirname) : (x_entityname ,props) ->
+		ModuleDefs(dirname, body, [])
+	 where 	ebd1 := <build-simple-json-function> props
+	 		; ebd2 := <build-json-function> props 
+	 		; ebd3 := <build-minimal-json-function> props
+	 		; body := def* 
+	 		  	|[
+	 		  		extend entity x_entityname {
+	 		  			ebd1
+	 		  			ebd2 
+	 		  			ebd3
+	 		  		}
+	 		  	]|
+	  
 rules//transformation
 	
 	build-simple-json-function: props -> function
-	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
-	 		; return := [Return(Var("object"))]
-	 		; filterdProperties := <filter(where(is-simple-prop); not(?VersionProperty1() + ?NameProperty1()))> props  
-	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
-	 		; statements := <concat> [init, puts, return]
-	 		; function := Function("toSimpleJSON", [], SimpleSort("JSONObject"), Block(statements))
-	 
+	 where 	filterdProperties := <filter(where(is-simple-prop); not(?VersionProperty1() + ?NameProperty1()))> props  
+	 		; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
+	 		; function := fun 
+	 		  |[
+	 		  	 function toSimpleJSON () : JSONObject {
+	 		  	 	var object := JSONObject();
+	 		  	 	stat_puts
+	 		  	 	return object;
+	 		  	 }
+	 		  ]| 
+	 		  	
 	build-minimal-json-function: props -> function
-	 where 	debug(!"props")
-	 		; init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
-	 		; return := [Return(Var("object"))]
-	 		; filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons ))> props  
-	 		; puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
-	 		; statements := <concat> [init, puts, return]
-	 		; function := Function("toMinimalJSON", [], SimpleSort("JSONObject"), Block(statements))
-	 
+	 where 	filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons ))> props  
+	 		; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
+	 		; function := fun 
+	 		  |[
+	 		  	 function toMinimalJSON () : JSONObject {
+	 		  	 	var object := JSONObject();
+	 		  	 	stat_puts
+	 		  	 	return object;
+	 		  	 }
+	 		  ]| 
 	build-json-function: props -> function
-	 where 	init :=  [VarDeclInitInferred("object", ThisCall("JSONObject", []))]
-	 		; return := [Return(Var("object"))]
-	 		; propertyStatements := <filter(property-to-json)> props
-	 		; statements := <concat> [init, propertyStatements, return]
-	 		; function := Function("toJSON", [], SimpleSort("JSONObject"), Block(statements))
-
+	 where	stat_puts := <filter(property-to-json)> props
+			; function := fun 
+	 		  |[
+	 		  	 function toJSON () : JSONObject {
+	 		  	 	var object := JSONObject();
+	 		  	 	stat_puts
+	 		  	 	return object;
+	 		  	 }
+	 		  ]| 
 	property-to-json-without-null: property -> statements
 	 where	(?Property(name, _, type, _) 
 	 			<+ ?PropertyNoAnno(name, _, type)
 	 			<+ ?DerivedProperty(name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
-	 		; value := <exp-to-value-statement> (name,type)  
-	 		; statements := 
-	 		  [IfNoElse(
-                NotEq(FieldAccess(Var("this"), name), Null())
-              	, Block([<generate-json-put>(name, value)])
-              )]
+	 		; stat_put := <exp-to-value-statement; generate-json-put> (name,type)  
+	 		; statements := webdsl 
+	 		  |[
+	 		  	if (this.name != null) {
+	 		  		stat_put
+	 		  	} 
+	 		  ]|
+              
    
    property-to-json: property -> statements
 	 where	(?Property(name, _, type, _) 
 	 			<+ ?PropertyNoAnno(name, _, type)
 	 			<+ ?DerivedProperty(name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
-	 		; pre := <property-to-value-array-pre(|)> (name,type)
+	 		; stat_pre := <property-to-value-array-pre(|)> (name,type) 
 	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), name) else exp := Var($[array[name]]) end	
 	 		; value := <exp-to-value-statement> (exp, type)
-	 		; statements := 
-	 		  [If(
-                Eq(FieldAccess(Var("this"), name), Null())
-                , Block([<generate-json-put>(name,Cast(Null(), SimpleSort("Object")))])
-              	, Block(<concat>[pre, [<generate-json-put>(name, value)]])
-              )]
+	 		; stat_else :=  <generate-json-put>(name, value)
+	 		; stat_if :=  <generate-json-put> (name, exp|[null as JSONObject]|)
+			; statements := webdsl 
+			  |[
+              	if (this.name == null) {
+              		stat_if
+              	} else {
+              		stat_pre
+              		stat_else
+              	}
+              ]| 
   
-  generate-json-put: (name, value) -> 
-  	Stat( Call( Var("object")
-		, "put"
-	 	, [String($[[name]]), value]
-	))
+  generate-json-put: (name, e_value) -> stat |[object.put(e_name, e_value);]|
+  	where e_name := $["[name]"]
               	
 rules//type transformation
 	
@@ -123,41 +143,32 @@ rules//type transformation
 	exp-to-value-statement: (exp, SimpleSort("Bool")) -> [exp]
 	
 	
-	exp-to-value-statement: (exp, SimpleSort("WikiText")) -> [Call(exp, "format", [])]
+	exp-to-value-statement: (e1, SimpleSort("WikiText")) -> exp|[e1.format()]|
 
-	exp-to-value-statement: (exp, SimpleSort("DateTime")) -> [Div(
-														                  Call(exp, "getTime", [])
-														                , Long("1000L")
-														           )]
+	exp-to-value-statement: (e1, SimpleSort("DateTime")) -> exp|[e1.getTime() / 1000L]|
+	
 
-	exp-to-value-statement: (exp, SimpleSort("Time")) -> [Call(
-																	exp
-                          											, "format"
-                          											, [Call(Var("DateType"), "getDefaultTimeFormat", [])]
-                          										)]
-    
-    exp-to-value-statement: (exp, SimpleSort("Date")) -> [Call(
-																	exp
-                          											, "format"
-                          											, [Call(Var("DateType"), "getDefaultDateFormat", [])]
-                          										)]                      											 
+	exp-to-value-statement: (e1, SimpleSort("Time")) -> exp|[e1.format(DateType.getDefaultTimeFormat())]|
+
+    exp-to-value-statement: (e1, SimpleSort("Date")) -> exp|[e1.format(DateType.getDefaultTimeFormat())]|              											 
  	
- 	exp-to-value-statement: (exp, type) -> [ThisCall("makeJSONObjectFromEntityRef", [exp])]
+ 	exp-to-value-statement: (e1, type) -> exp|[makeJSONObjectFromEntityRef(e1)]|  
  		where <is-entity-type> type
  	
  	exp-to-value-statement: (exp, GenericSort(_, _)) -> [exp]
  		
 
-    property-to-value-array-pre: (name, GenericSort(sort, [t@SimpleSort(type)])) -> [ VarDeclInitInferred(arrayname, ThisCall("JSONArray", []))
-																	, ForStmt( varname, t, FieldAccess(Var("this"), name), None()
-				                    									, Block([ 
-				                    									  	Stat( Call( Var(arrayname), "put",
-				                             									value
-				                            								))]))]
-		where 	arrayname := $[array[name]]
-				; varname := <new> type
-				; value := <exp-to-value-statement>(Var(varname), t)
-
+    property-to-value-array-pre: (x_name, GenericSort(sort, [x_t@SimpleSort(type)])) -> statements
+		where 	x_arrayname := $[array[x_name]]
+				; x_varname := <new> type
+				; e_value := <exp-to-value-statement>(exp|[x_varname]|, x_t)
+				; statements := webdsl 
+				  |[
+				  	var x_arrayname := JSONArray();
+				  	for(x_varname : x_t in this.x_name) {
+				  		x_arrayname.put(e_value);
+				  	}
+				  ]|
 rules// not allowed types	
 	
 	// exp-to-value-statement: (name, SimpleSort("Patch")) -> None()

@@ -16,50 +16,53 @@ overlays// mobl stuff
 	ToMoblForbiddenTypes = ["Secret", "Patch", "Image", "File"]
 	
 overlays//forward/redirect code
-	NativeClassDispatchServletHelper =
-		NativeClass(
-	      	"DispatchServletHelper"
-	    	, NativeClassAlias("DispatchServletHelper")
-	    	, NativeClassSuper("DispatchServlet")
-	    	, [ NativeClassFunction(None(), "getResponse", [], NativeClassFunctionReturn(NativeSimpleType("HttpServletResponse")))
-	      		, NativeClassFunction(None(), "forwardRequest", [NativeSimpleType("String")], None())
-	      		, NativeClassFunction(NativeClassFunctionStatic(), "get", [], NativeClassFunctionReturn(NativeSimpleType("DispatchServlet")))
-	      	]
-	    )
-rules//
-	GetDispatchServletHelper =
-		!Function(
-	     	"getDispatchServletHelper"
-	    	, []
-	    	, SimpleSort("DispatchServletHelper")
-	    	, Block(
-	        	[ VarDeclInitInferred("servlet", Call(Var("DispatchServletHelper"), "get", []))
-	        	, If(
-	            	IsA(Var("servlet"), SimpleSort("DispatchServletHelper"))
-	          		, Block([Return(Cast(Var("servlet"), SimpleSort("DispatchServletHelper")))])
-	          		, Block([Return(Null())])
-	          	)
-	        	]
-	      	)
-	    )
+	NativeClassDispatchServletHelper = def
+	|[
+		native class DispatchServletHelper as DispatchServletHelper : DispatchServlet {
+			getResponse ( ) : HttpServletResponse
+  			forwardRequest ( String )
+  			static get ( ) : DispatchServlet
+		}
+	]|
+rules	
+	GetDispatchServletHelper = !def
+	|[
+		function getDispatchServletHelper ( ) : DispatchServletHelper {
+  			var servlet := DispatchServletHelper.get() ;
+  			if ( servlet is a DispatchServletHelper ) {
+    			return ( servlet as DispatchServletHelper );
+  			} else {
+    			return null;
+  			}
+		}
+	]|	
+
 overlays//  prefix
 	
 	ServicePrefix = "webservice_generated_"
 
 overlays // service init and exit
 	
-	InitService =  	[VarDeclInitInferred("json", ThisCall("JSONObject", []))
-    				, VarDeclInitInferred("errors", ThisCall("JSONArray", []))]		
+	InitService = webdsl 
+	|[ 
+		var json := JSONObject() ;
+  		var errors := JSONArray() ;
+  	]|
 rules	
- 	ExitService = 	![Stat(Call( Var("json"), "put", [String("errors"), Var("errors")]))
-    				, Stat(Call( Var("json"), "put", [String("result"), Var("result")]))
-    				, Return(Var("json"))]
-    				  
+ 	ExitService = !webdsl 
+	|[ 
+		json.put("errors", errors);
+  		json.put("result", result);
+  		return json;
+  	]| 	
+ 		
 rules // for json
 	
-	MakeJSONFromRefFunction = 	
-		!Function("makeJSONObjectFromEntityRef", [Arg("ent", SimpleSort("Entity"))], SimpleSort("JSONObject")
-			, Block(
-    			[ VarDeclInitInferred("json", ThisCall("JSONObject", []))
-    			, Stat(Call(Var("json"), "put", [String("id"), FieldAccess(Var("ent"), "id")]))
-    			, Return(Var("json"))]))
+	MakeJSONFromRefFunction = !def
+	|[
+		function makeJSONObjectFromEntityRef ( ent : Entity ) : JSONObject {
+  			var json := JSONObject() ;
+  			json.put("id", ent.id);
+ 			return json;
+		}
+	]|	

@@ -11,20 +11,20 @@ rules
   			; <map(generate-sync-service)> filteredEntities
    
 	
-  generate-sync-service: entityname -> entityname
-  	where 	name := $[sync[entityname]]
-  			; forcountbody := 	Block([ 
-  			  						VarDeclInitInferred( "entity", Cast( ThisCall(  "loadEntity"
-      									, [ String(entityname)
-      									  	, Call(Call(Call(Var("request"), "getJSONObject", [Var("count")]) 
-      									  	  	, "getString", [String("id")]), "parseUUID", [])])
-    									, SimpleSort("Issue")))
-									, If( LargerThan(FieldAccess(Var("entity"), "version")
-    									, Call( Call( Call(Var("request"), "getJSONObject", [Var("count")]), 
-    									  	"getString", [String("version")]), "parseInt", []))
-    									, Block([ Stat(Call( Var("result"), "put", [Call(Var("entity"), "toJSON", [])]))])
-  										, Block([ Stat(Call( Var("result"), "put", [Call(Var("entity"), "toMinimalJSON", [])]))]))
-								])
+  generate-sync-service: x_entityname -> x_entityname
+  	where 	name := $[sync[x_entityname]]
+  			; x_namestring :=  $["[x_entityname]"]
+  			; stat_forcountbody := webdsl 
+      	  	  |[ 	
+      	  	  	var entity := ( loadEntity(x_namestring, request.getJSONObject(count).getString("id").parseUUID()) as x_entityname ) ;
+      			if ( entity.version > request.getJSONObject(count).getString("version").parseInt() ){
+        			result.put(entity.toJSON());
+        		} else {
+      				result.put(entity.toMinimalJSON());
+      			}
+      		  ]|
+      	  	  	
+  		
 //optimasation 1  				
   			// forcountbody :=  Block([ Stat( Call( Var("result"), "put", [ Call(
      //                		Cast( 
@@ -37,10 +37,15 @@ rules
 	    //                         	, "parseUUID", [])])
      //                			, SimpleSort(entityname))
      //              			, "toJSON", [])]))])
-  			; body := 
-  			  		[ VarDeclInitInferred("request", ThisCall("JSONArray", [ThisCall("readRequestBody", [])]))
-					, VarDeclInitInferred("result", ThisCall("JSONArray", []))
-    				, ForCountStmt("count", Int("0"), Call(Var("request"), "length", [])
-      					, forcountbody)]
+  			
+      	; body := webdsl 
+      	  |[
+      	  	var request := JSONArray(readRequestBody()) ;
+  			var result := JSONArray() ;
+  			for ( count : Int from 0 to request.length() ){
+  				stat_forcountbody
+  			}
+  		  ]| 
+  			 
             ; service := <generate-service(|name)> body
         	; service-to-file(|name) 

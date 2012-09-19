@@ -13,6 +13,7 @@ imports
 	webservices-generation/mobl/mapper
 	webservices-generation/mobl/sync-services
 	webservices-generation/sync-services
+	webservices-generation/related-entities
 		 
   	util 
   	lib/-
@@ -25,7 +26,8 @@ rules
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         	  
-  	where	 topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  	where	<generate-related-entities-functions> project-path
+  			; topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
   			; rules (TopEntity := topEntity )
   			; dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
@@ -36,7 +38,7 @@ rules
   			; generate-sync-services   
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>]
-			; defs' := <concat> [modules, defs]
+			; defs' := <concat> [modules,[Imports(" webservices/related-entities/main")], defs]
 			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
 			; <write-ast-to-file(|$[[dirname]/interface.app])> result
 			  	
@@ -48,55 +50,59 @@ rules// generation
 	
   generate-available-services-function: x -> function
 	where 	services := <bagof-Service>
-			; services' := <map(\x -> String(x)\)> services
-		  	; function := 
-		  	  	Function("getAvialableServices", [], GenericSort("Set", [SimpleSort("String")])
-    				, Block(
-        			[Return(SetCreation(services'))]
-      		))
+			; e_services* := <map(\x -> String(x)\)> services
+      		; function := def 
+      		  |[
+      		  	function getAvailableServices() : Set<String> {
+      		  	 return {e_services*};
+      		  	}
+      		  ]|
       		
   generate-interface-service: x -> service
-  	where 	service := 
-  				ServiceFunction("webservice", [Arg("service", SimpleSort("String"))]
-    			, Block(
-       				[ If( InColl(Var("service"), ThisCall("getAvialableServices", []))
-          				, Block([ Stat( Call( ThisCall("getDispatchServletHelper", []), "forwardRequest"
-                  			, [Add(Add(String($[/[ServicePrefix()]]), Var("service")), String("/"))]
-                 		))])
-          				, Block(
-		          			[ VarDeclInitInferred("json", ThisCall("JSONObject", []))
-		              		, VarDeclInitInferred("errors", ThisCall("JSONArray", []))
-		              		, Stat( Call( Var("errors"), "put"
-		     					, [Add(Add(String("service "), Var("service")), String(" does not exist"))]
-		                  	))
-		              		, Stat(Call(Var("json"), "put", [String("errors"), Var("errors")]))
-		              		, Return(Var("json"))
-	              		])
-          )]))
+  	where service := def 
+	          |[
+	          	service webservice ( service : String ) {
+	  				if ( service in getAvailableServices() ) {
+	    				getDispatchServletHelper().forwardRequest("/webservice_generated_" + service + "/");
+	  				} else {
+					    var json := JSONObject() ;
+					    var errors := JSONArray() ;
+					    errors.put("service " + service + " does not exist");
+					    json.put("errors", errors);
+					    return json;
+	  				}
+				}
+			]|
 
-  generate-service(|name): body -> service
+  generate-service(|name): stat_body -> service
   	where not(<bagof-Service; fetch-elem(?name)> name )
   	where 	rules (Service:+= name)
-  			; body':= <concat>	[InitService(), body, <ExitService>]
-  			; service := 
-  			  	ServiceFunction( $[[ServicePrefix][name]], []
-					, Block(
-					  	body'
-   	 			))
+  			; stat_init := InitService()
+  			; stat_exit := <ExitService>
+  			; x_servicename :=  $[[ServicePrefix][name]]
+   	 		; service  := def 
+	          |[
+	          	service x_servicename () {
+					stat_init
+					stat_body
+					stat_exit	
+				}
+			  ]|          	
    	 			
   generate-test-webservice: x -> service
-  	where 	service := <generate-service(|"test")> [VarDeclInitInferred("result", String("This is a test service"))]
+  	where 	service := <generate-service(|"test")> stat|[var result := "This is a test service";]|  			
   			; service-to-file(|"test") 
   	
   generate-top-level-webservice: x -> service
- 	where 	varname := <new> "ent"
- 			; (TopEntity, prop) := <TopEntity>
-  			; body := [VarDeclInitInferred("result", ThisCall("JSONArray", []))
-    				, ForStmt(varname, SimpleSort(TopEntity), Call(Var(TopEntity), "all", []), None()
-      					, Block(
-          					[ Stat(Call(Var("result"), "put", [Call(Var(varname), "toSimpleJSON", [])]))]
-          				))
-              		]
+ 	where 	x_varname := <new> "ent"
+ 			; (x_topEntityType, prop) := <TopEntity>
+            ; body := webdsl 
+              |[
+              	var result := JSONArray();
+              	for(x_varname : x_topEntityType in  x_topEntityType.all()){
+              		result.put(x_varname.toSimpleJSON());
+              	}
+              ]|  		
             ; service := <generate-service(|"getTopLevelEntities")> body
         	; service-to-file(|"getTopLevelEntities") 
         	     
