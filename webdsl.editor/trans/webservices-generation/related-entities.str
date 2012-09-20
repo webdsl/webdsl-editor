@@ -1,0 +1,68 @@
+module webservices-generation/related-entities
+
+imports
+	libstratego-lib
+	
+  	entity-extraction/generate-entity-files
+		
+  	util
+  	lib/-
+
+rules //builder
+	
+  generate-related-entities-functions : project-path -> project-path
+  	where	dirname := "webservices/related-entities"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; properties := <map(get-all-properties)> filteredEntities 
+  			; result:= <map(props-to-related-entities-functions(|dirname))> properties
+  			; <main-file-to-file(generate-main-model-file(|dirname, [])|dirname)> filteredEntities  
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+
+rules// lookup
+	
+  get-all-properties: entityName -> (entityName, <all-properties> entityName)
+  	where 	props1 := <concat> [<all-properties> entityName]
+  			
+  			  
+rules//file generation 
+	
+  props-to-related-entities-functions(|dirname): t@(name,props) -> t
+  	with	<file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[name].app]
+	  		; <make-valid-page-with-extends-entity-for-related-functions(|$[[dirname]/[name]])
+	  		   ; write-ast-to-file(|filename)> t  
+	
+  make-valid-page-with-extends-entity-for-related-functions(|dirname) : (x_entityName,props) ->
+		ModuleDefs(dirname, def, [])
+	where	ebd0* := [<build-related-entities-function>props]
+	 	 	; def := def* 
+	 		  	|[
+	 		  		extend entity x_entityName {
+	 		  		ebd0*
+	 		  		}
+	 		  	]|
+
+rules//transformation
+	
+  build-related-entities-function: props -> function
+	 where 	filterdProperties := <filter(not(is-simple-prop))> props  
+	 		; stat_puts* := <filter(property-to-add)> filterdProperties
+			; function := def 
+			  |[ 
+			  	function getRelatedEntities() : Set<Entity> {
+			  		var set := Set<Entity>();
+			  		stat_puts*
+			  		return set;	  
+			  	}
+			  ]|
+			  
+  property-to-add: property -> statement
+	where	(?Property(x_name, _, SimpleSort(_), _) 
+	 			<+ ?PropertyNoAnno(x_name, _, SimpleSort(_)))
+   			; statement := webdsl |[ set.add(this.x_name);]|
+  property-to-add: property -> statement
+	where	(?Property(x_name, _, GenericSort(_, _), _) 
+	 			<+ ?PropertyNoAnno(x_name, _, GenericSort(_, _)))
+			; statement := webdsl |[ set.addAll(this.x_name);]|   
