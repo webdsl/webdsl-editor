@@ -27,7 +27,7 @@ rules
   			; rules (TopEntity := topEntity )
   			; dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname
-  			; <Fst; generate-top-level-SyncProperty> topEntity 
+  			; <Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property> topEntity 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties)> filteredEntities 
@@ -96,11 +96,15 @@ rules //generation
   				ExtraInverseAnno: (class, propertyname) -> mobl-anno |[inverse : x_newPropertyName ]|
   			)
   
-   generate-top-level-SyncProperty: entityname -> entityname
+  generate-top-level-SyncProperty: entityname -> entityname
    	where 	property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
    			; rules( ExtraProperty:+ entityname -> property)
    
-   generate-inverse-property(|class): property ->  Property(name, Ref() , GenericSort("List", [SimpleSort(class)]), [InverseAnno(class, propertyname)])
+  generate-top-level-lastSynced-Property: entityname -> entityname
+   	where 	property := PropertyNoAnno("lastSynced", Simple(), SimpleSort("Int"))
+   			; rules( ExtraProperty:+ entityname -> property)			  
+   
+  generate-inverse-property(|class): property ->  Property(name, Ref() , GenericSort("List", [SimpleSort(class)]), [InverseAnno(class, propertyname)])
     where 	propertyname := <get-property-name> property
     		; name := $[generatedPropertyForInverse_[class]_[propertyname]]    
     		   

@@ -64,7 +64,7 @@
    Local                              -- KW["local"],
    Feed                               -- KW["feed"],
    Arg                                -- H[_1 KW[":"] _2],
-   Text                             -- H hs=0[KW["\""] _1 KW["\""]],
+   Text                               -- H hs=0[KW["\""] _1 KW["\""]],
    IfExp -- H[KW["if"] KW["("] _1 KW[")"] _2 KW["else"] _3], 
    IfTempl                            -- V[ V is=2[ H[KW["if"] KW["("] _1 KW[")"] KW["{"] ] _2 ] KW["}"] KW["else"] KW["{"] _3 KW["}"] ],
    IfTempl.2:iter-star                -- _1,
@@ -79,9 +79,9 @@
    Null                               -- KW["null"],
    TemplateCallNoBody                 -- H [_1 KW["("] H[_2] KW[")"]],
    TemplateCallNoBody.2:iter-star-sep -- H [_1 KW[","]],
-   TemplateCallBody                   -- V[ V is=2[H[_1 KW["{"]] _2] KW["}"]],
+   TemplateCallBody                   -- V[ V is=2[H[_1]  _2]],
    TemplateCallBody.2:iter-star       -- _1,
-   TemplateCall                       -- V[ V is=2[ H [ _1 KW["("] H[_2] KW[")"] KW["["] H[_3] KW["]"] KW["{"]] _4] KW["}"]],
+   TemplateCall                       -- V[ V is=2[ H [ _1 KW["("] H[_2] KW[")"] KW["["] H[_3] KW["]"]] _4]],
    TemplateCall.2:iter-star-sep       -- H [_1 KW[","]],
    TemplateCall.3:iter-star-sep       -- H [_1 KW[","]],
    TemplateCall.4:iter-star           -- _1,
@@ -375,9 +375,9 @@
    ExtendProcedure                              -- V[V is=2[H[KW["extend"] KW["procedure"] _1 KW["("] _2 KW[")"] KW["{"]] _3 ] KW["}"]],
 
    %% Derive
-   Derive                                       -- H[KW["derive"] _1 KW["for"] _2 KW["("] _3 KW[")"]],
+   Derive                                       -- H[KW["derive"] _1 KW["from"] _2 KW["("] _3 KW[")"]],
    Derive.3:iter-star-sep                       -- H[_1 KW[","]],
-   Derive                                       -- H[KW["derive"] _1 KW["for"] _2],
+   Derive                                       -- H[KW["derive"] _1 KW["from"] _2],
    DeriveDefault                                -- _1,
    DeriveMode                                   -- H[_1 KW["("] _2 KW[")"]],
    EditPage                                     -- KW["editPage"],
@@ -958,7 +958,7 @@
    TemplateWith.1:iter-star                               -- _1,
    TemplateWith                                           -- KW["with"] KW["{"] _1 KW["}"],
    TemplateWith.1:iter-star                               -- _1,
-   TemplateBody                                           -- _1,
+   TemplateBody                                           -- V is=2[_1],
    TemplateBody.1:iter-star                               -- _1,
    TemplateCase                                           -- KW["case"] KW["("] _1 KW[")"] KW["{"] _2 KW["}"],
    TemplateCase.1:iter-star-sep				  -- _1 KW[","],
@@ -1376,8 +1376,30 @@
    NativeClassConstructorCall                             -- KW["/*"] _1 KW["*/"] _2 KW["("] _3 KW[")"], %% hack: putting _1 in comments, omitting it will cause the rule to match constructor with arity 2 instead of 3. this is an internal constructor used for desugaring
    NativeClassConstructorCall.3:iter-star-sep             -- _1 KW[","],
    
+   PrefetchFor                                            -- H[KW["prefetch-for"] _1 _2 _3] _4,
+   PrefetchChildren                                       -- V  [V is=2 [KW["{"] _1] KW["}"]],
+   PrefetchChildren.1:iter-star                           -- _1,
+   PrefetchNode                                           -- H[ H hs=0 [_1 _2] H hs=1 [_3] _4 _5 _6] _7,
+   PrefetchNode.1:opt                                     -- _1 KW["."],
+   NoEmptyBatch                                           -- KW["no-empty-batch"],
+   FetchEarly                                             -- KW["fetch-early"],
+   PrefetchIfDefault                                      -- H [KW["default"] KW["["] ] H hs=0 [_1] KW["]"],
+   PrefetchIfDefault.1:iter-sep                           -- _1 KW[","],
+   PrefetchTemplateArgs                                   -- H [KW["templates"] KW["["] ] H hs=0 [_1] KW["]"],
+   PrefetchTemplateArgs.1:iter-sep                        -- _1 KW[","],
+   PrefetchThis                                           -- KW["this"],
+   TemplateArgOrThis                                      -- _1 KW["("] _2 KW[")"],
+   TemplateArgOrThis.2:iter-star-sep                      -- _1 KW[","],
+   PrefetchCondition                                      -- H[ KW["if"] KW["("] _1 KW[")"]],
+   PrefetchWhere                                          -- H[ KW["where"] H hs=1 [_1] KW["("] _2 KW[")"] ],
+   Hint                                                   -- KW["hint"],
+   RelativeFieldAccess                                    -- H hs=0 [_1 KW["."] _2],
+   
    ForInferred.4:iter-star                                -- _1,
    ForInferred                                            -- KW["for"] KW["("] _1 KW["in"] _2 _3 KW[")"] KW["{"] _4 KW["}"] _5,
-   ForStmtInferred                                        -- KW["for"] KW["("] _1 KW["in"] _2 _3 KW[")"] _4
-
+   ForStmtInferred                                        -- KW["for"] KW["("] _1 KW["in"] _2 _3 KW[")"] _4,
+   
+   GlobalVarDecl                                          -- KW["var"] _1 KW[":"] _2,
+   GlobalVarDeclInitInferred                              -- KW["var"] _1 KW[":="] _2,
+   GlobalVarDeclInit                                      -- KW["var"] _1 KW[":"] _2 KW[":="] _3
 ]

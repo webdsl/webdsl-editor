@@ -103,14 +103,14 @@ rules // generation of sync-functions
  	where x_topEntity := <TopEntity; Fst>
  	where not( <?x_topEntity> x_entity )
  	where	x_servicename := $[sync[x_entity]]
-          	; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id"]));]|
+          	; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]));]|
           	  				  
  
  get-all-mobl-objects-of-entity-statement: x_entity -> statement
  	where	x_topEntity := <TopEntity; Fst>
  			; <?x_topEntity> x_entity
  			; x_servicename := $[sync[x_entity]]
-			; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id"]));]|
+			; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]));]|
 	
  generate-mobl-total-sync-function:	x -> function
  	where 	stat_calls* := <Fst; generate-list-sync-calls> <TopEntity>
@@ -122,18 +122,16 @@ rules // generation of sync-functions
    			  		log("totaltime:" + ((now() - begin) / 1000).toString());
    			  	}
    			  ]|
-   			  
- generate-list-sync-calls: TopEntity -> list
- 	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); uniq> TopEntity
- 			; stat_syncunsynced* := <map(make-unsynced-check)> orderedentities
+   			   
+ generate-list-sync-calls: x_topEntity -> list
+ 	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); uniq> x_topEntity
  			; stat_firstsyncs* :=<map(make-sync-call)> orderedentities
  			; list := mobl-stat* 
  			  |[
+ 			  	var time = Sync.getTimeStamp();
  			  	stat_firstsyncs*
- 			  	var allsynced = false;
- 			  	while(!allsynced) {
- 			  		allsynced = true;
- 			  		stat_syncunsynced*
+ 			  	foreach(tl in x_topEntity.all().filter("sync", "=", true) ) {
+ 			  		tl.lastSynced = time;
  			  	}
  			  ]|
  			  
@@ -141,13 +139,3 @@ rules // generation of sync-functions
  	where x_servicename := $[syncAll[entityname]]
  		  ; call := mobl-stat |[x_servicename();]|
  		    
- make-unsynced-check: entityname -> check 
- 	where 	x_nrunsynced := $[nrUnsynced[entityname]]
- 			; x_unsynced := $[syncUnsynced[entityname]]
- 	 	  	; check := mobl-stat 
- 	 	  	  |[
- 	 	  	  	if(x_nrunsynced()) {
- 	 	  	  		x_unsynced();
- 	 	  	  		allsynced = false;
- 	 	  	  	}
- 	 	  	  ]|

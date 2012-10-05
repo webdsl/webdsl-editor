@@ -21,13 +21,12 @@ rules
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
 	  			var result := JSONArray() ;
-	  			var tls := Set<x_topLevelEntity>();
 	  			for ( count : Int from 0 to request.length() ){
-	  				var entity := ( loadEntity(e_name, request.getJSONObject(count).getString("id").parseUUID()) as x_topLevelEntity ) ;
-	  				tls.add(entity);
+	  				var tl := ( loadEntity(e_name, request.getJSONObject(count).getString("id").parseUUID()) as x_topLevelEntity ) ;
+	  				var timestamp := request.getJSONObject(count).getLong("lastSynced") ;
+	  				stat_forloop
+					stat_childloop
 	  			}
-				stat_forloop
-				stat_childloop
 	  		  ]|   			 
 	       	; service := <generate-service(|name)> body
 	        ; service-to-file(|name) 
@@ -37,7 +36,7 @@ rules
   			; x_functionnamejson := $[toJSONFromSuper[x_superClass]]
   			; statement :=  stat 
 	      	  |[
-	      	  	for(ent: x_entity in x_functionname(tls) ){
+	      	  	for(ent: x_entity in x_functionname(tl) where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp )){
 	  				result.put(ent.x_functionnamejson());
 	  			}
 	      	  ]|
@@ -46,7 +45,7 @@ rules
   	where 	x_functionname := $[getAll[x_entity]For[toplevelEntity]]
   			; statement :=  stat 
 	      	  |[
-	      	  	for(ent: x_entity in x_functionname(tls) ){
+	      	  	for(ent: x_entity in x_functionname(tl)where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp ) ){
 	  				result.put(ent.toJSON());
 	  			}
 	      	  ]|	      	  

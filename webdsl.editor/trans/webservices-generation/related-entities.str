@@ -118,13 +118,11 @@ rules // main file
 				; x_functioname := $[getAll[x_entity]For[x_topEntity]]  
 				; function := def
 				|[
-					function x_functioname (tls : Set<x_topEntity>) : Set<x_entity> {
+					function x_functioname (tl :x_topEntity) : Set<x_entity> {
 						var todo := Set<Entity>();
 						var seen := Set<UUID>();
 						var found := Set<x_entity>();
-						for(tl : x_topEntity in tls){
-							todo.addAll(getSetWhereNotSeen(todo, seen, tl.getRelatedEntities()));
-						}
+						todo.addAll(getSetWhereNotSeen(todo, seen, tl.getRelatedEntities()));
 						while( todo.length > 0 ) {
 	  	 					var newTodo := Set<Entity>();
 							for(ent: Entity in todo where ent != null) {
@@ -148,8 +146,8 @@ rules // main file
 				; x_functioname := $[getAll[x_entity]For[x_topEntity]]  
 				; function := def
 				|[
-					function x_functioname (tls : Set<x_topEntity>) : Set<x_entity> {
-						return tls;
+					function x_functioname (tl : x_topEntity) : Set<x_entity> {
+						return {tl};
 					}
 				]| 
 
