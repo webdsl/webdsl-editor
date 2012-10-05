@@ -8,3 +8,15 @@ rules
   	where directChildren := <bagof-SubClass> entity
   		  ; subchildren := <map(get-subclasses-of-entity); flatten-list> directChildren
   		  ; children := <concat> [directChildren, subchildren]
+  		    
+  get-superclasses-of-entity: entity -> parents
+  	where not ("Entity" := <Extends> entity)   
+  	where directparent := <Extends> entity
+  		  ; superparents := <get-superclasses-of-entity> directparent
+  		  ; parents := [ directparent | superparents]	
+ 			
+   get-superclasses-of-entity: entity -> ["Entity"]
+  	where "Entity" := <Extends> entity    
+  	
+  get-superclasses-of-entity: entity -> []
+  	where not( <Extends> entity)    	
