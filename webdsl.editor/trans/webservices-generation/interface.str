@@ -33,7 +33,8 @@ rules
   			; <create-dir-in-workspace> dirname 
   			; make-mobl-mapper-for-all-entities  
   			; TL := <generate-top-level-webservice>
-  			; testservice :=  <generate-test-webservice>  
+  			; testservice :=  <generate-test-webservice> 
+  			; generate-timestamp-webservice   
   			; generate-mobl-services
   			; generate-sync-services(|<Fst>topEntity)
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
@@ -92,6 +93,10 @@ rules// generation
   generate-test-webservice: x -> service
   	where 	service := <generate-service(|"test")> stat|[var result := "This is a test service";]|  			
   			; service-to-file(|"test") 
+  
+  generate-timestamp-webservice: x -> service
+  	where 	service := <generate-service(|"getTimeStamp")> stat|[var result := now().getTime();]|  			
+  			; service-to-file(|"getTimeStamp") 			  
   	
   generate-top-level-webservice: x -> service
  	where 	x_varname := <new> "ent"

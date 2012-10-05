@@ -18,6 +18,7 @@ rules
   			; generate-mobl-top-level-service
   			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity))> None()	
   			; <map(generate-mobl-sync-service)> entities
+  			; generate-mobl-timestamp-service  
   			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
   			; totalsyncfunction := <generate-mobl-total-sync-function>  
   			; service := <bundle-services> None()
@@ -70,7 +71,20 @@ rules
           	  	}
           	  ]|
            ; rules (ServiceMobl:+= service)
-             
+ 
+rules //timestamp service 
+	
+  generate-mobl-timestamp-service: x -> x
+  	where  	service := mobl-serviceElem 
+          	  |[
+          	  	resource  getTimeStamp (): Num{
+          	  		uri = "webservice/getTimeStamp"
+     				method = "PUT"
+      				mapper = timeStampMapper
+          	  	}
+          	  ]|
+           ; rules (ServiceMobl:+= service)	
+            
 rules // generation of sync-functions
 	 
  generate-mobl-sync-functions: entity -> function
