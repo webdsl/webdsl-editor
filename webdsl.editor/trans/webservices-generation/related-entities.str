@@ -4,6 +4,7 @@ imports
 	libstratego-lib
 	
   	entity-extraction/generate-entity-files
+	webservices-generation/interface
 		
   	util
   	lib/-
@@ -13,12 +14,13 @@ rules //builder
   generate-related-entities-functions : project-path -> project-path
   	where	dirname := "webservices/related-entities"
   			; <create-dir-in-workspace> dirname 
+  			; (topEntityType, topEntityProp) := <TopEntity>
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; properties := <map(get-all-properties)> filteredEntities
-  			; general-function := <generate-get-related-entities-function> filteredEntities 
+  			; main-defs := <generate-main-defs-for-related-entities(|topEntityType)> filteredEntities 
   			; result:= <map(props-to-related-entities-functions(|dirname))> properties
-  			; <main-file-to-file(generate-main-model-file(|dirname, [general-function])|dirname)> filteredEntities  
+  			; <main-file-to-file(generate-main-model-file(|dirname, main-defs )|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
 rules// lookup 
@@ -78,7 +80,17 @@ rules//transformation
    			  		}
    			  	]|
 rules // main file
-	
+  generate-main-defs-for-related-entities(|x_topEntity): entities -> defs
+	where	def0 := <set-where-not-seen-function>
+			; def1 := <generate-get-related-entities-function> entities
+			; def2* := <map(generate-get-entities-for-topEntity(|x_topEntity))> entities
+	  		; defs := def* 
+			 |[
+			 	def0
+			  	def1
+			  	def2*	
+			  ]|
+	  	
 	generate-get-related-entities-function: entities -> function
 		where 	stat_calls* := <map(generate-entity-to-related-entities-call)> entities
 				; function := def
@@ -98,4 +110,62 @@ rules // main file
 						return (ent as x_entity).getRelatedEntities();
 					}
 				]|
+				
+	generate-get-entities-for-topEntity(|x_topEntity): x_entity -> function
+		where not (<?x_topEntity> x_entity )
+		where 	str0 := x_entity
+				; str1 := x_topEntity
+				; x_functioname := $[getAll[x_entity]For[x_topEntity]]  
+				; function := def
+				|[
+					function x_functioname (tls : Set<x_topEntity>) : Set<x_entity> {
+						var todo := Set<Entity>();
+						var seen := Set<UUID>();
+						var found := Set<x_entity>();
+						for(tl : x_topEntity in tls){
+							todo.addAll(getSetWhereNotSeen(todo, seen, tl.getRelatedEntities()));
+						}
+						while( todo.length > 0 ) {
+	  	 					var newTodo := Set<Entity>();
+							for(ent: Entity in todo where ent != null) {
+								var type := ent.getTypeString();
+								var isToplevel := (type == str1);
+								if(!isToplevel) {
+									if (type == str0) {
+										found.add(ent as x_entity); 
+									}
+									newTodo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(ent)));
+								}
+							}
+							todo := newTodo ;
+						}
+						return found;
+					}  	
+				]| 
+
+	generate-get-entities-for-topEntity(|x_topEntity): x_entity -> function
+		where 	<?x_topEntity> x_entity 
+				; x_functioname := $[getAll[x_entity]For[x_topEntity]]  
+				; function := def
+				|[
+					function x_functioname (tls : Set<x_topEntity>) : Set<x_entity> {
+						return tls;
+					}
+				]| 
+
+
+	set-where-not-seen-function = !def 
+		|[	function getSetWhereNotSeen(set : Set<Entity>, seen : Set<UUID>, add : Set<Entity> ) : Set<Entity>{
+				var newset := Set<Entity>();
+				for(ent : Entity in add ) {
+					var inSeen := ent.id in seen;
+					if(!inSeen) {
+						newset.add(ent);
+						seen.add(ent.id);	
+					}
+				}
+				return newset;
+			}
+		]|
+		 		
 						 			  	

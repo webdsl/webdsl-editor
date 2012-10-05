@@ -26,9 +26,9 @@ rules
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         	  
-  	where	<generate-related-entities-functions> project-path
-  			; topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  	where	topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
   			; rules (TopEntity := topEntity )
+  			; <generate-related-entities-functions> project-path
   			; dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
   			; make-mobl-mapper-for-all-entities  
