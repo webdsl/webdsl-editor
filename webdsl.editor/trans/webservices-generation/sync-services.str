@@ -1,6 +1,7 @@
 module webservices-generation/sync-services
 imports 
     	webservices-generation/interface
+    	webservices-generation/util
   	  	util 
 	  	lib/-
 rules 
@@ -9,12 +10,13 @@ rules
 	where 	entities := <all-keys-EntDecl> None()	  
   			; filteredEntities := <filter(not(is-builtin-entity))> entities 
   			; <map(generate-sync-service(|topLevelEntity))> filteredEntities
-   
-	
+   			  
+   			  
   generate-sync-service(|x_topLevelEntity): x_entityname -> x_entityname
   	where 	name := $[sync[x_entityname]]
   			; str0 :=  x_topLevelEntity
-  			; x_functionname := $[getAll[x_entityname]For[x_topLevelEntity]]  	
+  			; stat_forloop :=  <generate-sync-for-entity-loop(|x_topLevelEntity, x_entityname)>x_entityname
+  			; stat_childloop* := <get-subclasses-of-entity; map(generate-sync-for-entity-loop(|x_topLevelEntity, x_entityname))>  x_entityname 	
       		; body := webdsl 
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
@@ -24,11 +26,17 @@ rules
 	  				var entity := ( loadEntity(str0, request.getJSONObject(count).getString("id").parseUUID()) as x_topLevelEntity ) ;
 	  				tls.add(entity);
 	  			}
-	  			for(ent: x_entityname in x_functionname(tls) ){
-	  				result.put(ent.toJSON());
-	  			}
-	
-	  		  ]| 
-	  			 
+				stat_forloop
+				stat_childloop*
+	  		  ]|   			 
 	       	; service := <generate-service(|name)> body
 	        ; service-to-file(|name) 
+	          
+  generate-sync-for-entity-loop(|toplevelEntity, x_superClass): entity  -> statement
+  	where 	x_functionname := $[getAll[entity]For[toplevelEntity]]  	
+  			; statement :=  webdsl 
+	      	  |[
+	      	  	for(ent: x_superClass in x_functionname(tls) ){
+	  				result.put(ent.toJSON());
+	  			}
+	      	  ]|
