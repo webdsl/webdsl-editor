@@ -10,6 +10,7 @@ imports
   	entity-extraction/generate-entity-files
 	
 	webservices-generation/overlays
+	webservices-generation/util
 		
   	util
   	lib/-
@@ -36,7 +37,7 @@ rules// lookup
 	
   all-properties-including-entity-properties: entityName -> (entityName, props*)
   	where 	props1 := <concat> [<all-properties> entityName, AllEntityProperties1()]
-  			; props* := <filter(get-arguments; Hd; ?"name"); length; ?2; !props1; filter(not(NameProperty1())) <+ id> props1 //check for overwriting of nameProperty
+  			; props* := <filter(not(NameProperty1())) > props1 //check for overwriting of nameProperty
   			  
 rules//file generation 
 	
@@ -48,15 +49,18 @@ rules//file generation
 	
 	make-valid-page-with-extends-entity(|dirname) : (x_entityname ,props) ->
 		ModuleDefs(dirname, body, [])
-	 where 	ebd1 := <build-simple-json-function> props
+	 where 	parents := <get-superclasses-of-entity; filter(not(?"Entity"))> x_entityname
+	 		; ebd1 := <build-simple-json-function> props
 	 		; ebd2 := <build-json-function> props 
 	 		; ebd3 := <build-minimal-json-function> props
+	 		; ebd4* := <map(build-json-from-super-function)> parents
 	 		; body := def* 
 	 		  	|[
 	 		  		extend entity x_entityname {
 	 		  			ebd1
 	 		  			ebd2 
 	 		  			ebd3
+	 		  			ebd4*
 	 		  		}
 	 		  	]|
 	  
@@ -95,6 +99,20 @@ rules//transformation
 	 		  	 	return object;
 	 		  	 }
 	 		  ]| 
+	
+  build-json-from-super-function: super -> function
+	 where 	x_functionname := $[toJSONFromSuper[super]]
+	 		; props := <all-properties-including-entity-properties; Snd> super
+			; stat_puts := <filter(property-to-json)> props
+	 where	function := fun 
+	 		  |[
+	 		  	 function x_functionname () : JSONObject {
+					var object := JSONObject();
+	 		  	 		stat_puts
+	 		  	 		return object;
+	 		  	 }
+	 		  ]| 
+	 
 	property-to-json-without-null: property -> statements
 	 where	(?Property(x_name, _, type, _) 
 	 			<+ ?PropertyNoAnno(x_name, _, type)

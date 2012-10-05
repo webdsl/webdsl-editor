@@ -15,8 +15,8 @@ rules
   generate-sync-service(|x_topLevelEntity): x_entityname -> x_entityname
   	where 	name := $[sync[x_entityname]]
   			; str0 :=  x_topLevelEntity
-  			; stat_forloop :=  <generate-sync-for-entity-loop(|x_topLevelEntity, x_entityname)>x_entityname
-  			; stat_childloop* := <get-subclasses-of-entity; map(generate-sync-for-entity-loop(|x_topLevelEntity, x_entityname))>  x_entityname 	
+  			; stat_forloop :=  <generate-sync-for-entity-loop(|x_topLevelEntity)>x_entityname
+  			; stat_childloop := <get-subclasses-of-entity; map(generate-sync-for-entity-loop(|x_topLevelEntity, x_entityname))>  x_entityname 	
       		; body := webdsl 
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
@@ -27,16 +27,27 @@ rules
 	  				tls.add(entity);
 	  			}
 				stat_forloop
-				stat_childloop*
+				stat_childloop
 	  		  ]|   			 
 	       	; service := <generate-service(|name)> body
 	        ; service-to-file(|name) 
 	          
-  generate-sync-for-entity-loop(|toplevelEntity, x_superClass): entity  -> statement
-  	where 	x_functionname := $[getAll[entity]For[toplevelEntity]]  	
-  			; statement :=  webdsl 
+  generate-sync-for-entity-loop(|toplevelEntity, x_superClass): x_entity  -> statement
+  	where 	x_functionname := $[getAll[x_entity]For[toplevelEntity]]
+  			; x_functionnamejson := $[toJSONFromSuper[x_superClass]]
+  			; statement :=  stat 
 	      	  |[
-	      	  	for(ent: x_superClass in x_functionname(tls) ){
-	  				result.put(ent.toJSON());
+	      	  	for(ent: x_entity in x_functionname(tls) ){
+	  				result.put(ent.x_functionnamejson());
 	  			}
 	      	  ]|
+  
+  generate-sync-for-entity-loop(|toplevelEntity): x_entity  -> statement
+  	where 	x_functionname := $[getAll[x_entity]For[toplevelEntity]]
+  			; statement :=  stat 
+	      	  |[
+	      	  	for(ent: x_entity in x_functionname(tls) ){
+	  				result.put(ent.toJSON());
+	  			}
+	      	  ]|	      	  
+	      	  
