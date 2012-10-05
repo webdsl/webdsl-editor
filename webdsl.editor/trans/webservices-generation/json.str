@@ -148,8 +148,8 @@ rules//transformation
               	}
               ]| 
   
-  generate-json-put: (name, e_value) -> stat |[object.put(str0, e_value);]|
-  	where str0 := name
+  generate-json-put: (name, e_value) -> stat |[object.put(e_name, e_value);]|
+  	where e_name := String(name)
               	
 rules//type transformation
 	

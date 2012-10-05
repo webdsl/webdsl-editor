@@ -48,11 +48,11 @@ rules //page stuf
 	 		; elem_properties* := <filter(property-to-par)> props
 	 		; elem_functions* := <filter(function-to-par)> props
 	 		; x_pagename := $[showEntity[name]]
-	 		; str0 := name 
+	 		; elem0 := Text(name) 
 	 		; body := def*
 	 		  	|[ 
 	 		  		page x_pagename () {
-	 		  	 		title  { str0 } 
+	 		  	 		title  { elem0 } 
 	 		  	 		header { elem_header* }
 	 		  	 		group("Properties") {
 	 		  	 			elem_properties*
@@ -139,7 +139,7 @@ rules//custom way to pp
 	
 	sort-to-text: x -> String(<pp-webdsl-to-string> x) 
 	
-	enityname-to-pagelink: name ->  elem|[navigate(x_pagename()){str0}]|
+	enityname-to-pagelink: name ->  elem|[navigate(x_pagename()){elem0}]|
 	 where 	<is-string> name
 	 		; x_pagename := $[showEntity[name]]
-	 		; str0 := name
+	 		; elem0 := Text(name)

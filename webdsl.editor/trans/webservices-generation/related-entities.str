@@ -103,18 +103,18 @@ rules // main file
 				]|  
 				
 	generate-entity-to-related-entities-call: x_entity -> statement
-		where 	str0 :=	x_entity
+		where 	e_name :=	String(x_entity)
 				; statement	:=  webdsl 
 			  	|[
-					if (type == str0 ){
+					if (type == e_name ){
 						return (ent as x_entity).getRelatedEntities();
 					}
 				]|
 				
 	generate-get-entities-for-topEntity(|x_topEntity): x_entity -> function
 		where not (<?x_topEntity> x_entity )
-		where 	str0 := x_entity
-				; str1 := x_topEntity
+		where 	e_name :=	String(x_entity)
+				; e_name2 := String(x_topEntity)
 				; x_functioname := $[getAll[x_entity]For[x_topEntity]]  
 				; function := def
 				|[
@@ -129,9 +129,9 @@ rules // main file
 	  	 					var newTodo := Set<Entity>();
 							for(ent: Entity in todo where ent != null) {
 								var type := ent.getTypeString();
-								var isToplevel := (type == str1);
+								var isToplevel := (type == e_name2);
 								if(!isToplevel) {
-									if (type == str0) {
+									if (type == e_name) {
 										found.add(ent as x_entity); 
 									}
 									newTodo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(ent)));

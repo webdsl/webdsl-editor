@@ -14,7 +14,7 @@ rules
    			  
   generate-sync-service(|x_topLevelEntity): x_entityname -> x_entityname
   	where 	name := $[sync[x_entityname]]
-  			; str0 :=  x_topLevelEntity
+  			; e_name :=  String(x_topLevelEntity)
   			; stat_forloop :=  <generate-sync-for-entity-loop(|x_topLevelEntity)>x_entityname
   			; stat_childloop := <get-subclasses-of-entity; map(generate-sync-for-entity-loop(|x_topLevelEntity, x_entityname))>  x_entityname 	
       		; body := webdsl 
@@ -23,7 +23,7 @@ rules
 	  			var result := JSONArray() ;
 	  			var tls := Set<x_topLevelEntity>();
 	  			for ( count : Int from 0 to request.length() ){
-	  				var entity := ( loadEntity(str0, request.getJSONObject(count).getString("id").parseUUID()) as x_topLevelEntity ) ;
+	  				var entity := ( loadEntity(e_name, request.getJSONObject(count).getString("id").parseUUID()) as x_topLevelEntity ) ;
 	  				tls.add(entity);
 	  			}
 				stat_forloop
