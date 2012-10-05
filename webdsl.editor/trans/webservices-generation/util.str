@@ -1,0 +1,10 @@
+module webservices-generation/util
+
+imports   	
+	libwebdsl-generator 
+
+rules
+  get-subclasses-of-entity: entity -> children
+  	where directChildren := <bagof-SubClass> entity
+  		  ; subchildren := <map(get-subclasses-of-entity); flatten-list> directChildren
+  		  ; children := <concat> [directChildren, subchildren]
