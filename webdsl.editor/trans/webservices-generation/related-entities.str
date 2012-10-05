@@ -15,12 +15,13 @@ rules //builder
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; properties := <map(get-all-properties)> filteredEntities 
+  			; properties := <map(get-all-properties)> filteredEntities
+  			; general-function := <generate-get-related-entities-function> filteredEntities 
   			; result:= <map(props-to-related-entities-functions(|dirname))> properties
-  			; <main-file-to-file(generate-main-model-file(|dirname, [])|dirname)> filteredEntities  
+  			; <main-file-to-file(generate-main-model-file(|dirname, [general-function])|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
-rules// lookup
+rules// lookup 
 	
   get-all-properties: entityName -> (entityName, <all-properties> entityName)
   	where 	props1 := <concat> [<all-properties> entityName]
@@ -40,7 +41,7 @@ rules//file generation
 	 	 	; def := def* 
 	 		  	|[
 	 		  		extend entity x_entityName {
-	 		  		ebd0*
+	 		  			ebd0*
 	 		  		}
 	 		  	]|
 
@@ -61,8 +62,40 @@ rules//transformation
   property-to-add: property -> statement
 	where	(?Property(x_name, _, SimpleSort(_), _) 
 	 			<+ ?PropertyNoAnno(x_name, _, SimpleSort(_)))
-   			; statement := webdsl |[ set.add(this.x_name);]|
+   			; statement := webdsl 
+   			  	|[ 
+   			  		if(this.x_name != null) {
+   			  			set.add(this.x_name);
+   			  		}
+   			  	]| 
+   			  	
   property-to-add: property -> statement
 	where	(?Property(x_name, _, GenericSort(_, _), _) 
 	 			<+ ?PropertyNoAnno(x_name, _, GenericSort(_, _)))
-			; statement := webdsl |[ set.addAll(this.x_name);]|   
+			; statement := webdsl	|[ 
+   			  		if(this.x_name != null) {
+   			  			set.addAll(this.x_name);
+   			  		}
+   			  	]|
+rules // main file
+	
+	generate-get-related-entities-function: entities -> function
+		where 	stat_calls* := <map(generate-entity-to-related-entities-call)> entities
+				; function := def
+				|[	
+					function getRelatedEntities(ent : Entity) : Set<Entity> {
+						var type := ent.getTypeString();
+						stat_calls*
+						return Set<Entity>();
+					}		
+				]|  
+				
+	generate-entity-to-related-entities-call: x_entity -> statement
+		where 	str0 :=	x_entity
+				; statement	:=  webdsl 
+			  	|[
+					if (type == str0 ){
+						return (ent as x_entity).getRelatedEntities();
+					}
+				]|
+						 			  	

@@ -1024,7 +1024,7 @@
    ForAllStmt                                             -- V is=2[H hs=1[KW["for"] KW["("] _1 KW[":"] _2 _3 KW[")"]] _4],
    ForAllStmtNoFilter                                     -- V is=2[H hs=1[KW["for"] KW["("] _1 KW[":"] _2 KW[")"]] _3],
    ForCountStmt                                           -- V is=2[H hs=1[KW["for"] KW["("] _1 KW[":"] KW["Int"] KW["from"] _2 KW["to"] _3 KW[")"]] _4],
-   WhileStmt                                   			  -- KW["while"] KW["("] _1 KW[")"] _2,
+   WhileStmt                                   			  -- V is=2[H hs=1[KW["while"] KW["("] _1 KW[")"]] _2],
    ForExp                                                 -- H hs=1[KW["["] _1 KW["for"] KW["("] _2 KW[":"] _3 KW["in"] _4 _5 KW[")"] KW["]"]],
    ForExpNoFilter                                         -- H hs=1[KW["["] _1 KW["for"] KW["("] _2 KW[":"] _3 KW["in"] _4 KW[")"] KW["]"]],
    ForExp                                                 -- H hs=1[KW["["] _1 KW["|"] _2 KW[":"] _3 KW["in"] _4 _5 KW["]"]],
