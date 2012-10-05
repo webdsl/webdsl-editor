@@ -35,7 +35,7 @@ rules
   			; TL := <generate-top-level-webservice>
   			; testservice :=  <generate-test-webservice>  
   			; generate-mobl-services
-  			; generate-sync-services   
+  			; generate-sync-services(|<Fst>topEntity)
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>]
 			; defs' := <concat> [modules,[Imports(" webservices/related-entities/main")], defs]

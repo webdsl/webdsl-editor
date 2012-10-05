@@ -86,17 +86,17 @@ rules // generation of sync-functions
  				}
  			  ]|
  get-all-mobl-objects-of-entity-statement: x_entity -> statement
- 	where topEntity := <TopEntity; Fst>
- 	where not( <?topEntity> x_entity )
+ 	where x_topEntity := <TopEntity; Fst>
+ 	where not( <?x_topEntity> x_entity )
  	where	x_servicename := $[sync[x_entity]]
-          	; statement := mobl-stat |[ Sync.x_servicename(x_entity.all().selectJSON(["id","version"]));]|
+          	; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id"]));]|
           	  				  
  
  get-all-mobl-objects-of-entity-statement: x_entity -> statement
- 	where	topEntity := <TopEntity; Fst>
- 			; <?topEntity> x_entity
+ 	where	x_topEntity := <TopEntity; Fst>
+ 			; <?x_topEntity> x_entity
  			; x_servicename := $[sync[x_entity]]
-			; statement := mobl-stat |[ Sync.x_servicename(x_entity.all().filter("sync", "=", true).selectJSON(["id","version"]));]|
+			; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id"]));]|
 	
  generate-mobl-total-sync-function:	x -> function
  	where 	stat_calls* := <Fst; generate-list-sync-calls> <TopEntity>

@@ -5,47 +5,30 @@ imports
 	  	lib/-
 rules 
 	
-  generate-sync-services: x -> x
+  generate-sync-services(|topLevelEntity): x -> x
 	where 	entities := <all-keys-EntDecl> None()	  
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; <map(generate-sync-service)> filteredEntities
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities 
+  			; <map(generate-sync-service(|topLevelEntity))> filteredEntities
    
 	
-  generate-sync-service: x_entityname -> x_entityname
+  generate-sync-service(|x_topLevelEntity): x_entityname -> x_entityname
   	where 	name := $[sync[x_entityname]]
-  			; str0 :=  x_entityname
-  			; stat_forcountbody := webdsl 
-      	  	  |[ 	
-      	  	  	var entity := ( loadEntity(str0, request.getJSONObject(count).getString("id").parseUUID()) as x_entityname ) ;
-      			if ( entity.version > request.getJSONObject(count).getString("version").parseInt() ){
-        			result.put(entity.toJSON());
-        		} else {
-      				result.put(entity.toMinimalJSON());
-      			}
-      		  ]|
-      	  	  	
-  		
-//optimasation 1  				
-  			// forcountbody :=  Block([ Stat( Call( Var("result"), "put", [ Call(
-     //                		Cast( 
-     //                			ThisCall( "loadEntity", [ String(entityname), 
-     //                			Call(
-     //                				Call(
-	    //                 				Call(Var("request"), "getJSONObject", [Var("count")])
-	    //                 				, "getString"
-	    //                         		, [String("id")])
-	    //                         	, "parseUUID", [])])
-     //                			, SimpleSort(entityname))
-     //              			, "toJSON", [])]))])
-  			
-      	; body := webdsl 
-      	  |[
-      	  	var request := JSONArray(readRequestBody()) ;
-  			var result := JSONArray() ;
-  			for ( count : Int from 0 to request.length() ){
-  				stat_forcountbody
-  			}
-  		  ]| 
-  			 
-            ; service := <generate-service(|name)> body
-        	; service-to-file(|name) 
+  			; str0 :=  x_topLevelEntity
+  			; x_functionname := $[getAll[x_entityname]For[x_topLevelEntity]]  	
+      		; body := webdsl 
+	      	  |[
+	      	  	var request := JSONArray(readRequestBody()) ;
+	  			var result := JSONArray() ;
+	  			var tls := Set<x_topLevelEntity>();
+	  			for ( count : Int from 0 to request.length() ){
+	  				var entity := ( loadEntity(str0, request.getJSONObject(count).getString("id").parseUUID()) as x_topLevelEntity ) ;
+	  				tls.add(entity);
+	  			}
+	  			for(ent: x_entityname in x_functionname(tls) ){
+	  				result.put(ent.toJSON());
+	  			}
+	
+	  		  ]| 
+	  			 
+	       	; service := <generate-service(|name)> body
+	        ; service-to-file(|name) 

@@ -96,14 +96,15 @@ rules//transformation
 	 		  	 }
 	 		  ]| 
 	property-to-json-without-null: property -> statements
-	 where	(?Property(name, _, type, _) 
-	 			<+ ?PropertyNoAnno(name, _, type)
-	 			<+ ?DerivedProperty(name, _, type, _, _)
-	 			<+ ?DerivedPropertyNoAnno(name, _, type, _))
-	 		; stat_put := <exp-to-value-statement; generate-json-put> (name,type)  
+	 where	(?Property(x_name, _, type, _) 
+	 			<+ ?PropertyNoAnno(x_name, _, type)
+	 			<+ ?DerivedProperty(x_name, _, type, _, _)
+	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	 		; exp := <exp-to-value-statement> (x_name,type)  
+	 		; stat_put := <generate-json-put> (x_name, exp)
 	 		; statements := webdsl 
 	 		  |[
-	 		  	if (this.name != null) {
+	 		  	if (this.x_name != null) {
 	 		  		stat_put
 	 		  	} 
 	 		  ]|
@@ -134,13 +135,13 @@ rules//transformation
               	
 rules//type transformation
 	
-	exp-to-value-statement: (exp, SimpleSort(type)) -> [exp]
+	exp-to-value-statement: (exp, SimpleSort(type)) -> exp
 		where not (<?"Time" <+ ?"Date" <+ ?"WikiText"> type)
 		where	<fetch(?type)> ToMoblStringTypes <+
 					<fetch(?type)> ToMoblNumTypes
 					
 	
-	exp-to-value-statement: (exp, SimpleSort("Bool")) -> [exp]
+	exp-to-value-statement: (exp, SimpleSort("Bool")) -> exp
 	
 	
 	exp-to-value-statement: (e1, SimpleSort("WikiText")) -> exp|[e1.format()]|
@@ -155,7 +156,7 @@ rules//type transformation
  	exp-to-value-statement: (e1, type) -> exp|[makeJSONObjectFromEntityRef(e1)]|  
  		where <is-entity-type> type
  	
- 	exp-to-value-statement: (exp, GenericSort(_, _)) -> [exp]
+ 	exp-to-value-statement: (exp, GenericSort(_, _)) -> exp
  		
 
     property-to-value-array-pre: (x_name, GenericSort(sort, [x_t@SimpleSort(type)])) -> statements
