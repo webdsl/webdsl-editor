@@ -89,9 +89,38 @@ rules //conversion to json
   					if(localent != null) {
   						ent.x_propname := localent ;
   					}
-  					ent.x_propname := ;
   				} else {
   					ent.x_propname := null;
   				}
-    		  ]|     		  
+    		  ]|
+    		  
+    json-to-properties-conversion : prop -> statement
+    where  	t@GenericSort(genericsort, [SimpleSort(x_type)]) := <get-property-type> prop
+    where not(<is-builtin-entity> x_type)		  
+    where	x_propname := <get-property-name> prop
+    		; if <?"List"> genericsort 
+    		  	then e_collCreation :=  webdsl:e |[ List<x_type>()]|
+    		  	else e_collCreation :=  webdsl:e |[ Set<x_type>()]|
+    		  end
+    		; x_stringPropname := String(x_propname)
+    		; x_typename := String(x_type)  
+    		; statement := webdsl 
+    		  |[
+				  var temp := json.getJSONArray(x_stringPropname);
+				  if (temp != null){
+				  	var collection := e_collCreation;
+				  	for( count : Int from 0 to temp.length()) {
+				  		var obj := temp.getJSONObject(count);
+				  		if(obj != null) {
+				  			var localent := loadEntity(x_typename, obj.getString("id").parseUUID()) as x_type;
+				  			if(localent != null) {
+				  				collection.add(localent);
+				  			}
+				  		}
+				  	}
+				  	ent.x_propname := collection;
+				  } else {
+				  	ent.x_propname := null;
+				  }
+    		  ]|          		  
  
