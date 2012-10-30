@@ -1,0 +1,69 @@
+module webservices-generation/mapper
+imports 
+		entity-extraction/generate-entity-files
+    	webservices-generation/util
+  	  	util 
+	  	lib/-
+	  	webservices-generation/overlays
+rules 
+	
+  generate-edit-mappers: project-path -> project-path
+	where 	dirname := "webservices/mappers"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; entitywithproperties := <map(\x -> (x, <all-properties> x)\)> filteredEntities
+   			; mappers := <map(generate-edit-mapper(|dirname))> entitywithproperties  
+   			; <main-file-to-file(generate-main-model-file(|dirname, []) |dirname)> filteredEntities  
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+  
+   			  
+  mapper-to-file(|modulename): service -> service
+  	where 	ast := <make-valid-page-from-defs(|modulename)>[service]
+  			; write-ast-to-file(|$[[modulename].app])
+  
+  generate-edit-mapper(|dirname): t@(x_entityname, props) -> t
+  	where   x_functionname := $[mapperEdited[x_entityname]]
+  			; filteredprop := <filter(not(is-derived-prop-cons))> props
+  			; stat_props* := <filter(json-to-properties-conversion)>filteredprop
+  			; function := webdsl 
+  				|[
+  					function x_functionname(ent : x_entityname, json : JSONObject ) {
+  						stat_props*
+  					}		
+  			 	]|
+  			;  <mapper-to-file(|$[[dirname]/[x_entityname]])> function
+
+rules //conversion to json
+	
+  json-to-properties-conversion : prop -> statement
+    where  	SimpleSort(type) := <get-property-type> prop
+    		; <fetch(?type)> FromMoblStringTypes()
+    		; x_propname := <get-property-name> prop
+    		; x_stringPropname := String(x_propname)
+    		; statement := webdsl |[ent.x_propname := json.getString(x_stringPropname);]|
+
+  json-to-properties-conversion : prop -> statement
+    where  	SimpleSort("Bool") := <get-property-type> prop
+    		; x_propname := <get-property-name> prop
+    		; x_stringPropname := String(x_propname)
+    		; statement := webdsl |[ent.x_propname := json.getBoolean(x_stringPropname);]|    
+
+  json-to-properties-conversion : prop -> statement
+    where  	SimpleSort("Int") := <get-property-type> prop
+    		; x_propname := <get-property-name> prop
+    		; x_stringPropname := String(x_propname)
+    		; statement := webdsl |[ent.x_propname := json.getInt(x_stringPropname);]|    
+    	  	   		  
+  json-to-properties-conversion : prop -> statement
+    where  	SimpleSort("Long") := <get-property-type> prop
+    		; x_propname := <get-property-name> prop
+    		; x_stringPropname := String(x_propname)
+    		; statement := webdsl |[ent.x_propname := json.getLong(x_stringPropname);]|    
+
+  json-to-properties-conversion : prop -> statement
+    where  	SimpleSort("Float") := <get-property-type> prop
+    		; x_propname := <get-property-name> prop
+    		; x_stringPropname := String(x_propname)
+    		; statement := webdsl |[ent.x_propname := json.getFloat(x_stringPropname);]|    
+    	  	   		  

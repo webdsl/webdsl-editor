@@ -77,9 +77,9 @@ rules //edit
  	where 	statement :=  webdsl |[errors.put("type is undefined: " + kind);]|    
  	
  generate-ifs-for-checking-type: [x|xs] -> statement
- 	where 	stat_elseblock := <generate-ifs-for-checking-type> xs
+ 	where	stat_elseblock := <generate-ifs-for-checking-type> xs
  			; x_entityname := String(x)
- 			; x_mappername := $[edited[x]] 
+ 			; x_mappername := $[mapperEdited[x]]
  			; statement :=  webdsl 
  			  |[
  			  	 if(kind == x_entityname) {

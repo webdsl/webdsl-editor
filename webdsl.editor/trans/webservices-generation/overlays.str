@@ -12,6 +12,7 @@ overlays// super properties
 
 overlays// mobl stuff		
 	ToMoblStringTypes = ["String", "Email", "UUID", "Text", "WikiText", "URL", "Time", "Date"]
+	FromMoblStringTypes = ["String", "Email", "Text", "WikiText", "URL"]
 	ToMoblNumTypes = ["Float", "Int", "Long"]
 	ToMoblForbiddenTypes = ["Secret", "Patch", "Image", "File"]
 	

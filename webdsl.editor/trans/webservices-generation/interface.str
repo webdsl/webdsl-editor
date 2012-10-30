@@ -10,6 +10,7 @@ imports
   	entity-extraction/generate-entity-files
 	
 	webservices-generation/overlays
+	webservices-generation/mapper
 	webservices-generation/mobl/mapper
 	webservices-generation/mobl/sync-services
 	webservices-generation/sync-services
@@ -37,9 +38,15 @@ rules
   			; generate-timestamp-webservice   
   			; generate-mobl-services
   			; generate-sync-services(|<Fst>topEntity)
+  			; <generate-edit-mappers> project-path  
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>, <generate-add-false-dirty-to-json>]
-			; defs' := <concat> [modules,[Imports(" webservices/related-entities/main")], defs]
+			; imports := def*
+			  |[
+			  	imports webservices/related-entities/main 
+			  	imports webservices/mappers/main 
+			  ]|
+			; defs' := <concat> [modules,imports, defs]
 			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
 			; <write-ast-to-file(|$[[dirname]/interface.app])> result
 			  	
