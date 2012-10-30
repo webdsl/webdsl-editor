@@ -105,9 +105,14 @@ rules //generation
    			; rules( ExtraProperty:+ entityname -> property)			  
    
   generate-inverse-property(|class): property ->  Property(name, Ref() , GenericSort("List", [SimpleSort(class)]), [InverseAnno(class, propertyname)])
-    where 	propertyname := <get-property-name> property
+    where 	proptype := <get-property-type; ?GenericSort("List", _)> property
+    		; propertyname := <get-property-name> property
     		; name := $[generatedPropertyForInverse_[class]_[propertyname]]    
-    		   
+   
+  generate-inverse-property(|class): property -> PropertyNoAnno(name, Ref() , SimpleSort(class))
+    where 	proptype := <get-property-type; ?GenericSort("Set", _)> property
+    		; propertyname := <get-property-name> property
+    		; name := $[generatedPropertyForInverse_[class]_[propertyname]]  		   
 rules //transform 
 
   entity-to-mobl-entity: EntityNoSuper(x_name, props) -> moblEntity
