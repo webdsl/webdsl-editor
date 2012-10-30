@@ -85,7 +85,11 @@ rules //conversion to json
     		  |[
     		  	var temp :=  json.getJSONObject(x_stringPropname);
   				if(temp != null){
-  					ent.x_propname := loadEntity(x_typename, temp.getString("id").parseUUID()) as x_type;
+  					var localent := loadEntity(x_typename, temp.getString("id").parseUUID()) as x_type;
+  					if(localent != null) {
+  						ent.x_propname := localent ;
+  					}
+  					ent.x_propname := ;
   				} else {
   					ent.x_propname := null;
   				}
