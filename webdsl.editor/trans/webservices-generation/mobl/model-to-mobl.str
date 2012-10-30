@@ -149,8 +149,9 @@ rules // type transformations
 
   type-to-mobl-type: SimpleSort("Bool") -> mobl-t|[Bool]|
  
-  type-to-mobl-type: SimpleSort("DateTime") -> mobl-t|[DateTime]| 
-   
+  type-to-mobl-type: SimpleSort(type) -> mobl-t|[DateTime]|
+  	where 	<fetch(?type)> MoblDateTimeTypes 
+
   type-to-mobl-type: SimpleSort(x_type) -> mobl-t|[x_type]|
    	where 	<IsEntity> x_type
    	where not (<is-builtin-entity> x_type)

@@ -164,12 +164,8 @@ rules//type transformation
 	
 	exp-to-value-statement: (e1, SimpleSort("WikiText")) -> exp|[e1.format()]|
 
-	exp-to-value-statement: (e1, SimpleSort("DateTime")) -> exp|[e1.getTime() / 1000L]|
-	
-
-	exp-to-value-statement: (e1, SimpleSort("Time")) -> exp|[e1.format(DateType.getDefaultTimeFormat())]|
-
-    exp-to-value-statement: (e1, SimpleSort("Date")) -> exp|[e1.format(DateType.getDefaultTimeFormat())]|              											 
+	exp-to-value-statement: (e1, SimpleSort(type)) -> exp|[e1.getTime() / 1000L]|
+		where 	<fetch(?type)> MoblDateTimeTypes          											 
  	
  	exp-to-value-statement: (e1, type) -> exp|[makeJSONObjectFromEntityRef(e1)]|  
  		where <is-entity-type> type

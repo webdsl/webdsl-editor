@@ -11,10 +11,11 @@ overlays// super properties
 	NameProperty1 =    DerivedProperty("name", Simple(), SimpleSort("String"), [], []){IsGeneratedProperty()}
 
 overlays// mobl stuff		
-	ToMoblStringTypes = ["String", "Email", "UUID", "Text", "WikiText", "URL", "Time", "Date"]
+	ToMoblStringTypes = ["String", "Email", "UUID", "Text", "WikiText", "URL"]
 	FromMoblStringTypes = ["String", "Email", "Text", "WikiText", "URL"]
 	ToMoblNumTypes = ["Float", "Int", "Long"]
 	ToMoblForbiddenTypes = ["Secret", "Patch", "Image", "File"]
+	MoblDateTimeTypes = ["DateTime", "Date", "Time"]
 	
 overlays//forward/redirect code
 	NativeClassDispatchServletHelper = def
