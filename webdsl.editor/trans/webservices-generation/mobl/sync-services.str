@@ -106,9 +106,11 @@ rules // editService
  			; function := mobl-def 
  			  |[
  			  	 function syncEdits() {
+ 			  	 	setSyncFlag(true);
    				 	var array : [JSON] = [];
     				stat_objectstatement*
     				Sync.sendEdits(array);
+    				setSyncFlag(false);
  				}
  			  ]|    
  			   
@@ -168,9 +170,11 @@ rules // generation of sync-functions
    			; function := mobl-def 
    			  |[
    			  	function syncAll() {
+   			  		setSyncFlag(true);
    			  		var begin = now();
    			  		stat_calls*
    			  		log("totaltime:" + ((now() - begin) / 1000).toString());
+   			  		setSyncFlag(false);
    			  	}
    			  ]|
    			   
