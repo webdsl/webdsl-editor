@@ -93,7 +93,7 @@ rules // editService
   	where  	service := mobl-serviceElem 
           	  |[
           	  	resource  sendEdits (arg : [JSON]): void {
-          	  		uri = "webservice/test"
+          	  		uri = "webservice/syncDirtyObjects"
      				method = "PUT"
      				data = JSON.stringify(arg)
       				mapper = voidMapper

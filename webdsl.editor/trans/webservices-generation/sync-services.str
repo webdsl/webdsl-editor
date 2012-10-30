@@ -8,8 +8,9 @@ rules
 	
   generate-sync-services(|topLevelEntity): x -> x
 	where 	entities := <all-keys-EntDecl> None()	  
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities 
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities   
   			; <map(generate-sync-service(|topLevelEntity))> filteredEntities
+  			; <generate-edit-sync-service> filteredEntities  
    			  
    			  
   generate-sync-service(|x_topLevelEntity): x_entityname -> x_entityname
@@ -48,5 +49,45 @@ rules
 	      	  	for(ent: x_entity in x_functionname(tl)where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp ) ){
 	  				result.put(addDirtyFalse(ent.toJSON()));
 	  			}
-	      	  ]|	      	  
-	      	  
+	      	  ]|
+rules //edit	      	  
+  generate-edit-sync-service: entities -> entities
+	where	stat_ifs := <generate-ifs-for-checking-type> entities
+			; name := "syncDirtyObjects"
+			; body := webdsl 
+	      	  |[
+	      	  	var request := JSONArray(readRequestBody()) ;
+	      	  	var result := JSONArray();
+				for ( count : Int from 0 to request.length() ) {
+					var jsontemp := request.getJSONObject(count);
+				  	var kind := jsontemp.getString("name");
+				  	var entities := jsontemp.getJSONArray("value");
+					stat_ifs
+				  		//is not already edited
+				  		//may edit
+				  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
+				  		// editedProject(entity, projects.getJSONObject(count));
+				  		// 
+  				}
+	  		  ]|
+	  		; service := <generate-service(|name)> body
+	        ; service-to-file(|name)    			      	  
+	
+ generate-ifs-for-checking-type: [] -> statement
+ 	where 	statement :=  webdsl |[errors.put("type is undefined: " + kind);]|    
+ 	
+ generate-ifs-for-checking-type: [x|xs] -> statement
+ 	where 	stat_elseblock := <generate-ifs-for-checking-type> xs
+ 			; x_entityname := String(x)
+ 			; x_mappername := $[edited[x]] 
+ 			; statement :=  webdsl 
+ 			  |[
+ 			  	 if(kind == x_entityname) {
+				  		for ( count : Int from 0 to entities.length() ) {
+				  			var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x ) ;
+				  			x_mappername(entity, entities.getJSONObject(count));
+				  		}
+				  	} else {
+				  		stat_elseblock
+				  	}
+ 			  ]|   		  
