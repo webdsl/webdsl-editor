@@ -14,6 +14,7 @@ rules
   			; entities := <all-keys-EntDecl> None()	  
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; result := <map( make-mobl-mapper-for-entity); 
+  			  	add-elem-to-list(|<void-mobl-mapper>);
   			  	add-elem-to-list(|<time-mobl-mapper>);
   			  	add-elem-to-list(|mobl-def |[import webservices::mobl::model]|);
   			  	make-valid-page-from-mobl-defs(|dirname, "mapper")> filteredEntities
@@ -44,6 +45,16 @@ rules
       					log(json.errors);
     				} else {
       					return json.result;
+    				}
+  				}		 
+  				]|
+  
+  void-mobl-mapper: x -> mapper
+    where 	mapper := mobl-stat 
+              |[
+              	function voidMapper (json : JSON) : void {
+   		 			if (json.errors && json.errors.length > 0) {
+      					log(json.errors);
     				}
   				}		 
   				]|
