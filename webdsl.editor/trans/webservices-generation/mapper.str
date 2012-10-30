@@ -65,5 +65,5 @@ rules //conversion to json
     where  	SimpleSort("Float") := <get-property-type> prop
     		; x_propname := <get-property-name> prop
     		; x_stringPropname := String(x_propname)
-    		; statement := webdsl |[ent.x_propname := json.getFloat(x_stringPropname);]|    
+    		; statement := webdsl |[ent.x_propname := json.getDouble(x_stringPropname) as Float;]|    
     	  	   		  
