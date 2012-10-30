@@ -48,12 +48,15 @@ rules// transform types to viewcalls
 	
   type-to-view : (x_name, SimpleType("String")) -> result
   	where e_name := $["[x_name]"] 
- 		  ; result := mobl-elem	|[showField(e_name,ent.x_name)]|
+ 		  ; result := mobl-elem	|[showTextField(e_name,ent.x_name)]|
  		     
-  type-to-view : (x_name, SimpleType(type)) -> result
-  	where 	<fetch-elem(?type)> ["Bool", "Num"]
-   		  	; e_name := $["[x_name]"] 
-   		  	; result := mobl-elem	|[showField(e_name,ent.x_name.toString())]|
+  type-to-view : (x_name, SimpleType("Bool")) -> result
+  	where 	e_name := $["[x_name]"] 
+   		  	; result := mobl-elem	|[showBoolField(e_name,ent.x_name)]|
+
+  type-to-view : (x_name, SimpleType("Num")) -> result
+  	where 	e_name := $["[x_name]"] 
+   		  	; result := mobl-elem	|[showNumField(e_name,ent.x_name)]|
 
   type-to-view : (x_name, SimpleType("DateTime")) -> result
   	where 	e_name := $["[x_name]"] 
@@ -94,6 +97,24 @@ rules //overlays
 		    textField(value, disabled = true)
 		  }
 		}
+		control showTextField ( name : String , value : String ) {
+    		item {
+      			label ( name , style = textFieldLabelStyle )
+      			textField ( value )
+    		}
+  		}
+	  	control showBoolField ( name : String , value : Bool ) {
+	    	item {
+	      		label ( name , style = textFieldLabelStyle )
+	      		checkBox(value)
+	    	}	
+	  	}
+	   	control showNumField ( name : String , value : Num ) {
+	    	item {
+	      		label ( name , style = textFieldLabelStyle )
+	      		numField(value)
+	    	}
+	  	}
 		control showEntityField (name : String, value : Entity<?>, viewer : Control1< Entity<?> >) {
 		  when ( value ) {
 		    item( onclick = { showControl(viewer,value); } ) {
