@@ -120,7 +120,7 @@ rules // editService
    				|[
 					var value = x_entity.all().filter("sync", "=",true).filter("dirty", "=", true).selectJSON(["*"]);	
 					var json = Dynamic(name=x_entityname, value=value);
-					array.add(json);
+					array.push(json);
    				]|
   
   generate-sync-edit-mobl-statements: x_entity -> statements
@@ -131,7 +131,7 @@ rules // editService
    				|[
 					var value = x_entity.all().filter("dirty", "=", true).selectJSON(["*"]);	
 					var json = Dynamic(name=x_entityname, value=value);
-					array.add(json);
+					array.push(json);
    				]|				        
 
 	            

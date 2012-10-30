@@ -37,7 +37,7 @@ rules
   			; statement :=  stat 
 	      	  |[
 	      	  	for(ent: x_entity in x_functionname(tl) where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp )){
-	  				result.put(ent.x_functionnamejson());
+	  				result.put(addDirtyFalse(ent.x_functionnamejson()));
 	  			}
 	      	  ]|
   
@@ -46,7 +46,7 @@ rules
   			; statement :=  stat 
 	      	  |[
 	      	  	for(ent: x_entity in x_functionname(tl)where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp ) ){
-	  				result.put(ent.toJSON());
+	  				result.put(addDirtyFalse(ent.toJSON()));
 	  			}
 	      	  ]|	      	  
 	      	  

@@ -38,7 +38,7 @@ rules
   			; generate-mobl-services
   			; generate-sync-services(|<Fst>topEntity)
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
-  			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>]
+  			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>, <generate-add-false-dirty-to-json>]
 			; defs' := <concat> [modules,[Imports(" webservices/related-entities/main")], defs]
 			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
 			; <write-ast-to-file(|$[[dirname]/interface.app])> result
@@ -115,4 +115,14 @@ rules// generation
   	where 	modname := $[[DirServices()]/[name]]
   			; ast := <make-valid-page-from-defs(|modname)>[service]
   			; write-ast-to-file(|$[[modname].app])
-  	// where ast 		  	      	
+  	// where ast 	
+  	
+rules //general functions
+	
+  generate-add-false-dirty-to-json: x -> function
+	where	function := webdsl |[
+		function addDirtyFalse(json : JSONObject) : JSONObject {
+			json.put("dirty", "false");
+			return json;
+		}
+	]| 	  	      	
