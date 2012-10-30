@@ -60,7 +60,7 @@ rules// transform types to viewcalls
 
   type-to-view : (x_name, SimpleType("DateTime")) -> result
   	where 	e_name := $["[x_name]"] 
-			; result := mobl-elem	|[when(ent.x_name){showField(e_name,ent.x_name.toDateString())}]| 
+			; result := mobl-elem	|[when(ent.x_name){showDateTimeField(e_name,ent.x_name)}]| 
 
   type-to-view : (x_name, SimpleType(type)) -> result
   	where not	( <string-starts-with(|"generatedPropertyForInverse")> x_name 
@@ -85,6 +85,7 @@ rules //overlays
 	|[
 		import webservices::mobl::model
 		import mobl::ui::generic
+		import mobl::ui::generic::datepicker
 		screen showControl (viewer : Control1< Entity<?> >, value : Entity<?>) {
 		  viewer(value)
 		}
@@ -113,6 +114,12 @@ rules //overlays
 	    	item {
 	      		label ( name , style = textFieldLabelStyle )
 	      		numField(value)
+	    	}
+	  	}
+	  	control showDateTimeField ( name : String , value : DateTime ) {
+	    	item {
+	      		label ( name , style = textFieldLabelStyle )
+	      		datePicker(value)
 	    	}
 	  	}
 		control showEntityField (name : String, value : Entity<?>, viewer : Control1< Entity<?> >) {
