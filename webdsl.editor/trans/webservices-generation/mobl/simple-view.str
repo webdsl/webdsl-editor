@@ -119,7 +119,7 @@ rules //overlays
 	  	control showDateTimeField ( name : String , value : DateTime ) {
 	    	item {
 	      		label ( name , style = textFieldLabelStyle )
-	      		datePicker(value)
+	      		dateTimePicker(value)
 	    	}
 	  	}
 		control showEntityField (name : String, value : Entity<?>, viewer : Control1< Entity<?> >) {
