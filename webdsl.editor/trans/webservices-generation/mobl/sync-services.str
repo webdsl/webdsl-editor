@@ -92,10 +92,10 @@ rules // editService
   generate-mobl-edit-service: x -> x
   	where  	service := mobl-serviceElem 
           	  |[
-          	  	resource  sendEdits (arg : Collection<JSON>): void{
+          	  	resource  sendEdits (arg : [JSON]): void {
           	  		uri = "webservice/test"
      				method = "PUT"
-     				data = JSON.stringify(arg.list())
+     				data = JSON.stringify(arg)
       				mapper = voidMapper
           	  	}
           	  ]|
@@ -106,21 +106,20 @@ rules // editService
  			; function := mobl-def 
  			  |[
  			  	 function syncEdits() {
-   				 	var array = Collection<JSON>();
+   				 	var array : [JSON] = [];
     				stat_objectstatement*
     				Sync.sendEdits(array);
  				}
- 			  ]|   
- 			  
+ 			  ]|    
+ 			   
   generate-sync-edit-mobl-statements: x_entity -> statements
     where 	x_topEntity := <TopEntity; Fst>
  			; <?x_topEntity> x_entity
     		; x_entityname := $["[x_entity]"]
     		; statements := mobl-stat*
    				|[
-   					var json = JSON();
-					json.name = x_entityname;
-					json.value = x_entity.all().filter("sync", "=",true).filter("dirty", "=", true).selectJSON(["*"]);	
+					var value = x_entity.all().filter("sync", "=",true).filter("dirty", "=", true).selectJSON(["*"]);	
+					var json = Dynamic(name=x_entityname, value=value);
 					array.add(json);
    				]|
   
@@ -130,9 +129,8 @@ rules // editService
     where	x_entityname := $["[x_entity]"]
     		; statements := mobl-stat*
    				|[
-   					var json = JSON();
-					json.name = x_entityname;
-					json.value = x_entity.all().filter("dirty", "=", true).selectJSON(["*"]);	
+					var value = x_entity.all().filter("dirty", "=", true).selectJSON(["*"]);	
+					var json = Dynamic(name=x_entityname, value=value);
 					array.add(json);
    				]|				        
 
