@@ -85,7 +85,11 @@ rules //edit
  			  	 if(kind == x_entityname) {
 				  		for ( count : Int from 0 to entities.length() ) {
 				  			var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x ) ;
-				  			x_mappername(entity, entities.getJSONObject(count));
+				  			if (entity.version <= entities.getJSONObject(count).getInt("version")) {
+				  				x_mappername(entity, entities.getJSONObject(count));
+				  			} else {
+				  				errors.add(x_entityname + ": " + entity.name + ", already has newer version");
+				  			}
 				  		}
 				  	} else {
 				  		stat_elseblock

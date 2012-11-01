@@ -17,7 +17,7 @@ imports
 	webservices-generation/related-entities
 		 
   	util 
-  	lib/-
+  	lib/- 
 
 overlays
 	DirServices = "webservices/services"
@@ -40,7 +40,10 @@ rules
   			; generate-sync-services(|<Fst>topEntity)
   			; <generate-edit-mappers> project-path  
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
-  			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>, <generate-available-services-function>, <generate-interface-service>, <generate-add-false-dirty-to-json>]
+  			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
+  			  		   <generate-available-services-function>, <generate-interface-service>,
+  			  		   <generate-add-false-dirty-to-json>, <generate-make-JSON-Error>,
+  			  		   <generate-Enum-ErrorTypes>]
 			; imports := def*
 			  |[
 			  	imports webservices/related-entities/main 
@@ -132,4 +135,26 @@ rules //general functions
 			json.put("dirty", "false");
 			return json;
 		}
-	]| 	  	      	
+	]|
+	
+  generate-make-JSON-Error: x -> function
+	where	function := webdsl |[
+		function makeJSONErrorObject(message : String, type : ErrorTypes , ent : String, id : UUID ) : JSONObject {
+			var json := JSONObject();
+			json.put("message", message);
+			json.put("type" , type);
+			json.put("id", id);
+			json.put("entity",ent);
+			return json;
+		}
+	]|
+	
+  generate-Enum-ErrorTypes: x -> function
+	where	function := def |[
+				enum ErrorTypes {
+					Warning("warning"),
+					Error("error")
+				}
+			]|
+	
+	 	   	  	      	
