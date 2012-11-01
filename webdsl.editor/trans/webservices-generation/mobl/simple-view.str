@@ -13,9 +13,10 @@ rules
   	where	dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname  
   			; templates := <SimpleViewStandaardDefs> None()
-  			; views := <map(make-simple-view-for-mobl-entity)> moblentities
+  			; views := <map(make-simple-view-for-mobl-entity)> moblentities  
   			; syncView := <make-mobl-sync-view>
-  			; defs := <concat>[templates, views, [syncView]]
+  			; showObject := <make-show-object-control>  moblentities
+  			; defs := <concat>[templates, views, [syncView],[showObject]]
   			; result :=  < make-valid-page-from-mobl-defs(|dirname, "simpleView")> defs
   			; module-to-moblfile(|dirname, "simpleView")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
@@ -74,7 +75,26 @@ rules// transform types to viewcalls
   	where  	e_name := $["[x_name]"] 
 			; x_pagename := $[show[type]Simple]
 			; result := mobl-elem	|[showEntitiesField(e_name,ent.x_name,x_pagename)]|
+
+rules// generate showObjectControl
 	
+	make-show-object-control: entities -> control
+		where	se_when* := <map(make-mobl-when-checks-for-entitie-views)> entities 	
+				; control := mobl-def 
+					|[
+						control showObject(type : String, id : String ){
+					  	 se_when*	
+					  }
+					]|
+	make-mobl-when-checks-for-entitie-views:  EntityNoSuper(_, x_entity, _) -> when
+		where 	e_entity := $["[x_entity]"]
+				; x_viewname := $[show[x_entity]Simple]
+				; when := mobl-elem 
+				  	|[ 
+				  		when( type == e_entity ) {
+				  			x_viewname(x_entity.load(id))
+				  		}	
+				  	]|
 overlays
 	
 	ArgumentVarName = "ent" 
@@ -168,22 +188,30 @@ rules //overlays
 		</javascript>
 	    external function back () : void
 	    
-	    style customWarningItemStyle {
-	  		itemMixin(#000, #ff5);
-	  	}
-	  
+		screen showObjectEmptyScreen(type : String, id : String , entityCTRL : Control2<String, String>) {
+ 			entityCTRL(type, id)
+  		}
+  		
+		style customWarningItemStyle {
+			itemMixin(#000, #ff5);
+  		}
+  
   		style customErrorItemStyle {
   			itemMixin(#000, #f1);
   		}
   		
-  		screen showErrors( errors : JSON ) {
+  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject) {
   			header("Errors")
   			list (error in errors) {
   				when(error.type == "warning") {
-  					item ( style = customWarningItemStyle ) { label ( error . message ) }
+  					item ( style = customWarningItemStyle, onclick={ if(detailview != null) { showObjectEmptyScreen(error.ent, error.id, detailview);} }) { 
+        				label ( error . message )
+        			}
   				} 
-  				when (error.type == "error") {
-  					item ( style = customErrorItemStyle ) { label ( error . message ) }
+  				when (error.type == "error"){
+  					item ( style = customErrorItemStyle,  onclick={ if(detailview != null) { showObjectEmptyScreen(error.ent, error.id, detailview);} } ) {
+        				label ( error . message )
+        			}
   				}
      		}
   		}
