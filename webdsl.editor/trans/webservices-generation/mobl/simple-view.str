@@ -167,4 +167,24 @@ rules //overlays
 		  };
 		</javascript>
 	    external function back () : void
+	    
+	    style customWarningItemStyle {
+	  		itemMixin(#000, #ff5);
+	  	}
+	  
+  		style customErrorItemStyle {
+  			itemMixin(#000, #f1);
+  		}
+  		
+  		screen showErrors( errors : JSON ) {
+  			header("Errors")
+  			list (error in errors) {
+  				when(error.type == "warning") {
+  					item ( style = customWarningItemStyle ) { label ( error . message ) }
+  				} 
+  				when (error.type == "error") {
+  					item ( style = customErrorItemStyle ) { label ( error . message ) }
+  				}
+     		}
+  		}
 	]| 

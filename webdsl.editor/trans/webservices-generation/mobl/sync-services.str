@@ -96,7 +96,7 @@ rules // editService
           	  		uri = "webservice/syncDirtyObjects"
      				method = "PUT"
      				data = JSON.stringify(arg)
-      				mapper = voidMapper
+      				mapper = errorMapper
           	  	}
           	  ]|
            ; rules (ServiceMobl:+= service)	

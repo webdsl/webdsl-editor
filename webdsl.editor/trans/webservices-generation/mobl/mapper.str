@@ -16,6 +16,7 @@ rules
   			; result := <map( make-mobl-mapper-for-entity); 
   			  	add-elem-to-list(|<void-mobl-mapper>);
   			  	add-elem-to-list(|<time-mobl-mapper>);
+  			  	add-elem-to-list(|<error-mobl-mapper>);
   			  	add-elem-to-list(|mobl-def |[import webservices::mobl::model]|);
   			  	make-valid-page-from-mobl-defs(|dirname, "mapper")> filteredEntities
   			; module-to-moblfile(|dirname, "mapper")
@@ -55,6 +56,15 @@ rules
               	function voidMapper (json : JSON) : void {
    		 			if (json.errors && json.errors.length > 0) {
       					log(json.errors);
+    				}
+  				}		 
+  				]|
+  error-mobl-mapper: x -> mapper
+    where 	mapper := mobl-stat 
+              |[
+              	function errorMapper (json : JSON) : JSON {
+   		 			if (json.errors) {
+      					return json.errors;
     				}
   				}		 
   				]|

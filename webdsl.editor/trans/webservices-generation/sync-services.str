@@ -88,7 +88,7 @@ rules //edit
 				  			if (entity.version <= entities.getJSONObject(count).getInt("version")) {
 				  				x_mappername(entity, entities.getJSONObject(count));
 				  			} else {
-				  				errors.put(makeJSONErrorObject("already has newer version", ErrorTypes.Warning, x_entityname, entity.id));
+				  				errors.put(makeJSONErrorObject("already has newer version", "warning", x_entityname, entity.id));
 				  			}
 				  		}
 				  	} else {

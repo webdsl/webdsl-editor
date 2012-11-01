@@ -42,12 +42,11 @@ rules
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
   			  		   <generate-available-services-function>, <generate-interface-service>,
-  			  		   <generate-add-false-dirty-to-json>, <generate-make-JSON-Error>,
-  			  		   <generate-Enum-ErrorTypes>]
+  			  		   <generate-add-false-dirty-to-json>, <generate-make-JSON-Error>]
 			; imports := def*
 			  |[
 			  	imports webservices/related-entities/main 
-			  	imports webservices/mappers/main 
+			  	imports webservices/mappers/main
 			  ]|
 			; defs' := <concat> [modules,imports, defs]
 			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
@@ -98,7 +97,7 @@ rules// generation
 					stat_body
 					stat_exit	
 				}
-			  ]|          	
+			  ]|          	   
    	 			
   generate-test-webservice: x -> service
   	where 	service := <generate-service(|"test")> stat|[var result := "This is a test service";]|  			
@@ -107,7 +106,7 @@ rules// generation
   generate-timestamp-webservice: x -> service
   	where 	service := <generate-service(|"getTimeStamp")> stat|[var result := now().getTime();]|  			
   			; service-to-file(|"getTimeStamp") 			  
-  	
+  	 
   generate-top-level-webservice: x -> service
  	where 	x_varname := <new> "ent"
  			; (x_topEntityType, prop) := <TopEntity>
@@ -139,22 +138,15 @@ rules //general functions
 	
   generate-make-JSON-Error: x -> function
 	where	function := webdsl |[
-		function makeJSONErrorObject(message : String, type : ErrorTypes , ent : String, id : UUID ) : JSONObject {
+		function makeJSONErrorObject(message : String, type : String , ent : String, id : UUID ) : JSONObject {
 			var json := JSONObject();
 			json.put("message", message);
 			json.put("type" , type);
 			json.put("id", id);
-			json.put("entity",ent);
+			json.put("ent",ent);
 			return json;
 		}
 	]|
 	
-  generate-Enum-ErrorTypes: x -> function
-	where	function := def |[
-				enum ErrorTypes {
-					Warning("warning"),
-					Error("error")
-				}
-			]|
 	
 	 	   	  	      	
