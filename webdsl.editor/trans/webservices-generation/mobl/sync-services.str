@@ -92,7 +92,7 @@ rules // editService
   generate-mobl-edit-service: x -> x
   	where  	service := mobl-serviceElem 
           	  |[
-          	  	resource  sendEdits (arg : [JSON]): void {
+          	  	resource  sendEdits (arg : [JSON]): JSON {
           	  		uri = "webservice/syncDirtyObjects"
      				method = "PUT"
      				data = JSON.stringify(arg)
@@ -105,12 +105,13 @@ rules // editService
     where	stat_objectstatement* := <map(generate-sync-edit-mobl-statements)> entities			
  			; function := mobl-def 
  			  |[
- 			  	 function syncEdits() {
+ 			  	 function syncEdits() : JSON {
  			  	 	setSyncFlag(true);
    				 	var array : [JSON] = [];
     				stat_objectstatement*
-    				Sync.sendEdits(array);
+    				var errors = Sync.sendEdits(array);
     				setSyncFlag(false);
+    				return errors;
  				}
  			  ]|    
  			   
