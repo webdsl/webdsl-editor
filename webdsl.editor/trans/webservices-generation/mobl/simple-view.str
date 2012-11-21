@@ -233,8 +233,11 @@ rules //overlays
 	  		}
   		}
   		
-  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject) {
-  			header("Errors")
+  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject, ignoreFunction : Function0<void>) {
+  			header("Errors") {
+				backButton( "back", onclick = { back(); } )
+				button("ignore", onclick = {back(); ignoreFunction(); })
+		  	}
   			var collection = Collection<Tuple2<JSON, Control2<String, String>>>()
   			script {
   				foreach(error in errors) {
@@ -243,4 +246,8 @@ rules //overlays
   			}	
   			zoomList(collection, SimpleErrorViewControl, DetailErrorViewControl)
   		}
+  		
+  		screen showErrorsEmptyScreen(errors : JSON, ctrl : Control2<JSON, ?>, detailCTRL : Control2<String, String>, continueFunction : Function0<void>){
+			ctrl(errors, detailCTRL, continueFunction)
+		}
 	]| 
