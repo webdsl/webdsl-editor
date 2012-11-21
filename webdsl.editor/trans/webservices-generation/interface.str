@@ -42,8 +42,7 @@ rules
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
   			  		   <generate-available-services-function>, <generate-interface-service>,
-  			  		   <generate-add-false-dirty-to-json>, <generate-make-JSON-Error>,
-  			  		   <generate-make-JSON-Entity-Error>, <generate-put-ValidationExceptions-in-jsonerrors>]
+  			  		   <get-general-service-functions>]
 			; imports := def*
 			  |[
 			  	imports webservices/related-entities/main 
@@ -129,26 +128,21 @@ rules// generation
   	
 rules //general functions
 	
-  generate-add-false-dirty-to-json: x -> function
-	where	function := webdsl |[
-		function addDirtyFalse(json : JSONObject) : JSONObject {
+  get-general-service-functions: x -> defs
+  	where defs := webdsl 
+  	|[
+  		function addDirtyFalse(json : JSONObject) : JSONObject {
 			json.put("dirty", "false");
 			return json;
 		}
-	]|
-	
-  generate-make-JSON-Error: x -> function
-	where	function := webdsl |[
+		
 		function makeJSONErrorObject(message : String, type : String) : JSONObject {
 			var json := JSONObject();
 			json.put("message", message);
 			json.put("type", type);
 			return json;
 		}
-	]|
-	
-  generate-make-JSON-Entity-Error: x -> function
-	where	function := webdsl |[
+		
 		function makeJSONEntityErrorObject(errors : JSONArray, ent : String, id : String) : JSONObject {
 			var json := JSONObject();
 			json.put("errors", errors);
@@ -156,11 +150,8 @@ rules //general functions
 			json.put("id", id);
 			return json;
 		}
-	]|
-
-  generate-put-ValidationExceptions-in-jsonerrors: x -> function
-  	where function := webdsl |[
-  		function addValidationExceptionsToLocalErrors(errors : List<NativeValidationException>, localErrors : JSONArray) {
+		
+		function addValidationExceptionsToLocalErrors(errors : List<NativeValidationException>, localErrors : JSONArray) {
 			for(ex : NativeValidationException in errors){
 		    	localErrors.put(makeJSONErrorObject(ex.getErrorMessage(), "error"));
 			}
@@ -171,6 +162,13 @@ rules //general functions
 				errors.put(makeJSONErrorObject(ex.message, "error"));
 			}
 		}
-  	]|
-	
-	 	   	  	      	
+		
+		function containsErrorInJSONArray(array : JSONArray) : Bool {
+			for ( count : Int from 0 to array.length() ) {
+				if(array.getJSONObject(count).getString("type") == "error") {
+					return true;
+				}
+			}
+			return false; 
+		 }
+  	]|	 	   	  	      	
