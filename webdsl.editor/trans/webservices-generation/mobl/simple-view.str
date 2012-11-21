@@ -187,8 +187,9 @@ rules //overlays
 				  }
 				}  
 				<javascript>
-			 	  __ns.back = function() {
+			 	  __ns.back = function(callback) {
 				    history.back();
+					callback();
 				  };
 				</javascript>
 			    external function back () : void
