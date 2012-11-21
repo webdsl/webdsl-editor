@@ -262,7 +262,7 @@ rules//some sync integration
 					if(errors.length == 0) {
 						continueSync();
 					} else {
-						showErrorsEmptyScreen(errors, errorCTRL, detailCTRL, continueSync);
+						showErrorsEmptyScreen(errors, errorCTRL, detailCTRL, ingnoreAndContinue);
 					}	
 				}
 				

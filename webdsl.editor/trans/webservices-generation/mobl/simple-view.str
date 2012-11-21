@@ -203,7 +203,7 @@ rules //overlays
 		  		}
 		  
 		  		style customErrorItemStyle {
-		  			itemMixin(#000, #f1);
+		  			itemMixin(#000, #f11);
 		  		}
 		  		
 				control SimpleErrorViewControl(errorTuple : Tuple2<JSON, Control2<String, String>>) {
@@ -242,7 +242,7 @@ rules //overlays
 		  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject, ignoreFunction : Function1<JSON , void >) {
 		  			header("Errors") {
 						backButton( "back", onclick = { back(); } )
-						button("ignore", onclick = {back(); ignoreFunction(); })
+						button("ignore", onclick = {back(); ignoreFunction(errors); })
 				  	}
 					se_vardecl
 					script {
