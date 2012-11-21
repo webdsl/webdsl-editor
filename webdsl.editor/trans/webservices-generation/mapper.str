@@ -51,7 +51,6 @@ rules //conversion to json
     					stat_mapping
     				}
     			}
-    			
     		]|
 
   json-to-properties-conversion : prop -> statement
@@ -90,7 +89,13 @@ rules //conversion to json
     		; <fetch(?type)> MoblDateTimeTypes
     		; x_propname := <get-property-name> prop
     		; x_stringPropname := String(x_propname)
-    		; statement := webdsl |[ent.x_propname.setTime(json.getLong(x_stringPropname)* 1000L);]|   
+    		; statement := webdsl 
+    		  |[
+    		  	if(ent.x_propname == null ){
+    		  		ent.x_propname := now();
+    		  	}
+    		  	ent.x_propname.setTime(json.getLong(x_stringPropname)* 1000L);
+    		  ]|   
   
   json-to-properties-conversion : prop -> statement
     where  	t@SimpleSort(x_type) := <get-property-type> prop
@@ -127,8 +132,9 @@ rules //conversion to json
     		  		var temp := json.getJSONArray(x_stringPropname);
     		  		var collection := e_collCreation;
 				  	for( count : Int from 0 to temp.length()) {
-				  		var obj := temp.getJSONObject(count);
-				  		if(obj != null) {
+				  		log(count);
+				  		if(temp.get(count) != json.NULL) {
+				  			var obj := temp.getJSONObject(count);
 				  			var localent := loadEntity(x_typename, obj.getString("id").parseUUID()) as x_type;
 				  			if(localent != null) {
 				  				collection.add(localent);
