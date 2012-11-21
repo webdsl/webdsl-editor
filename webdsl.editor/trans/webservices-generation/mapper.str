@@ -143,6 +143,8 @@ rules //conversion to json
 				  			} 
 				  		}
 				  	}
-				  	ent.x_propname := collection; 
+				  	if(ent.x_propname != collection){
+				  		ent.x_propname := collection; 
+				  	}
     		  ]|          		  
  

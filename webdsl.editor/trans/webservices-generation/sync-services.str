@@ -93,6 +93,8 @@ rules //edit
 				  			} else {
 				  				if (entity.version <= entities.getJSONObject(count).getInt("version")) {
 				  					x_mappername(entity, entities.getJSONObject(count), localErrors);
+				  					var valerrors := commitAndStartNewTransaction();
+									addValidationExceptionsToLocalErrors(localErrors, valerrors);
 					  			} else {
 					  				localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
 					  			}	

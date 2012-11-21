@@ -43,7 +43,7 @@ rules
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
   			  		   <generate-available-services-function>, <generate-interface-service>,
   			  		   <generate-add-false-dirty-to-json>, <generate-make-JSON-Error>,
-  			  		   <generate-make-JSON-Entity-Error>]
+  			  		   <generate-make-JSON-Entity-Error>, <generate-put-ValidationExceptions-in-local-errors>]
 			; imports := def*
 			  |[
 			  	imports webservices/related-entities/main 
@@ -157,5 +157,14 @@ rules //general functions
 			return json;
 		}
 	]|
+
+  generate-put-ValidationExceptions-in-local-errors: x -> function
+  	where function := webdsl |[
+  		function addValidationExceptionsToLocalErrors(localErrors : JSONArray, errors : List<NativeValidationException> ) {
+			for(ex : NativeValidationException in errors){
+		    	localErrors.put(makeJSONErrorObject(ex.getErrorMessage(), "error"));
+			}
+		}
+  	]|
 	
 	 	   	  	      	
