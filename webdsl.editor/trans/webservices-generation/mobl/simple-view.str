@@ -239,7 +239,7 @@ rules //overlays
 			  		}
 		  		}
 		  		
-		  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject, ignoreFunction : Function0<void>) {
+		  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject, ignoreFunction : Function1<JSON , void >) {
 		  			header("Errors") {
 						backButton( "back", onclick = { back(); } )
 						button("ignore", onclick = {back(); ignoreFunction(); })
@@ -253,7 +253,7 @@ rules //overlays
 		  			zoomList(collection, SimpleErrorViewControl, DetailErrorViewControl)
 		  		}
 		  		
-		  		screen showErrorsEmptyScreen(errors : JSON, ctrl : Control2<JSON, ?>, detailCTRL : Control2<String, String>, continueFunction : Function0<void>){
+		  		screen showErrorsEmptyScreen(errors : JSON, ctrl : Control2<JSON, ?>, detailCTRL : Control2<String, String>, continueFunction : Function1<JSON,void>){
 					ctrl(errors, detailCTRL, continueFunction)
 				}
 			]| 

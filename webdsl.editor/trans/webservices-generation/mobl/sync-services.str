@@ -24,6 +24,7 @@ rules
   			; totalsyncfunction := <generate-mobl-total-sync-function>
   			; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
   			; clearEditFunction := <generate-mobl-clear-edit-function>  entities 
+  			; restoreFunction := <generate-mobl-restore-object-function> entities
   			; service := <bundle-services> None()
   			; imports :=  mobl-def* 
   			  |[
@@ -32,7 +33,7 @@ rules
   			  	import webservices::mobl::unsync
   			  	import webservices::mobl::simpleView
   			  ]|  
-  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, clearEditFunction, 
+  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, clearEditFunction, restoreFunction, 
   			  						<generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>]]
   			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
   			; module-to-moblfile(|dirname, "sync")
@@ -255,7 +256,7 @@ rules//some sync integration
   generate-mobl-sync-integration-functions : x -> defs
   	where  defs := mobl-def* 
   			|[
-  				function testSync( errorCTRL : Control3<JSON, ?,Function0<void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
+  				function testSync( errorCTRL : Control3<JSON, ?,Function1<JSON , void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
 					var errors = syncEdits();
 					clearDirty(getListofIds(errors));
 					if(errors.length == 0) {
@@ -265,8 +266,35 @@ rules//some sync integration
 					}	
 				}
 				
-				function continueSync() {
-					clearDirty([]);
-					syncAll();
+			    function ingnoreAndContinue(jsonArray : JSON) {
+				  	foreach(error in jsonArray) {
+				  			if(error.restore) {
+				  				restoreObject(error.ent, error.restore);
+				  			}	
+				  	}
+				  	continueSync();
+				  }
+				  
+				  function continueSync ( ) {
+				    clearDirty([]);
+				    syncAll();
+				  }
+  			]|		
+
+  generate-mobl-restore-object-function: entities -> function
+  	where 	stat_ifs := <map(generate-mobl-restore-single-object-from-JSON)>entities
+  			; function := mobl-def	
+  			|[
+  				function restoreObject ( type : String , ent : JSON ) {
+				  	stat_ifs
 				}
-  			]|		 		    
+  			]|
+  generate-mobl-restore-single-object-from-JSON: x_entity -> statement
+  	where  	x_entityString := String(x_entity)
+  			; statement :=mobl-stat* 
+  			|[
+  				if ( type == x_entityString ) {
+				      x_entity . fromSelectJSON ( ent );
+				}
+  			]|	
+   
