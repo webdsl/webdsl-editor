@@ -59,6 +59,7 @@ rules //edit
 	      	  	var request := JSONArray(readRequestBody()) ;
 	      	  	var result := JSONArray();
 				for ( count : Int from 0 to request.length() ) {
+					
 					var jsontemp := request.getJSONObject(count);
 				  	var kind := jsontemp.getString("name");
 				  	var entities := jsontemp.getJSONArray("value");
@@ -68,6 +69,7 @@ rules //edit
 				  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
 				  		// editedProject(entity, projects.getJSONObject(count));
 				  		// 
+		
   				}
 	  		  ]|
 	  		; service := <generate-service(|name)> body
@@ -84,11 +86,19 @@ rules //edit
  			  |[
  			  	 if(kind == x_entityname) {
 				  		for ( count : Int from 0 to entities.length() ) {
+				  			var localErrors := JSONArray();
 				  			var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x ) ;
-				  			if (entity.version <= entities.getJSONObject(count).getInt("version")) {
-				  				x_mappername(entity, entities.getJSONObject(count));
+				  			if (entity == null) {
+				  				localErrors.put("Object does not exist");	
 				  			} else {
-				  				errors.put(makeJSONErrorObject("already has newer version", "warning", x_entityname, entity.id));
+				  				if (entity.version <= entities.getJSONObject(count).getInt("version")) {
+				  				x_mappername(entity, entities.getJSONObject(count));
+					  			} else {
+					  				localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
+					  			}	
+				  			}
+				  			if(localErrors.length() > 0) {
+				  				errors.put(makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id")));
 				  			}
 				  		}
 				  	} else {

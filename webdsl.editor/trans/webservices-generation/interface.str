@@ -42,7 +42,8 @@ rules
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
   			  		   <generate-available-services-function>, <generate-interface-service>,
-  			  		   <generate-add-false-dirty-to-json>, <generate-make-JSON-Error>]
+  			  		   <generate-add-false-dirty-to-json>, <generate-make-JSON-Error>,
+  			  		   <generate-make-JSON-Entity-Error>]
 			; imports := def*
 			  |[
 			  	imports webservices/related-entities/main 
@@ -138,15 +139,23 @@ rules //general functions
 	
   generate-make-JSON-Error: x -> function
 	where	function := webdsl |[
-		function makeJSONErrorObject(message : String, type : String , ent : String, id : UUID ) : JSONObject {
+		function makeJSONErrorObject(message : String, type : String) : JSONObject {
 			var json := JSONObject();
 			json.put("message", message);
-			json.put("type" , type);
-			json.put("id", id);
-			json.put("ent",ent);
+			json.put("type", type);
 			return json;
 		}
 	]|
 	
+  generate-make-JSON-Entity-Error: x -> function
+	where	function := webdsl |[
+		function makeJSONEntityErrorObject(errors : JSONArray, ent : String, id : String) : JSONObject {
+			var json := JSONObject();
+			json.put("errors", errors);
+			json.put("ent", ent);
+			json.put("id", id);
+			return json;
+		}
+	]|
 	
 	 	   	  	      	

@@ -23,6 +23,8 @@ rules
   			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
   			; totalsyncfunction := <generate-mobl-total-sync-function>
   			; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
+  			; clearEditFunction := <generate-mobl-clear-edit-function>  entities
+  			; listofIdsFunction := <generate-mobl-get-listof-Ids-function>  
   			; service := <bundle-services> None()
   			; imports :=  mobl-def* 
   			  |[
@@ -30,7 +32,7 @@ rules
   			  	import webservices::mobl::model
   			  	import webservices::mobl::unsync
   			  ]|  
-  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction], [editsyncfunction]]
+  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, clearEditFunction, listofIdsFunction]]
   			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
   			; module-to-moblfile(|dirname, "sync")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
@@ -179,7 +181,7 @@ rules // generation of sync-functions
    			  	}
    			  ]|
    			   
- generate-list-sync-calls: x_topEntity -> list
+  generate-list-sync-calls: x_topEntity -> list
  	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); uniq> x_topEntity
  			; stat_firstsyncs* :=<map(make-sync-call)> orderedentities
  			; list := mobl-stat* 
@@ -191,7 +193,58 @@ rules // generation of sync-functions
  			  	}
  			  ]|
  			  
- make-sync-call: entityname -> call
+  make-sync-call: entityname -> call
  	where x_servicename := $[syncAll[entityname]]
  		  ; call := mobl-stat |[x_servicename();]|
- 		    
+
+rules// clear function 
+  generate-mobl-clear-edit-function: entities -> function
+  	where 	stat_clear* := <map(generate-clear-edit-statement)>
+  			; function := mobl-def 
+  			|[
+				function clearDirty (excludes :  [String]) {
+					stat_clear*	
+				}  		
+  			]|
+  			
+  generate-clear-edit-statement: x_entity -> statement
+  	where	x_topEntity := <TopEntity; Fst>
+ 			; <?x_topEntity> x_entity
+ 			; statement := mobl-stat* 
+ 			  |[
+ 			  		var value = x_entity . all ( ) . filter ( "sync" , "=" , true ) . filter ( "dirty" , "=" , true );
+				  	foreach(ent in value){
+				  		if(!excludes.contains(ent.id)){
+				  			ent.dirty = false;
+				  		}
+				  	}
+ 			  ]|
+  
+  generate-clear-edit-statement: x_entity -> statement
+  	where	x_topEntity := <TopEntity; Fst>
+ 	where not(<?x_topEntity> x_entity)
+ 	where	statement := mobl-stat* 
+ 			  |[
+ 			  		var value = x_entity . all ( ). filter ( "dirty" , "=" , true );
+				  	foreach(ent in value){
+				  		if(!excludes.contains(ent.id)){
+				  			ent.dirty = false;
+				  		}
+				  	}
+ 			  ]|
+ 			  
+rules// get list of id's from errors
+	  			  
+   generate-mobl-get-listof-Ids-function: x -> function
+  	where 	function := mobl-def 
+  			|[
+				function getListofIds (errorents :  JSON) : [String] {
+					var ids : [String] = [];
+					foreach (errorent in errorents) {
+						if(errorent.id){
+							ids.push(errorent.id);	
+						}	
+					}
+					return ids;	
+				}  		
+  			]|  		 		    
