@@ -89,18 +89,29 @@ rules //edit
 				  			var localErrors := JSONArray();
 				  			var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x ) ;
 				  			if (entity == null) {
-				  				localErrors.put(makeJSONErrorObject("Object does not exist", "error") );	
+				  				localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
 				  			} else {
 				  				if (entity.version <= entities.getJSONObject(count).getInt("version")) {
 				  					x_mappername(entity, entities.getJSONObject(count), localErrors);
-				  					var valerrors := commitAndStartNewTransaction();
-									addValidationExceptionsToLocalErrors(localErrors, valerrors);
+				  					var exceptions := entity.validateSave();
+					                addValidateExceptionsToErrors(exceptions, localErrors);
+									if(exceptions.exceptions.length > 0 ){
+										rollbackAndStartNewTransaction();
+									} else {
+										var uncheckedExceptions := commitAndStartNewTransaction();
+										addValidationExceptionsToLocalErrors(uncheckedExceptions, localErrors);
+									}
 					  			} else {
 					  				localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
 					  			}	
 				  			}
 				  			if(localErrors.length() > 0) {
-				  				errors.put(makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id")));
+				  				var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
+					  			// if(containsErrorInJSONArray(localErrors)) {
+					  			// 	var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x );
+					  			// 	jsonErrorObject.put("entity", entity.toJSON());
+					  			// }
+					  			errors.put(jsonErrorObject);
 				  			}
 				  		}
 				  	} else {
