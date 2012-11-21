@@ -55,10 +55,43 @@ rules //conversion to json
 
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort(type) := <get-property-type> prop
+    		; not (<?"Email" <+ ?"URL"> type )
     		; <fetch(?type)> FromMoblStringTypes()
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)
+    		; x_stringPropname := String(x_propname)   
     		; statement := webdsl |[ent.x_propname := json.getString(x_stringPropname);]|
+
+  json-to-properties-conversion : prop -> statement
+    where  	SimpleSort("Email") := <get-property-type> prop
+    		; <fetch(?type)> FromMoblStringTypes()
+    		; x_propname := <get-property-name> prop
+    		; x_stringPropname := String(x_propname)   
+    		; x_warningMessage := String($[[x_propname]: Not a valid email address])   
+    		; statement := webdsl 
+    		  |[
+    		  	var emailobj := json.getString(x_stringPropname) as Email;
+    		  	if(emailobj.isValid()) {
+    		  		ent.x_propname := emailobj;
+    		  	} else {
+    		  		localerrors.put(makeJSONErrorObject(x_warningMessage, "error"));
+    		  	}
+    		  ]|
+  
+  json-to-properties-conversion : prop -> statement
+    where  	SimpleSort("URL") := <get-property-type> prop
+    		; <fetch(?type)> FromMoblStringTypes()
+    		; x_propname := <get-property-name> prop
+    		; x_stringPropname := String(x_propname)   
+    		; x_warningMessage := String($[[x_propname]: URL is invalid])   
+    		; statement := webdsl 
+    		  |[
+    		  	var urlobj := json.getString(x_stringPropname) as URL;
+    		  	if(urlobj.isValid()) {
+    		  		ent.x_propname := urlobj;
+    		  	} else {
+    		  		localerrors.put(makeJSONErrorObject(x_warningMessage, "error"));
+    		  	}
+    		  ]|
 
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort("Bool") := <get-property-type> prop
