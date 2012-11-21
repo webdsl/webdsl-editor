@@ -258,11 +258,12 @@ rules//some sync integration
   				function testSync( errorCTRL : Control3<JSON, ?,Function0<void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
 					var errors = syncEdits();
 					clearDirty(getListofIds(errors));
-					if(errors.length > 0) {
+					if(errors.length == 0) {
+						continueSync();
+					} else {
 						showErrorsEmptyScreen(errors, errorCTRL, detailCTRL, continueSync);
-					}
-					continueSync();
-					}
+					}	
+				}
 				
 				function continueSync() {
 					clearDirty([]);
