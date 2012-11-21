@@ -25,10 +25,10 @@ rules
   generate-edit-mapper(|dirname): t@(x_entityname, props) -> t
   	where   x_functionname := $[mapperEdited[x_entityname]]
   			; filteredprop := <filter(not(is-derived-prop-cons))> props
-  			; stat_props* := <filter(json-to-properties-conversion)>filteredprop
+  			; stat_props* := <filter(json-to-properties-conversion-null-check)>filteredprop
   			; function := webdsl 
   				|[
-  					function x_functionname(ent : x_entityname, json : JSONObject ) {
+  					function x_functionname(ent : x_entityname, json : JSONObject, localerrors : JSONArray) {
   						stat_props*
   					}		
   			 	]|
@@ -36,6 +36,24 @@ rules
 
 rules //conversion to json
 	
+  json-to-properties-conversion-null-check: prop -> statement
+    where	x_propname := <get-property-name> prop
+    		; stat_mapping := <json-to-properties-conversion> prop
+    		; x_stringPropname := String(x_propname)
+    		; x_warningMessage := String($[Entity is missing property [x_propname]]) 
+    		; statement := webdsl 
+    		|[	if(!json.has(x_stringPropname)) {
+    				localerrors.put(makeJSONErrorObject(x_warningMessage, "warning"));
+    			} else {
+    				if(json.get(x_stringPropname) == json.NULL) {
+    					ent.x_propname := null;
+    				} else {
+    					stat_mapping
+    				}
+    			}
+    			
+    		]|
+
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort(type) := <get-property-type> prop
     		; <fetch(?type)> FromMoblStringTypes()
@@ -81,16 +99,15 @@ rules //conversion to json
     where	x_propname := <get-property-name> prop
     		; x_stringPropname := String(x_propname)
     		; x_typename := String(x_type)  
+    		; x_warningMessage := String($[Trying to set non existing object for property: [x_propname]]) 
     		; statement := webdsl 
     		  |[
     		  	var temp :=  json.getJSONObject(x_stringPropname);
-  				if(temp != null){
-  					var localent := loadEntity(x_typename, temp.getString("id").parseUUID()) as x_type;
-  					if(localent != null) {
-  						ent.x_propname := localent ;
-  					}
+  				var localent := loadEntity(x_typename, temp.getString("id").parseUUID()) as x_type;
+  				if(localent != null) {
+  					ent.x_propname := localent ;
   				} else {
-  					ent.x_propname := null;
+  					localerrors.put(makeJSONErrorObject(x_warningMessage, "warning"));
   				}
     		  ]|
     		  
@@ -104,23 +121,22 @@ rules //conversion to json
     		  end
     		; x_stringPropname := String(x_propname)
     		; x_typename := String(x_type)  
+    		; x_warningMessage := String($[Trying to add non existing object for property: [x_propname]])   
     		; statement := webdsl 
-    		  |[
-				  var temp := json.getJSONArray(x_stringPropname);
-				  if (temp != null){
-				  	var collection := e_collCreation;
+    		  |[	
+    		  		var temp := json.getJSONArray(x_stringPropname);
+    		  		var collection := e_collCreation;
 				  	for( count : Int from 0 to temp.length()) {
 				  		var obj := temp.getJSONObject(count);
 				  		if(obj != null) {
 				  			var localent := loadEntity(x_typename, obj.getString("id").parseUUID()) as x_type;
 				  			if(localent != null) {
 				  				collection.add(localent);
-				  			}
+				  			} else {
+				  				localerrors.put(makeJSONErrorObject(x_warningMessage, "warning"));
+				  			} 
 				  		}
 				  	}
-				  	ent.x_propname := collection;
-				  } else {
-				  	ent.x_propname := null;
-				  }
+				  	ent.x_propname := collection; 
     		  ]|          		  
  

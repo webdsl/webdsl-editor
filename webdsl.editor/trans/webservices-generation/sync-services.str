@@ -89,10 +89,10 @@ rules //edit
 				  			var localErrors := JSONArray();
 				  			var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x ) ;
 				  			if (entity == null) {
-				  				localErrors.put("Object does not exist");	
+				  				localErrors.put(makeJSONErrorObject("Object does not exist", "error") );	
 				  			} else {
 				  				if (entity.version <= entities.getJSONObject(count).getInt("version")) {
-				  				x_mappername(entity, entities.getJSONObject(count));
+				  					x_mappername(entity, entities.getJSONObject(count), localErrors);
 					  			} else {
 					  				localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
 					  			}	
