@@ -23,16 +23,17 @@ rules
   			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
   			; totalsyncfunction := <generate-mobl-total-sync-function>
   			; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
-  			; clearEditFunction := <generate-mobl-clear-edit-function>  entities
-  			; listofIdsFunction := <generate-mobl-get-listof-Ids-function>  
+  			; clearEditFunction := <generate-mobl-clear-edit-function>  entities 
   			; service := <bundle-services> None()
   			; imports :=  mobl-def* 
   			  |[
   			  	import webservices::mobl::mapper
   			  	import webservices::mobl::model
   			  	import webservices::mobl::unsync
+  			  	import webservices::mobl::simpleView
   			  ]|  
-  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, clearEditFunction, listofIdsFunction]]
+  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, clearEditFunction, 
+  			  						<generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>]]
   			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
   			; module-to-moblfile(|dirname, "sync")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
@@ -247,4 +248,24 @@ rules// get list of id's from errors
 					}
 					return ids;	
 				}  		
-  			]|  		 		    
+  			]|  
+
+rules//some sync integration 
+	
+  generate-mobl-sync-integration-functions : x -> defs
+  	where  defs := mobl-def* 
+  			|[
+  				function testSync( errorCTRL : Control3<JSON, ?,Function0<void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
+					var errors = syncEdits();
+					clearDirty(getListofIds(errors));
+					if(errors.length > 0) {
+						showErrorsEmptyScreen(errors, errorCTRL, detailCTRL, continueSync);
+					}
+					continueSync();
+					}
+				
+				function continueSync() {
+					clearDirty([]);
+					syncAll();
+				}
+  			]|		 		    

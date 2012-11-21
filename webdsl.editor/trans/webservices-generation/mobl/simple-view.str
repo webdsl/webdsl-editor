@@ -101,153 +101,158 @@ overlays
 	IdMoblProperty = mobl-entBodyElem |[ id : String ]| 
   			
 rules //overlays 
-	SimpleViewStandaardDefs = ! mobl-def* 
-	|[
-		import webservices::mobl::model
-		import mobl::ui::generic
-		import mobl::ui::generic::datepicker
-		screen showControl (viewer : Control1< Entity<?> >, value : Entity<?>) {
-		  viewer(value)
-		}
-		screen showControlList (viewer : Control3 <String, Collection < Entity<?> >, Control1<Dynamic> >, headerName : String, values : Collection< Entity<?> >, dviewer : Control1<Dynamic>) {
-		  viewer(headerName, values, dviewer)
-		}
-		control showField (name : String, value : String) {
-		  item {
-		    label(name, style = textFieldLabelStyle)
-		    textField(value, disabled = true)
-		  }
-		}
-		control showTextField ( name : String , value : String ) {
-    		item {
-      			label ( name , style = textFieldLabelStyle )
-      			textField ( value )
-    		}
-  		}
-	  	control showBoolField ( name : String , value : Bool ) {
-	    	item {
-	      		label ( name , style = textFieldLabelStyle )
-	      		checkBox(value)
-	    	}	
-	  	}
-	   	control showNumField ( name : String , value : Num ) {
-	    	item {
-	      		label ( name , style = textFieldLabelStyle )
-	      		numField(value)
-	    	}
-	  	}
-	  	control showDateTimeField ( name : String , value : DateTime ) {
-	    	item {
-	      		label ( name , style = textFieldLabelStyle )
-	      		dateTimePicker(value)
-	    	} 
-	  	}
-	  	
-	  	control showTimeField ( name : String , value : DateTime ) {
-	    	item {
-	      		label ( name , style = textFieldLabelStyle )
-	      		timePicker(value)
-	    	}
-	  	}
-	  	
-	  	control showDateField ( name : String , value : DateTime ) {
-	    	item {
-	      		label ( name , style = textFieldLabelStyle )
-	      		datePicker(value)
-	    	}
-	  	}
-	  	
-		control showEntityField (name : String, value : Entity<?>, viewer : Control1< Entity<?> >) {
-		  when ( value ) {
-		    item( onclick = { showControl(viewer,value); } ) {
-		      label( name )
-		    }
-		  }
-		}
-		control showEntitiesField(name : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
-		  when ( values ) {
-		    item( onclick = { showControlList(showEntitiesList,name,values,viewer); } ) {
-		      label( name )
-		    }
-		  }
-		}
-		control showEntitiesList (headerName : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
-		  header( headerName ) {
-			backButton( "back", onclick = { back(); } )
-		  }
-		  list ( value in values ) {
-		    item( onclick = { showControl(viewer,value); } ) {
-		      label( value . id )
-		    }
-		  }
-		}  
-		<javascript>
-	 	  __ns.back = function() {
-		    history.back();
-		  };
-		</javascript>
-	    external function back () : void
-	    
-		screen showObjectEmptyScreen(type : String, id : String , entityCTRL : Control2<String, String>) {
- 			entityCTRL(type, id)
-  		}
-  		
-		style customWarningItemStyle {
-			itemMixin(#000, #ff5);
-  		}
-  
-  		style customErrorItemStyle {
-  			itemMixin(#000, #f1);
-  		}
-  		
-		control SimpleErrorViewControl(errorTuple : Tuple2<JSON, Control2<String, String>>) {
-  			when(errorTuple._1.id) {
-  				item{ label(errorTuple._1.ent + " : " + errorTuple._1.id) }
-  			} else {
-  				item{ label(errorTuple._1.message) }
-  			}
-  		}
-  		
- 		control DetailErrorViewControl(errorTuple : Tuple2<JSON, Control2<String, String>>) {
-  			when(errorTuple._1.id) {
-  				item{ label(errorTuple._1.ent + " : " + errorTuple._1.id) }
-	  			when(errorTuple._2 != null) {
-	  				item( onclick={ showObjectEmptyScreen(errorTuple._1.ent, errorTuple._1.id, errorTuple._2);}) {
-	  					label("Show Object")
-	  				}
-	  			}
-	  			list(error in errorTuple._1.errors){
-	  				when(error.type == "warning") {
-		  				item ( style = customWarningItemStyle){ 
-		        			label ( error . message )
-		        		}
-		  			} 
-		  			when (error.type == "error"){
-		  				item ( style = customErrorItemStyle) {
-		        			label ( error . message )
-		        		}
+	SimpleViewStandaardDefs : x -> defs
+			// hack becuase of vardecl for action and UI are different. but this is not doable with current PP
+	where 	se_vardecl := VarDeclInferredContrElem( "collection", CollectionCons( "Collection"
+  				, [ GenericType( "Tuple2", [SimpleType("JSON"), GenericType("Control2", [SimpleType("String"), SimpleType("String")])])]
+  				, [] ))
+			; defs := mobl-def* 
+			|[
+				import webservices::mobl::model
+				import mobl::ui::generic
+				import mobl::ui::generic::datepicker
+				screen showControl (viewer : Control1< Entity<?> >, value : Entity<?>) {
+				  viewer(value)
+				}
+				screen showControlList (viewer : Control3 <String, Collection < Entity<?> >, Control1<Dynamic> >, headerName : String, values : Collection< Entity<?> >, dviewer : Control1<Dynamic>) {
+				  viewer(headerName, values, dviewer)
+				}
+				control showField (name : String, value : String) {
+				  item {
+				    label(name, style = textFieldLabelStyle)
+				    textField(value, disabled = true)
+				  }
+				}
+				control showTextField ( name : String , value : String ) {
+		    		item {
+		      			label ( name , style = textFieldLabelStyle )
+		      			textField ( value )
+		    		}
+		  		}
+			  	control showBoolField ( name : String , value : Bool ) {
+			    	item {
+			      		label ( name , style = textFieldLabelStyle )
+			      		checkBox(value)
+			    	}	
+			  	}
+			   	control showNumField ( name : String , value : Num ) {
+			    	item {
+			      		label ( name , style = textFieldLabelStyle )
+			      		numField(value)
+			    	}
+			  	}
+			  	control showDateTimeField ( name : String , value : DateTime ) {
+			    	item {
+			      		label ( name , style = textFieldLabelStyle )
+			      		dateTimePicker(value)
+			    	} 
+			  	}
+			  	
+			  	control showTimeField ( name : String , value : DateTime ) {
+			    	item {
+			      		label ( name , style = textFieldLabelStyle )
+			      		timePicker(value)
+			    	}
+			  	}
+			  	
+			  	control showDateField ( name : String , value : DateTime ) {
+			    	item {
+			      		label ( name , style = textFieldLabelStyle )
+			      		datePicker(value)
+			    	}
+			  	}
+			  	
+				control showEntityField (name : String, value : Entity<?>, viewer : Control1< Entity<?> >) {
+				  when ( value ) {
+				    item( onclick = { showControl(viewer,value); } ) {
+				      label( name )
+				    }
+				  }
+				}
+				control showEntitiesField(name : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
+				  when ( values ) {
+				    item( onclick = { showControlList(showEntitiesList,name,values,viewer); } ) {
+				      label( name )
+				    }
+				  }
+				}
+				control showEntitiesList (headerName : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
+				  header( headerName ) {
+					backButton( "back", onclick = { back(); } )
+				  }
+				  list ( value in values ) {
+				    item( onclick = { showControl(viewer,value); } ) {
+				      label( value . id )
+				    }
+				  }
+				}  
+				<javascript>
+			 	  __ns.back = function() {
+				    history.back();
+				  };
+				</javascript>
+			    external function back () : void
+			    
+				screen showObjectEmptyScreen(type : String, id : String , entityCTRL : Control2<String, String>) {
+		 			entityCTRL(type, id)
+		  		}
+		  		
+				style customWarningItemStyle {
+					itemMixin(#000, #ff5);
+		  		}
+		  
+		  		style customErrorItemStyle {
+		  			itemMixin(#000, #f1);
+		  		}
+		  		
+				control SimpleErrorViewControl(errorTuple : Tuple2<JSON, Control2<String, String>>) {
+		  			when(errorTuple._1.id) {
+		  				item{ label(errorTuple._1.ent + " : " + errorTuple._1.id) }
+		  			} else {
+		  				item{ label(errorTuple._1.message) }
 		  			}
-	  			}
-	  		} else {
-	  			item{ label(errorTuple._1.message) }
-	  		}
-  		}
-  		
-  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject, ignoreFunction : Function0<void>) {
-  			header("Errors") {
-				backButton( "back", onclick = { back(); } )
-				button("ignore", onclick = {back(); ignoreFunction(); })
-		  	}
-  			var collection = Collection<Tuple2<JSON, Control2<String, String>>>()
-  			script {
-  				foreach(error in errors) {
-  					collection.add( (error, detailview) );	
-  				}
-  			}	
-  			zoomList(collection, SimpleErrorViewControl, DetailErrorViewControl)
-  		}
-  		
-  		screen showErrorsEmptyScreen(errors : JSON, ctrl : Control2<JSON, ?>, detailCTRL : Control2<String, String>, continueFunction : Function0<void>){
-			ctrl(errors, detailCTRL, continueFunction)
-		}
-	]| 
+		  		}
+		  		
+		 		control DetailErrorViewControl(errorTuple : Tuple2<JSON, Control2<String, String>>) {
+		  			when(errorTuple._1.id) {
+		  				item{ label(errorTuple._1.ent + " : " + errorTuple._1.id) }
+			  			when(errorTuple._2 != null) {
+			  				item( onclick={ showObjectEmptyScreen(errorTuple._1.ent, errorTuple._1.id, errorTuple._2);}) {
+			  					label("Show Object")
+			  				}
+			  			}
+			  			list(error in errorTuple._1.errors){
+			  				when(error.type == "warning") {
+				  				item ( style = customWarningItemStyle){ 
+				        			label ( error . message )
+				        		}
+				  			} 
+				  			when (error.type == "error"){
+				  				item ( style = customErrorItemStyle) {
+				        			label ( error . message )
+				         		}
+				  			}
+			  			}
+			  		} else {
+			  			item{ label(errorTuple._1.message) }
+			  		}
+		  		}
+		  		
+		  		control showErrors( errors : JSON , detailview : Control2<String, String> = showObject, ignoreFunction : Function0<void>) {
+		  			header("Errors") {
+						backButton( "back", onclick = { back(); } )
+						button("ignore", onclick = {back(); ignoreFunction(); })
+				  	}
+					se_vardecl
+					script {
+		  				foreach(error in errors) {
+		  					collection.add( (error, detailview) );	
+		  				}
+		  			}	
+		  			zoomList(collection, SimpleErrorViewControl, DetailErrorViewControl)
+		  		}
+		  		
+		  		screen showErrorsEmptyScreen(errors : JSON, ctrl : Control2<JSON, ?>, detailCTRL : Control2<String, String>, continueFunction : Function0<void>){
+					ctrl(errors, detailCTRL, continueFunction)
+				}
+			]| 
