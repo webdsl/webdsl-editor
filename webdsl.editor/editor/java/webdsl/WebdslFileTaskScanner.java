@@ -49,13 +49,13 @@ public class WebdslFileTaskScanner implements IFileTaskScanner {
 		}
 	}
 
-	@Override
+	
 	public String getMarkerType() {
 		
 		return "org.eclipse.core.resources.taskmarker";
 	}
 
-	@Override
+	
 	public Map[] scan(IFile file, TaskTag[] tags, IProgressMonitor arg2) {
 		try {
 			file.deleteMarkers(null, true, 1);
@@ -103,7 +103,7 @@ public class WebdslFileTaskScanner implements IFileTaskScanner {
 	} 
 
 
-
+	
 	private int findPriorityOfTag(String tag, TaskTag[] tags) {
 		for (TaskTag taskTag : tags) {
 			if(taskTag.getTag().equalsIgnoreCase(tag)){
@@ -112,7 +112,7 @@ public class WebdslFileTaskScanner implements IFileTaskScanner {
 		}
 		return -1;
 	}
-
+	
 	private boolean stringIsTagName(String term, TaskTag[] tags) {
 		for(TaskTag tag : tags ){
 			if(tag.getTag().equalsIgnoreCase(term)){
@@ -122,12 +122,12 @@ public class WebdslFileTaskScanner implements IFileTaskScanner {
 		return false;
 	}
 
-	@Override
+	
 	public void shutdown(IProject arg0) {
 		
 	}
 
-	@Override
+	
 	public void startup(IProject arg0) {
 
 	}
