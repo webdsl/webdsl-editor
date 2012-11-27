@@ -26,7 +26,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.debug.ui,
  org.eclipse.ui.ide,
  org.eclipse.jdt.core,
- org.apache.ant
+ org.apache.ant,
+ org.eclipse.wst.sse.core
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: org.acoda.editor,
  org.webdsl.back_end_transformations,
@@ -45,3 +46,4 @@ Bundle-ClassPath: include/webdsl_editor.jar,
  include/webdsl.jar,
  include/acoda.jar
 Bundle-ActivationPolicy: lazy
+Import-Package: org.eclipse.wst.sse.core.internal.provisional.tasks
