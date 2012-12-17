@@ -9,13 +9,14 @@ imports
 
   	util 
   	lib/-
+  	webservices-generation/util
   	
   	lib/mobl/MoBL
   	lib/mobl/editor-common.generated
   	
   	entity-extraction/generate-entity-pages
   	webservices-generation/overlays
-  	webservices-generation/mobl/simple-view 
+  	webservices-generation/mobl/simple-view  
  
 rules 
 
@@ -30,7 +31,8 @@ rules
   			; <Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property> topEntity 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; completeEntities := <map(generate-extra-properties-for-collections); map(make-entity-with-properties)> filteredEntities 
+  			; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
+  			; completeEntities := <map(generate-extra-properties-for-collections); filter(where(\x -> <Extends; ?"Entity">x\)); map(make-entity-with-properties)> filteredEntities //TODO: filter only subEntitties
   			; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
   			; module-to-moblfile(|dirname, "model")
   			; <refresh-workspace-file> $[[project-path]/[dirname]]   
@@ -49,30 +51,84 @@ rules // file stuff
 	  		  
 rules //lookup  			   
   
-  make-entity-with-properties : entityname -> EntityNoSuper(entityname, props)
-  	where	props := <concat> [[VersionProperty1()], <all-properties> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
-  
+  make-entity-with-properties : entityname -> EntityNoSuper(entityname, [props_entity*|props*])
+  	where 	props_entity* := <concat> [[VersionProperty1()],<get-properties-of-entity-mobl-model> entityname]
+  			; props_childeren := <get-subclasses-of-entity; map(get-properties-of-entity-mobl-model); flatten-list> entityname	//todo:  this is also something for flatening subclasses only don't like the subclasses having same property names thing
+  			; names-to-rename := <map(get-property-name); find-doubles> 
+  			; props* := <map(rename-prop-with-classname(|names-to-rename))> props_childeren
+  				
+  get-properties-of-entity-mobl-model: entityname -> props
+  	where  	props := <concat> [<all-properties; filter(where(has-anno(?FromEntity(entityname))))> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
+  	// TODO: Also only got properties from own entity
+  	
   check-searchable-anno: property -> mobl-anno |[searchable]| 
    	where 	<is-searchable-prop> property  
   			; <get-property-type; ?SimpleSort(type)> property
   			; <fetch-elem(?type)> ToMoblStringTypes()  
   			  
   check-inverse-anno: Property(_, _, _, annos) ->  mobl-anno |[inverse : x_name ]|
-    where	<fetch-elem(?InverseAnno(_, x_name))> annos
+    where	<fetch-elem(?InverseAnno(class, name))> annos
+    		; x_name := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
     
   check-inverse-anno(|class): property -> mobl-anno |[inverse : x_otherprop ]| 
   	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where 	<get-property-type; ?GenericSort(_,_)> property
-    		; (otherEnity, x_otherprop) := <InverseProperty> (class, <get-property-name> property)
-  
+    		; propertyname := <get-property-name> property
+    		; propertyname' := <get-original-propname-name <+ id>   // todo: hirarchie flatten
+    		; class' := <(get-anno(?FromEntity(x)); !x) <+ !class> property    // todo: hirarchie flatten
+    		; (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
+    		; x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop)  // todo: hirarchie flatten
+  			
+  		
  check-inverse-anno(|class): property ->  anno
   	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where 	<get-property-type; ?GenericSort(_,_)> property
-    		; propname := <get-property-name> property
-   			; anno := <ExtraInverseAnno> (class, propname)
-    where not	(<InverseProperty> (class, propname))
+    		; propertyname := <get-property-name> property
+    		; propertyname' := <get-original-propname-name <+ id>   // todo: hirarchie flatten
+   			; anno := <ExtraInverseAnno> (class, propertyname')
+    where not	(<InverseProperty> (class, propertyname'))
    
+rules //rename(subclasses stuf)
+	rename-prop-with-classname(|names-to-rename): p -> p
+		where 	prop-name := <get-property-name> p
+				; not (<fetch-elem(?prop-name)> names-to-rename) 
+	
+	rename-prop-with-classname(|names-to-rename): Property(name, k, str,annos){anno*} -> Property(newname, k, str,annos){anno*}
+		where 	<fetch-elem(?name)> names-to-rename
+				; <fetch-elem(?FromEntity(x))> anno*
+				; newname := $[[x]_[name]] 
+				; rules(
+				  	get-renamed-prop :+ (x, name) -> newname
+				  	get-original-propname-name :+ newname -> name
+				  ) 
 
+	rename-prop-with-classname(|names-to-rename): DerivedProperty(name, k, str,annos, derive){anno*} -> DerivedProperty(newname, k, str,annos, derive){anno*}
+		where 	<fetch-elem(?name)> names-to-rename
+				; <fetch-elem(?FromEntity(x))> anno*
+				; newname := $[[x]_[name]] 
+				; rules(
+				  	get-renamed-prop :+ (x, name) -> newname
+				  	get-original-propname-name :+ newname -> name
+				  ) 
+				  				  
+	rename-prop-with-classname(|names-to-rename): PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
+		where 	<fetch-elem(?name)> names-to-rename
+				; <fetch-elem(?FromEntity(x))> anno*
+				; newname := $[[x]_[name]] 
+				; rules(
+				  	get-renamed-prop :+ (x, name) -> newname
+				  	get-original-propname-name :+ newname -> name
+				  ) 
+
+				  
+	rename-prop-with-classname(|names-to-rename): DerivedPropertyNoAnno(name, k, str,derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
+		where 	<fetch-elem(?name)> names-to-rename
+				; <fetch-elem(?FromEntity(x))> anno*
+				; newname := $[[x]_[name]] 
+				; rules(
+				  	get-renamed-prop :+ (x, name) -> newname
+				  	get-original-propname-name :+ newname -> name
+				  ) 
 rules //generation 
 	
   generate-extra-properties-for-collections: entityname -> entityname
@@ -90,10 +146,11 @@ rules //generation
   	where 	entity := <get-property-type; srt-to-type> property
   			; propertyname := <get-property-name> property
   			; newProperty := <generate-inverse-property(|class)> property
-  			; x_newPropertyName := <get-property-name> newProperty
+  			; x_newPropertyName := <get-property-name> newProperty 
+  			; parent := <get-highest-parent>class // TODO: fix the flat hirarchie stuff 
   			; rules(
   				ExtraInverseProperty:+ entity -> newProperty
-  				ExtraInverseAnno: (class, propertyname) -> mobl-anno |[inverse : x_newPropertyName ]|
+  				ExtraInverseAnno: (parent, propertyname) -> mobl-anno |[inverse : x_newPropertyName ]|
   			)
   
   generate-top-level-SyncProperty: entityname -> entityname
@@ -152,13 +209,13 @@ rules // type transformations
   type-to-mobl-type: SimpleSort(type) -> mobl-t|[Num]|
    	where 	<fetch(?type)> ToMoblNumTypes
 
-  type-to-mobl-type: SimpleSort("Bool") -> mobl-t|[Bool]|
+  type-to-mobl-type: SimpleSort("Bool") -> mobl-t|[Bool]| 
  
   type-to-mobl-type: SimpleSort(type) -> mobl-t|[DateTime]|
   	where 	<fetch(?type)> MoblDateTimeTypes 
 
-  type-to-mobl-type: SimpleSort(x_type) -> mobl-t|[x_type]|
-   	where 	<IsEntity> x_type
+  type-to-mobl-type: SimpleSort(x_type) -> mobl-t|[x_newType]|
+   	where 	x_newType := <IsEntity; get-highest-parent> x_type // TODO: this only works for flatten subentities
    	where not (<is-builtin-entity> x_type)
   
   type-to-mobl-type: GenericSort(_, type) -> mobl-t|[Collection<t_paramtype>]| 

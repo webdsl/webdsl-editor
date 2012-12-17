@@ -1,7 +1,8 @@
 module webservices-generation/util
 
 imports   	
-	libwebdsl-generator 
+	libwebdsl-generator
+	lib/-
 
 rules
   get-subclasses-of-entity: entity -> children
@@ -19,4 +20,22 @@ rules
   	where "Entity" := <Extends> entity    
   	
   get-superclasses-of-entity: entity -> []
-  	where not( <Extends> entity)    	
+  	where not( <Extends> entity)    
+  	
+  generate-dr-for-highest-parent: e@EntityNoSuper(name, props) -> e
+   	where rules(
+   		get-highest-parent : name -> name
+   	)
+  
+  generate-dr-for-highest-parent: e@Entity(name, super, props) -> e
+   	where parent := <find-highest-parent> name
+   		; rules(
+   			get-highest-parent : name -> parent
+   		)
+  
+  find-highest-parent: name -> parent
+  	where parent := <Extends; find-highest-parent> name 	
+  
+  find-highest-parent: name -> name
+  	where "Entity" := <Extends> name  	
+  	

@@ -9,7 +9,7 @@ imports
 rules 
 	
   make-mobl-sync-view: x -> view
-  	where 	 (topEntity, x_nameprop) := <TopEntity>
+  	where 	 (x_topEntity, x_nameprop) := <TopEntity>
             ; e_nameprop := $["[x_nameprop]"] 
             ; se_vardecl := VarDeclInferredContrElem("phrase", String(""))   //hack for grammer problems make difference between vardecls				  
  			; view := mobl-def 
@@ -20,7 +20,7 @@ rules
     				}
     				se_vardecl
     				searchBox ( phrase )
-    				list ( ent in Project.searchPrefix( phrase ).order( e_nameprop , true ) ) {
+    				list ( ent in x_topEntity.searchPrefix( phrase ).order( e_nameprop , true ) ) {
       					item { checkBox ( ent . sync , label = ent . x_nameprop ) }
     				}
   				}

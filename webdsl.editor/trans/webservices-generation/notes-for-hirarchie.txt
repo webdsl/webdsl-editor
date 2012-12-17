@@ -1,0 +1,12 @@
+entity hirarchie:
+flatten:
+mobl model: 
+1. add extra properties to super for every sub entity 
+1.b.1 rename where there are 2 properties with same name
+1.b.2 rename inverse that points to a renamed prop thing
+1.b.3 also lookup of inverse props is needed to be replaced to super and original names
+2. replace all the type of sub to super
+3. filter out subclasses 
+4. filter out properties that are only form itself
+mobl_view:
+for free
