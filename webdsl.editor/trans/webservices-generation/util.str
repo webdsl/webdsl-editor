@@ -2,6 +2,7 @@ module webservices-generation/util
 
 imports   	
 	libwebdsl-generator
+	trans/util
 	lib/-
 
 rules
@@ -34,8 +35,14 @@ rules
    		)
   
   find-highest-parent: name -> parent
-  	where parent := <Extends; find-highest-parent> name 	
+  	where 	parent := <Extends; find-highest-parent> name 	
   
   find-highest-parent: name -> name
-  	where "Entity" := <Extends> name  	
+  	where 	"Entity" := <Extends> name  	
   	
+
+  all-properties-with-entity-anno-inculding-entityproperties: entityname -> properties
+  	where 	properties := <all-entity-properties-tuples; map(\(x,y) -> <add-anno(|FromEntity(x))> y\)>
+
+  all-properties-with-entity-anno: entityname -> properties
+  	where 	properties := <all-properties-with-entity-anno-inculding-entityproperties; filter(not(has-anno(?FromEntity("Entity"))))> entityname 

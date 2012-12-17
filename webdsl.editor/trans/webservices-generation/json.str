@@ -41,7 +41,7 @@ rules //lookup
   all-properties-including-entity-properties: entityName -> (entityName, props*)
   	where 	 < make-entity-with-properties > entityName // TODO : for store rename props  + add-anno for getting rename working
   			; extraprops :=  <map(add-anno(|FromEntity(entityName)))> <(get-extra-type-property; MkSingleton ) <+ ![]> entityName //TODO :extra prop added
-  			; props := <concat> [<all-properties> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1(), extraprops]
+  			; props := <concat> [<all-properties-with-entity-anno> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1(), extraprops]
   			; props* := <map(rename-prop-by-dr)> props //check for overwriting of nameProperty
  
   get-extra-type-property: entityname -> property
@@ -92,7 +92,7 @@ rules //transformation
 	 		  ]| 
 	 		  	
 	build-minimal-json-function: props -> function
-	 where 	filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons ))> props  
+	 where 	filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons))> props  
 	 		; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
 	 		; function := fun 
 	 		  |[

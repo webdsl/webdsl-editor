@@ -5,6 +5,7 @@ imports
 	
   	entity-extraction/generate-entity-files
 	webservices-generation/interface
+	webservices-generation/util
 		
   	util
   	lib/-
@@ -25,10 +26,8 @@ rules //builder
 
 rules// lookup 
 	
-  get-all-properties: entityName -> (entityName, <all-properties> entityName)
-  	where 	props1 := <concat> [<all-properties> entityName]
-  			
-  			  
+  get-all-properties: entityName -> (entityName, <all-properties-with-entity-anno> entityName)
+  				  
 rules//file generation 
 	
   props-to-related-entities-functions(|dirname): t@(name,props) -> t

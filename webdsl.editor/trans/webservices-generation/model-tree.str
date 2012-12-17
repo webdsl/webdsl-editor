@@ -7,6 +7,8 @@ imports
 	libwebdsl-generator
   	libwebdsl-front
 
+	webservices-generation/util
+	
   	util 
   	lib/-
   		
@@ -27,7 +29,7 @@ rules
   	
   make-node-of-entity(|stopEntities): entityname -> Node(entityname,childs) //todo: subclasses are ignored for now
   	where not ( <fetch(?entityname)> stopEntities ) //this is to not loop while making a tree(ofcourse then it is not a tree anymore)
-  	where	properties := <all-properties> entityname
+  	where	properties := <all-properties-with-entity-anno> entityname
   			; types := <map(get-property-type; srt-to-type)>
   			; childtypes := <filter(IsEntity); uniq>
   			; stopEntities' := [entityname| stopEntities]

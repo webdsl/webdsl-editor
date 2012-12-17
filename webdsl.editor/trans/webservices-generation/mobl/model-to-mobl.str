@@ -52,14 +52,15 @@ rules // file stuff
 	  		  
 rules //lookup  			   
   
-  make-entity-with-properties : entityname -> EntityNoSuper(entityname, [props_entity*|props*])
-  	where 	props_entity* := <concat> [[VersionProperty1()],<get-properties-of-entity-mobl-model> entityname]
-  			; props_childeren := <get-subclasses-of-entity; map(get-properties-of-entity-mobl-model); flatten-list> entityname	//todo:  this is also something for flatening subclasses only don't like the subclasses having same property names thing
-  			; names-to-rename := <map(get-property-name); find-doubles> 
-  			; props* := <map(rename-prop-with-classname(|names-to-rename))> props_childeren
+  make-entity-with-properties : entityname -> EntityNoSuper(entityname, props*)
+  	where 	props_entity* := <concat> [[VersionProperty1()], <get-properties-of-entity-mobl-model> entityname]
+  			; props_childeren* := <get-subclasses-of-entity; map(get-properties-of-entity-mobl-model); flatten-list> entityname	//todo:  this is also something for flatening subclasses only don't like the subclasses having same property names thing
+  			; props := [props_entity*|props_childeren*]
+  			; names-to-rename := <map(get-property-name); find-doubles>   
+  			; props* := <map(rename-prop-with-classname(|names-to-rename)); uniq> props
   				
   get-properties-of-entity-mobl-model: entityname -> props
-  	where  	props := <concat> [<all-properties; filter(where(has-anno(?FromEntity(entityname))))> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
+  	where  	props := <concat> [<all-properties-with-entity-anno> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
   	// TODO: Also only got properties from own entity
   	
   check-searchable-anno: property -> mobl-anno |[searchable]| 
@@ -150,7 +151,7 @@ rules //rename(subclasses stuf)
 rules //generation 
 	
   generate-extra-properties-for-collections: entityname -> entityname
-	where	props := <all-properties> entityname
+	where	props := <all-properties-with-entity-anno> entityname
 			; propswithoutinvers := <filter(generic-type-has-no-inverse-anno(|entityname))>
 			; map(declare-extra-prop(|entityname))
 
