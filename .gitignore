@@ -20,3 +20,4 @@ webdsl.editor/utils/sdf2imp.jar
 webdsl.editor/webdsl-template/*
 webdsl.editor/build.generated.xml
 webdsl.editor/bin/*
+webdsl.editor/.servletapp/*
