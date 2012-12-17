@@ -8,11 +8,13 @@ flatten:
 		2. replace all the type of sub to super
 		3. filter out subclasses 
 		4. filter out properties that are only form itself
+		5. addExtraPropertyToSetType
 	mobl_view:
 		for free
 	json:
 		1.only fill own properties but need to use rename if needed
 			1.b first find out rename again.
 			1.c rename them afterwards with dr lookup
+		2. set typeProperty
 	generate-mobl-unsynced-functions:
 		1. remove subentities

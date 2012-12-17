@@ -16,7 +16,7 @@ rules
   		  ; superparents := <get-superclasses-of-entity> directparent
   		  ; parents := [ directparent | superparents]	
  			
-   get-superclasses-of-entity: entity -> ["Entity"]
+  get-superclasses-of-entity: entity -> ["Entity"]
   	where "Entity" := <Extends> entity    
   	
   get-superclasses-of-entity: entity -> []

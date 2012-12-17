@@ -32,7 +32,7 @@ rules
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
-  			; completeEntities := <map(generate-extra-properties-for-collections); filter(where(entity-has-no-super)); map(make-entity-with-properties)> filteredEntities //TODO: filter only subEntitties
+  			; completeEntities := <map(generate-extra-properties-for-collections); map(try(generate-extra-type-property)); filter(where(entity-has-no-super)); map(make-entity-with-properties)> filteredEntities //TODO: filter only subEntitties + add type property
   			; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
   			; module-to-moblfile(|dirname, "model")
   			; <refresh-workspace-file> $[[project-path]/[dirname]]   
@@ -79,7 +79,6 @@ rules //lookup
     		; (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
     		; x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop)  // todo: hirarchie flatten
   			
-  		
  check-inverse-anno(|class): property ->  anno
   	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where 	<get-property-type; ?GenericSort(_,_)> property
@@ -171,6 +170,12 @@ rules //generation
   				ExtraInverseAnno: (parent, propertyname) -> mobl-anno |[inverse : x_newPropertyName ]|
   			)
   
+  generate-extra-type-property: entityname -> entityname
+  	where 	<entity-has-no-super> entityname
+  			; <SubClass> entityname
+  			; property := PropertyNoAnno("typeField", Simple(), SimpleSort("String"))
+   			; rules( ExtraProperty:+ entityname -> property)
+  		
   generate-top-level-SyncProperty: entityname -> entityname
    	where 	property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
    			; rules( ExtraProperty:+ entityname -> property)

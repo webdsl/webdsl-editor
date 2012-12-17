@@ -39,9 +39,18 @@ rules //lookup
 	
   all-properties-including-entity-properties: entityName -> (entityName, props*)
   	where 	 < make-entity-with-properties > entityName // TODO : for store rename props  + add-anno for getting rename working
-  			; props := <concat> [<all-properties> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1()]
+  			; extraprops :=  <map(add-anno(|FromEntity(entityName)))> <(get-extra-type-property; MkSingleton ) <+ ![]> entityName //TODO :extra prop added
+  			; props := <concat> [<all-properties> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1(), extraprops]
   			; props* := <map(rename-prop-by-dr)> props //check for overwriting of nameProperty
-  			  
+ 
+  get-extra-type-property: entityname -> property
+  	where 	superclass := <Extends> entityname
+  			; not (<?"Entity"> superclass)
+  			; property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 		
+  
+  get-extra-type-property: entityname -> property
+  	where 	<SubClass> entityname
+  			; property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 				  	  
 rules //file generation 
 	
 	props-to-jsonfile(|dirname): t@(name,props) -> t
@@ -121,6 +130,7 @@ rules //transformation
 	 			<+ ?PropertyNoAnno(x_name, _, type)
 	 			<+ ?DerivedProperty(x_name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	 		; not (<?"typeField"> x_name)		// TODO: flatten hirarchie
 	 		; exp := <exp-to-value-statement> (x_name,type)  
 	 		; stat_put := <generate-json-put> (x_name, exp)
 	 		; statements := webdsl 
@@ -129,13 +139,17 @@ rules //transformation
 	 		  		stat_put
 	 		  	} 
 	 		  ]|
-              
+    
+    property-to-json-without-null: property -> stat |[object.put("typeField", x_entity);]|// TODO: flatten hirarchie
+    	where 	<get-property-name; ?"typeField"> property
+    			; x_entity := <get-anno(?FromEntity(x)); !String(x) > property
    
    property-to-json: property -> statements
 	 where	(?Property(x_name, _, type, _) 
 	 			<+ ?PropertyNoAnno(x_name, _, type)
 	 			<+ ?DerivedProperty(x_name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	 		; not (<?"typeField"> x_name)	// TODO: flatten hirarchie
 	 		; stat_pre := <property-to-value-array-pre(|)> (x_name,type) 
 	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), x_name) else exp := Var($[array[x_name]]) end	
 	 		; value := <exp-to-value-statement> (exp, type)
@@ -150,6 +164,10 @@ rules //transformation
               		stat_else
               	}
               ]| 
+              
+      property-to-json: property -> stat |[object.put("typeField", x_entity);]| // TODO: flatten hirarchie
+    	where 	<get-property-name; ?"typeField"> property
+    			; x_entity := <get-anno(?FromEntity(x)); !String(x) > property
   
   generate-json-put: (name, e_value) -> stat |[object.put(e_name, e_value);]|
   	where e_name := String(name)
