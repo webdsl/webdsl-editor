@@ -11,6 +11,8 @@ imports
 	
 	webservices-generation/overlays
 	webservices-generation/util
+	webservices-generation/mobl/model-to-mobl
+
 		
   	util
   	lib/-
@@ -23,12 +25,12 @@ rules //builder
   	where	dirname := "webservices/json"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; filteredEntities := <filter(not(is-builtin-entity))> entities  
   			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
   			; result:= <map(props-to-jsonfile(|dirname))> properties
   			; <main-file-to-file(generate-main-model-file(|dirname, [<MakeJSONFromRefFunction>None()])|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
-
+			
   generate-json-functions-for-entities: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
 	where not (<?Application(_, _)> ast)
 	where fatal-err-msg(|"This builder is only supported on the application file")
@@ -36,8 +38,9 @@ rules //builder
 rules// lookup
 	
   all-properties-including-entity-properties: entityName -> (entityName, props*)
-  	where 	props1 := <concat> [<all-properties> entityName, AllEntityProperties1()]
-  			; props* := <filter(not(NameProperty1())) > props1 //check for overwriting of nameProperty
+  	where 	 < make-entity-with-properties > entityName // TODO : for store rename props  
+  			; props1 := <concat> [<all-properties> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))>AllEntityProperties1()]
+  			; props* := <rename-prop-by-dr)> props1 //check for overwriting of nameProperty
   			  
 rules//file generation 
 	

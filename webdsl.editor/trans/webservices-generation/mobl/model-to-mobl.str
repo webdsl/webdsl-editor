@@ -89,6 +89,23 @@ rules //lookup
     where not	(<InverseProperty> (class, propertyname'))
    
 rules //rename(subclasses stuf)
+	
+	rename-prop-by-dr: Property(name, k, str, annos){anno*} -> Property(newname, k, str, annos){anno*}
+		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
+			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+
+	rename-prop-by-dr: DerivedProperty(name, k, str, annos, derive){anno*} -> DerivedProperty(newname, k, str, annos, derive){anno*}
+		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
+			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+		  				  
+	rename-prop-by-dr: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
+		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
+			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+				  
+	rename-prop-by-dr: DerivedPropertyNoAnno(name, k, str, derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
+		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
+			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+ 				  
 	rename-prop-with-classname(|names-to-rename): p -> p
 		where 	prop-name := <get-property-name> p
 				; not (<fetch-elem(?prop-name)> names-to-rename) 
@@ -129,6 +146,7 @@ rules //rename(subclasses stuf)
 				  	get-renamed-prop :+ (x, name) -> newname
 				  	get-original-propname-name :+ newname -> name
 				  ) 
+				  
 rules //generation 
 	
   generate-extra-properties-for-collections: entityname -> entityname
