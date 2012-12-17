@@ -23,7 +23,8 @@ overlays
 	DirServices = "webservices/services"
 rules
 	 
-  generate-webservices: (selected, position, ast@Application(_, _), path, project-path) -> None()
+  generate-webservices: (selected, position, ast, path, project-path) -> None()
+  	where 	<try(simplify-application-constructor); ?Application(_, _) > ast
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         	  
@@ -53,7 +54,7 @@ rules
 			; <write-ast-to-file(|$[[dirname]/interface.app])> result
 			  	
   generate-webservices: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
-	where not (<?Application(_, _)> ast)
+	where not (<?ApplicationDefs(_, _, _) <+ ?Application(_, _) > ast)
 	where fatal-err-msg(|"This builder is only supported on the application file")
 	
 rules// generation
