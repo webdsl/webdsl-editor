@@ -27,7 +27,7 @@ rules
   generate-edit-mapper(|dirname): t@(x_entityname, props) -> t
   	where  	not(<entity-has-no-super; SubClass> x_entityname) // TODO: for flatten hirarchie
   			; x_functionname := $[mapperEdited[x_entityname]]
-  			; filteredprop := <filter(not(is-derived-prop-cons))> props
+  			; filteredprop := <filter(not(helper-is-derived-property))> props
   			; stat_props* := <filter(json-to-properties-conversion-null-check)>filteredprop
   			; function := webdsl 
   				|[
@@ -42,7 +42,7 @@ rules
   			; childeren := <get-subclasses-of-entity> x_entityname
   			; stat_typecheck* := <generate-mapper-to-submapper(|x_entityname)> childeren
   			; x_functionname := $[mapperEdited[x_entityname]]
-  			; filteredprop := <filter(not(is-derived-prop-cons))> props
+  			; filteredprop := <filter(not(helper-is-derived-property))> props
   			; stat_props* := <filter(json-to-properties-conversion-null-check)>filteredprop
   			; function := webdsl 
   				|[
@@ -53,6 +53,11 @@ rules
   			 	]|
   			;  <mapper-to-file(|$[[dirname]/[x_entityname]])> function
 
+	helper-is-derived-property: property -> property
+		where 	<get-property-name> property
+		    	; propertyname := <get-original-propname-name <+ id>   // todo: hirarchie flatten
+				; class := <has-anno(?FromEntity(x)); !x> property
+				; <IsDerivedProperty>  (class,propertyname)
 rules // mapper from super to sub classes
 	generate-mapper-to-submapper(|parent): childeren -> statements
 		where	stat* := <map(generate-mapper-to-mapper-statement)> childeren
