@@ -95,7 +95,7 @@ rules //edit
 				  					x_mappername(entity, entities.getJSONObject(count), localErrors);
 				  					var exceptions := entity.validateSave();
 					                addValidateExceptionsToErrors(exceptions, localErrors);
-									if(exceptions.exceptions.length > 0 ){
+									if(containsErrorInJSONArray(localErrors)) {
 										rollbackAndStartNewTransaction();
 									} else {
 										var uncheckedExceptions := commitAndStartNewTransaction();
