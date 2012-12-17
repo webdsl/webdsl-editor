@@ -32,7 +32,7 @@ rules
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
-  			; completeEntities := <map(generate-extra-properties-for-collections); filter(where(\x -> <Extends; ?"Entity">x\)); map(make-entity-with-properties)> filteredEntities //TODO: filter only subEntitties
+  			; completeEntities := <map(generate-extra-properties-for-collections); filter(where(entity-has-no-super)); map(make-entity-with-properties)> filteredEntities //TODO: filter only subEntitties
   			; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
   			; module-to-moblfile(|dirname, "model")
   			; <refresh-workspace-file> $[[project-path]/[dirname]]   

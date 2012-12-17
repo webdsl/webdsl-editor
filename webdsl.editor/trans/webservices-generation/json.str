@@ -35,14 +35,14 @@ rules //builder
 	where not (<?Application(_, _)> ast)
 	where fatal-err-msg(|"This builder is only supported on the application file")
 	
-rules// lookup
+rules //lookup
 	
   all-properties-including-entity-properties: entityName -> (entityName, props*)
-  	where 	 < make-entity-with-properties > entityName // TODO : for store rename props  
-  			; props1 := <concat> [<all-properties> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))>AllEntityProperties1()]
-  			; props* := <rename-prop-by-dr)> props1 //check for overwriting of nameProperty
+  	where 	 < make-entity-with-properties > entityName // TODO : for store rename props  + add-anno for getting rename working
+  			; props := <concat> [<all-properties> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1()]
+  			; props* := <map(rename-prop-by-dr)> props //check for overwriting of nameProperty
   			  
-rules//file generation 
+rules //file generation 
 	
 	props-to-jsonfile(|dirname): t@(name,props) -> t
   	with	<file-exists> $[[<project-path>]/[dirname]]
@@ -67,7 +67,7 @@ rules//file generation
 	 		  		}
 	 		  	]|
 	  
-rules//transformation
+rules //transformation
 	
 	build-simple-json-function: props -> function
 	 where 	filterdProperties := <filter(where(is-simple-prop); not(?VersionProperty1() + ?NameProperty1()))> props  

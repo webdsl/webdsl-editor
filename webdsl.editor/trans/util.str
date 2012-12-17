@@ -84,6 +84,10 @@ rules // file IO
      		; dir := $[[<project-path>]/[dirname]]
      		; if <file-exists> dir then id else <mkdir> dir end
      		; <refresh-workspace-file> base
+
+rules // check if Entity is EntityNoSuper
+	entity-has-no-super : name -> name
+		where "Entity" := <Extends> name
      		  
 rules // check for builtin-entities
   is-builtin-entity : entity -> entity

@@ -18,7 +18,7 @@ rules
   			  	import webservices::mobl::sync
   			  	import mobl::ui::generic
   			  ]|  
-  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity)); string-sort> None()	
+  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity); where(entity-has-no-super)); string-sort> None()	// TODO flatten hirarchie
   			; nr-functions := <map(generate-mobl-unsynced-nrfunction)> entities
   			; elem-functions := <map(generate-mobl-unsynced-elemfunction)> entities
   			; sync-functions := <map(generate-mobl-sync-functions-unsynced)> entities  

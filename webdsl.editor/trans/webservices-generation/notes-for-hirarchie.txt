@@ -14,3 +14,5 @@ flatten:
 		1.only fill own properties but need to use rename if needed
 			1.b first find out rename again.
 			1.c rename them afterwards with dr lookup
+	generate-mobl-unsynced-functions:
+		1. remove subentities
