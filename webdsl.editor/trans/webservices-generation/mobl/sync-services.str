@@ -6,6 +6,8 @@ imports
   		webservices-generation/mobl/model-to-mobl
   		webservices-generation/mobl/unsynced-functions
      	webservices-generation/model-tree
+     	webservices-generation/util
+
   	  	
   	  	util 
 	  	lib/-
@@ -16,7 +18,7 @@ rules
   			; <create-dir-in-workspace> dirname
   			; generate-mobl-unsynced-functions  
   			; generate-mobl-top-level-service
-  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity))> None()	
+  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity); where(entity-has-no-super))> None()	// TODO : flatten - removes subentities
   			; <map(generate-mobl-sync-service)> entities
   			; generate-mobl-timestamp-service 
   			; generate-mobl-edit-service   
@@ -184,7 +186,7 @@ rules // generation of sync-functions
    			  ]|
    			   
   generate-list-sync-calls: x_topEntity -> list
- 	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); uniq> x_topEntity
+ 	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); map(find-highest-parent) ;uniq> x_topEntity // TODO it is not clear of order mathers at the moment so keep this but flatten it
  			; stat_firstsyncs* :=<map(make-sync-call)> orderedentities
  			; list := mobl-stat* 
  			  |[

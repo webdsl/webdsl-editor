@@ -18,3 +18,12 @@ flatten:
 		2. set typeProperty
 	generate-mobl-unsynced-functions:
 		1. remove subentities
+	generate-mobl-services:
+		1. remove subentities
+	generate-mobl-total-sync-function:
+		1. flatten/map to parents 
+	make-mobl-mapper-for-all-entities
+		1. remove subentities
+	generate-sync-services
+		1. remove subentities
+		2. map super to itself + childeren

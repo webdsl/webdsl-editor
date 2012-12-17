@@ -8,7 +8,7 @@ rules
 	
   generate-sync-services(|topLevelEntity): x -> x
 	where 	entities := <all-keys-EntDecl> None()	  
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities   
+  			; filteredEntities := <filter(not(is-builtin-entity); where(entity-has-no-super))> entities   
   			; <map(generate-sync-service(|topLevelEntity))> filteredEntities
   			; <generate-edit-sync-service> filteredEntities  
    			  
@@ -17,7 +17,7 @@ rules
   	where 	name := $[sync[x_entityname]]
   			; e_name :=  String(x_topLevelEntity)
   			; stat_forloop :=  <generate-sync-for-entity-loop(|x_topLevelEntity)>x_entityname
-  			; stat_childloop := <get-subclasses-of-entity; map(generate-sync-for-entity-loop(|x_topLevelEntity, x_entityname))>  x_entityname 	
+  			; stat_childloop := <get-subclasses-of-entity; map(generate-sync-for-entity-loop(|x_topLevelEntity))>  x_entityname 	//TODO: here are the childeren mapped to super
       		; body := webdsl 
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
@@ -32,15 +32,15 @@ rules
 	       	; service := <generate-service(|name)> body
 	        ; service-to-file(|name) 
 	          
-  generate-sync-for-entity-loop(|toplevelEntity, x_superClass): x_entity  -> statement
-  	where 	x_functionname := $[getAll[x_entity]For[toplevelEntity]]
-  			; x_functionnamejson := $[toJSONFromSuper[x_superClass]]
-  			; statement :=  stat 
-	      	  |[
-	      	  	for(ent: x_entity in x_functionname(tl) where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp )){
-	  				result.put(addDirtyFalse(ent.x_functionnamejson()));
-	  			}
-	      	  ]|
+  // generate-sync-for-entity-loop(|toplevelEntity, x_superClass): x_entity  -> statement
+  // 	where 	x_functionname := $[getAll[x_entity]For[toplevelEntity]]
+  // 			; x_functionnamejson := $[toJSONFromSuper[x_superClass]]
+  // 			; statement :=  stat 
+	 //      	  |[
+	 //      	  	for(ent: x_entity in x_functionname(tl) where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp )){
+	 //  				result.put(addDirtyFalse(ent.x_functionnamejson()));
+	 //  			}
+	 //      	  ]|
   
   generate-sync-for-entity-loop(|toplevelEntity): x_entity  -> statement
   	where 	x_functionname := $[getAll[x_entity]For[toplevelEntity]]
@@ -81,7 +81,7 @@ rules //edit
  generate-ifs-for-checking-type: [x|xs] -> statement
  	where	stat_elseblock := <generate-ifs-for-checking-type> xs
  			; x_entityname := String(x)
- 			; x_mappername := $[mapperEdited[x]]
+ 			; x_mappername := $[mapperEdited[x]] // TODO: should do something with flatten hirarchie
  			; statement :=  webdsl 
  			  |[
  			  	 if(kind == x_entityname) {

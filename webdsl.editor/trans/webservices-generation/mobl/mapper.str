@@ -12,7 +12,7 @@ rules
   	where	dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname  
   			; entities := <all-keys-EntDecl> None()	  
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; filteredEntities := <filter(not(is-builtin-entity); where(entity-has-no-super))> entities
   			; result := <map( make-mobl-mapper-for-entity); 
   			  	add-elem-to-list(|<void-mobl-mapper>);
   			  	add-elem-to-list(|<time-mobl-mapper>);
