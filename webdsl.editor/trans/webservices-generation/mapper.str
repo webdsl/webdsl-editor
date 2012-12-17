@@ -2,6 +2,8 @@ module webservices-generation/mapper
 imports 
 		entity-extraction/generate-entity-files
     	webservices-generation/util
+    	webservices-generation/mobl/model-to-mobl
+    	
   	  	util 
 	  	lib/-
 	  	webservices-generation/overlays
@@ -12,7 +14,7 @@ rules
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; entitywithproperties := <map(\x -> (x, <all-properties> x)\)> filteredEntities
+  			; entitywithproperties := <map(where(make-entity-with-properties);\x -> (x, <all-properties> x)\)> filteredEntities //TODO : here set DR for renamed properties
    			; mappers := <map(generate-edit-mapper(|dirname))> entitywithproperties  
    			; <main-file-to-file(generate-main-model-file(|dirname, []) |dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
@@ -23,7 +25,8 @@ rules
   			; write-ast-to-file(|$[[modulename].app])
   
   generate-edit-mapper(|dirname): t@(x_entityname, props) -> t
-  	where   x_functionname := $[mapperEdited[x_entityname]]
+  	where  	not(<entity-has-no-super; SubClass> x_entityname) // TODO: for flatten hirarchie
+  			; x_functionname := $[mapperEdited[x_entityname]]
   			; filteredprop := <filter(not(is-derived-prop-cons))> props
   			; stat_props* := <filter(json-to-properties-conversion-null-check)>filteredprop
   			; function := webdsl 
@@ -33,13 +36,62 @@ rules
   					}		
   			 	]|
   			;  <mapper-to-file(|$[[dirname]/[x_entityname]])> function
+  
+  generate-edit-mapper(|dirname): t@(x_entityname, props) -> t
+  	where   <entity-has-no-super; SubClass> x_entityname // TODO:variant for flatten hirarchie
+  			; childeren := <get-subclasses-of-entity> x_entityname
+  			; stat_typecheck* := <generate-mapper-to-submapper(|x_entityname)> childeren
+  			; x_functionname := $[mapperEdited[x_entityname]]
+  			; filteredprop := <filter(not(is-derived-prop-cons))> props
+  			; stat_props* := <filter(json-to-properties-conversion-null-check)>filteredprop
+  			; function := webdsl 
+  				|[
+  					function x_functionname(ent : x_entityname, json : JSONObject, localerrors : JSONArray) {
+  						stat_typecheck*
+  						stat_props*
+  					}		
+  			 	]|
+  			;  <mapper-to-file(|$[[dirname]/[x_entityname]])> function
+
+rules // mapper from super to sub classes
+	generate-mapper-to-submapper(|parent): childeren -> statements
+		where	stat* := <map(generate-mapper-to-mapper-statement)> childeren
+				; x_parentString := String(parent)
+				; statements := webdsl 
+	  				|[
+	  					var sub := "";
+	  					if(!json.has("typeField")) {
+							localerrors.put(makeJSONErrorObject("Entity misses property typeField ", "error"));	
+							return;					
+	  					} else	{
+	  						sub := json.getString("typeField");	
+	  					}
+	  					stat*
+	  					if(sub != x_parentString) {
+	  						localerrors.put(makeJSONErrorObject("Entity has a incorrect Type", "error"));	
+							return;					
+	  					}
+	  				]|
+	  
+	  generate-mapper-to-mapper-statement: x_entityname -> statement
+	  	where 	x_entityString := String(x_entityname)
+	  			; x_functionname := $[mapperEdited[x_entityname]]
+	  			; statement:= stat 
+	  				|[
+	  					if(sub == x_entityString) {
+	  						x_functionname(ent as x_entityname, json, localerrors);
+	  						return;
+	  					}
+	  				]|
+  	
 
 rules //conversion to json
 	
   json-to-properties-conversion-null-check: prop -> statement
     where	x_propname := <get-property-name> prop
+    		; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename
     		; stat_mapping := <json-to-properties-conversion> prop
-    		; x_stringPropname := String(x_propname)
+    		; x_stringPropname := String(x_renamedName)  
     		; x_warningMessage := String($[Entity is missing property [x_propname]]) 
     		; statement := webdsl 
     		|[	if(!json.has(x_stringPropname)) {
@@ -58,14 +110,16 @@ rules //conversion to json
     		; not (<?"Email" <+ ?"URL"> type )
     		; <fetch(?type)> FromMoblStringTypes()
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)   
+    		; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName) 
     		; statement := webdsl |[ent.x_propname := json.getString(x_stringPropname);]|
 
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort("Email") := <get-property-type> prop
     		; <fetch(?type)> FromMoblStringTypes()
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)   
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; x_warningMessage := String($[[x_propname]: Not a valid email address])   
     		; statement := webdsl 
     		  |[
@@ -81,7 +135,8 @@ rules //conversion to json
     where  	SimpleSort("URL") := <get-property-type> prop
     		; <fetch(?type)> FromMoblStringTypes()
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)   
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; x_warningMessage := String($[[x_propname]: URL is invalid])   
     		; statement := webdsl 
     		  |[
@@ -96,32 +151,37 @@ rules //conversion to json
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort("Bool") := <get-property-type> prop
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; statement := webdsl |[ent.x_propname := json.getBoolean(x_stringPropname);]|    
 
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort("Int") := <get-property-type> prop
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; statement := webdsl |[ent.x_propname := json.getInt(x_stringPropname);]|    
     	  	   		  
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort("Long") := <get-property-type> prop
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; statement := webdsl |[ent.x_propname := json.getLong(x_stringPropname);]|    
 
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort("Float") := <get-property-type> prop
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; statement := webdsl |[ent.x_propname := Double(json.getDouble(x_stringPropname)).floatValue();]| 
   
   json-to-properties-conversion : prop -> statement
     where  	SimpleSort(type) := <get-property-type> prop
     		; <fetch(?type)> MoblDateTimeTypes
     		; x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; statement := webdsl 
     		  |[
     		  	if(ent.x_propname == null ){
@@ -135,8 +195,8 @@ rules //conversion to json
     		; <is-entity-type> t  
     where not(<is-builtin-entity> x_type)		  
     where	x_propname := <get-property-name> prop
-    		; x_stringPropname := String(x_propname)
-    		; x_typename := String(x_type)  
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)       		; x_typename := String(x_type)  
     		; x_warningMessage := String($[Trying to set non existing object for property: [x_propname]]) 
     		; statement := webdsl 
     		  |[
@@ -157,7 +217,8 @@ rules //conversion to json
     		  	then e_collCreation :=  webdsl:e |[ List<x_type>()]|
     		  	else e_collCreation :=  webdsl:e |[ Set<x_type>()]|
     		  end
-    		; x_stringPropname := String(x_propname)
+    	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
+    		; x_stringPropname := String(x_renamedName)   
     		; x_typename := String(x_type)  
     		; x_warningMessage := String($[Trying to add non existing object for property: [x_propname]])   
     		; statement := webdsl 

@@ -27,3 +27,7 @@ flatten:
 	generate-sync-services
 		1. remove subentities
 		2. map super to itself + childeren
+	edit-mapper-functions:
+		1. map to good name when renamed
+		2. map to good entity
+		

@@ -131,11 +131,12 @@ rules //transformation
 	 			<+ ?DerivedProperty(x_name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
 	 		; not (<?"typeField"> x_name)		// TODO: flatten hirarchie
-	 		; exp := <exp-to-value-statement> (x_name,type)  
+	 		; x_orgname := <get-original-propname-name <+ id>  x_name //TODO : lookupname
+	 		; exp := <exp-to-value-statement> (x_orgname, type)  
 	 		; stat_put := <generate-json-put> (x_name, exp)
 	 		; statements := webdsl 
 	 		  |[
-	 		  	if (this.x_name != null) {
+	 		  	if (this.x_orgname != null) {
 	 		  		stat_put
 	 		  	} 
 	 		  ]|
@@ -150,14 +151,15 @@ rules //transformation
 	 			<+ ?DerivedProperty(x_name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
 	 		; not (<?"typeField"> x_name)	// TODO: flatten hirarchie
-	 		; stat_pre := <property-to-value-array-pre(|)> (x_name,type) 
-	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), x_name) else exp := Var($[array[x_name]]) end	
+	 		; x_orgname := <get-original-propname-name <+ id>  x_name //TODO : lookupname
+	 		; stat_pre := <property-to-value-array-pre(|)> (x_orgname, type) 
+	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), x_orgname) else exp := Var($[array[x_orgname]]) end	
 	 		; value := <exp-to-value-statement> (exp, type)
 	 		; stat_else :=  <generate-json-put>(x_name, value)
 	 		; stat_if :=  <generate-json-put> (x_name, exp|[null as JSONObject]|)
 			; statements := webdsl 
 			  |[
-              	if (this.x_name == null) {
+              	if (this.x_orgname == null) {
               		stat_if
               	} else {
               		stat_pre
