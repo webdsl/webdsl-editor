@@ -6,27 +6,30 @@ imports
 	  	lib/-
 rules 
 	
-  generate-sync-services(|topLevelEntity): x -> x
+  generate-sync-services: x -> x
 	where 	entities := <all-keys-EntDecl> None()	  
   			; filteredEntities := <filter(not(is-builtin-entity); where(entity-has-no-super))> entities   
-  			; <map(generate-sync-service(|topLevelEntity))> filteredEntities
+  			; <map(generate-sync-service)> filteredEntities
   			; <generate-edit-sync-service> filteredEntities  
    			  
    			  
-  generate-sync-service(|x_topLevelEntity): x_entityname -> x_entityname
+  generate-sync-service: x_entityname -> x_entityname
   	where 	name := $[sync[x_entityname]]
-  			; e_name :=  String(x_topLevelEntity)
-  			; stat_forloop :=  <generate-sync-for-entity-loop(|x_topLevelEntity)>x_entityname
-  			; stat_childloop := <get-subclasses-of-entity; map(generate-sync-for-entity-loop(|x_topLevelEntity))>  x_entityname 	//TODO: here are the childeren mapped to super
+  			; stat_forloop :=  <generate-sync-for-entity-loop>x_entityname
+  			; stat_childloop := <get-subclasses-of-entity; map(generate-sync-for-entity-loop)>  x_entityname 	//TODO: here are the childeren mapped to super
       		; body := webdsl 
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
 	  			var result := JSONArray() ;
-	  			for ( count : Int from 0 to request.length() ){
-	  				var tl := ( loadEntity(e_name, request.getJSONObject(count).getString("id").parseUUID()) as x_topLevelEntity ) ;
-	  				var timestamp := request.getJSONObject(count).getLong("lastSynced") ;
-	  				stat_forloop
-					stat_childloop
+	  			for ( count : Int from 0 to request.length() ) {
+	  				var JSONEntList := request.getJSONObject(count).getJSONArray("value");
+	  				var entname := request.getJSONObject(count).getString("name");
+	  				for(innercount : Int from 0 to JSONEntList.length()) {
+		  				var tl := ( loadEntity(entname, JSONEntList.getJSONObject(innercount).getString("id").parseUUID())) ;
+		  				var timestamp :=  JSONEntList.getJSONObject(innercount).getLong("lastSynced") ;
+		  				stat_forloop
+						stat_childloop
+					}
 	  			}
 	  		  ]|   			 
 	       	; service := <generate-service(|name)> body
@@ -42,11 +45,11 @@ rules
 	 //  			}
 	 //      	  ]|
   
-  generate-sync-for-entity-loop(|toplevelEntity): x_entity  -> statement
-  	where 	x_functionname := $[getAll[x_entity]For[toplevelEntity]]
+  generate-sync-for-entity-loop: x_entity  -> statement
+  	where 	x_functionname := $[getAll[x_entity]ForTopEntity]
   			; statement :=  stat 
 	      	  |[
-	      	  	for(ent: x_entity in x_functionname(tl)where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp ) ){
+	      	  	for(ent: x_entity in x_functionname(tl) where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp ) ){
 	  				result.put(addDirtyFalse(ent.toJSON()));
 	  			}
 	      	  ]|

@@ -33,12 +33,12 @@ rules
   			; <generate-related-entities-functions> project-path
   			; dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
-  			; make-mobl-mapper-for-all-entities  
+  			; make-mobl-mapper-for-all-entities
   			; TL := <generate-top-level-webservice>
   			; testservice :=  <generate-test-webservice> 
   			; generate-timestamp-webservice   
   			; generate-mobl-services
-  			; generate-sync-services(|<Fst>topEntity*)
+  			; generate-sync-services
   			; <generate-edit-mappers> project-path  
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
