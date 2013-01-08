@@ -52,3 +52,10 @@ entity-multiple entrances:
 			a. needs to deal with list instead of single element 
 			b. sync=true doesn't work on combined classes. use version =! 0 instead to be save
 		3. normal services: the get a list of json Objects as param
+		generate-mobl-sync-functions:
+			1. normalSync services now need to build json like dirty each toplevel entity needs to be in there
+		generate-mobl-total-sync:
+			1. let go of the tree structure not sure if this would do anything at all. just do all the entities
+			2. need to set for all TopEntities Last Synced
+			
+		

@@ -23,7 +23,7 @@ rules
   			; generate-mobl-timestamp-service 
   			; generate-mobl-edit-service   
   			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
-  			; totalsyncfunction := <generate-mobl-total-sync-function>
+  			; totalsyncfunction := <generate-mobl-total-sync-function> entities
   			; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
   			; clearEditFunction := <generate-mobl-clear-edit-function>  entities 
   			; restoreFunction := <generate-mobl-restore-object-function> entities
@@ -168,20 +168,45 @@ rules // generation of sync-functions
  			  ]|
  			  
  get-all-mobl-objects-of-entity-statement: x_entity -> statement
- 	where x_topEntity := <TopEntity; Fst>
- 	where not( <?x_topEntity> x_entity )
  	where	x_servicename := $[sync[x_entity]]
-          	; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]));]|
-          	  				  
+          	; stat_objectstatement* := <TopEntity; map(Fst; generate-get-top-entities-statements)> 
+          	; statement := mobl-stat* 
+          	  |[ 
+          		var array : [JSON] = [];
+    			stat_objectstatement*
+    			Sync.x_servicename(array);
+          	  ]|
+  
+  generate-get-top-entities-statements: x_entity -> statements
+    where	x_parent := <find-highest-parent> x_entity
+    		; <SubClass> x_parent
+    		; x_entityname := $["[x_entity]"]
+    		; statements := mobl-stat*
+   				|[
+					var value = x_parent.all().filter("sync", "=", true).filter("typeField", "=", x_entityname).selectJSON(["id", "lastSynced"]);	
+					var json = Dynamic(name=x_entityname, value=value);
+					array.push(json);
+   				]|	
  
- get-all-mobl-objects-of-entity-statement: x_entity -> statement
- 	where	x_topEntity := <TopEntity; Fst>
- 			; <?x_topEntity> x_entity
- 			; x_servicename := $[sync[x_entity]]
-			; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]));]|
+   generate-get-top-entities-statements: x_entity -> statements
+    where	x_parent := <find-highest-parent> x_entity
+    		; not(<SubClass> x_parent)
+    		; x_entityname := $["[x_entity]"]
+    		; statements := mobl-stat*
+   				|[
+					var value = x_parent.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]);	
+					var json = Dynamic(name=x_entityname, value=value);
+					array.push(json);
+   				]|			       	  				  
+ 
+ // get-all-mobl-objects-of-entity-statement: x_entity -> statement
+ // 	where	x_topEntity := <TopEntity; Fst>
+ // 			; <?x_topEntity> x_entity
+ // 			; x_servicename := $[sync[x_entity]]
+	// 		; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]));]|
 	
- generate-mobl-total-sync-function:	x -> function
- 	where 	stat_calls* := <Fst; generate-list-sync-calls> <TopEntity>
+ generate-mobl-total-sync-function:	entities -> function
+ 	where 	stat_calls* := <generate-list-sync-calls> entities
    			; function := mobl-def 
    			  |[
    			  	function syncAll() {
@@ -193,22 +218,44 @@ rules // generation of sync-functions
    			  	}
    			  ]|
    			   
-  generate-list-sync-calls: x_topEntity -> list
- 	where 	orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); map(find-highest-parent) ;uniq> x_topEntity // TODO it is not clear of order mathers at the moment so keep this but flatten it
- 			; stat_firstsyncs* :=<map(make-sync-call)> orderedentities
+  generate-list-sync-calls: entities -> list
+ 	where 	//orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); map(find-highest-parent) ;uniq> x_topEntity // TODO it is not clear of order mathers at the moment so keep this but flatten it 
+ 			// the rule above is to hard to make any point when having multiple entry point making a try. since it was already doubtfull if it would help any thing we just let it go.
+ 			stat_firstsyncs* := <map(make-sync-call)> entities
+ 			; stat_setlastSynced* := <map(Fst; generate-set-LastSynced-loops)> <TopEntity>
  			; list := mobl-stat* 
  			  |[
  			  	var time = Sync.getTimeStamp();
  			  	stat_firstsyncs*
- 			  	foreach(tl in x_topEntity.all().filter("sync", "=", true) ) {
- 			  		tl.lastSynced = time;
- 			  	}
+ 			  	stat_setlastSynced*
  			  ]|
  			  
   make-sync-call: entityname -> call
  	where x_servicename := $[syncAll[entityname]]
  		  ; call := mobl-stat |[x_servicename();]|
 
+  generate-set-LastSynced-loops: x_entity -> statement
+  	where	x_parent := <find-highest-parent> x_entity
+  			; <SubClass> x_parent
+    		; x_entityname := $["[x_entity]"]
+  			; statement :=  mobl-stat* 
+  			  |[
+  			  	foreach(tl in x_parent.all().filter("sync", "=", true).filter("typeField", "=", x_entityname) ) {
+ 			  		tl.lastSynced = time;
+ 			  	}
+  			  ]|
+ 
+   generate-set-LastSynced-loops: x_entity -> statement
+  	where	x_parent := <find-highest-parent> x_entity
+  			; not(<SubClass> x_parent)
+    		; x_entityname := $["[x_entity]"]
+  			; statement :=  mobl-stat* 
+  			  |[
+  			  	foreach(tl in x_parent.all().filter("sync", "=", true)) {
+ 			  		tl.lastSynced = time;
+ 			  	}
+  			  ]|
+  			  
 rules// clear function 
   generate-mobl-clear-edit-function: entities -> function
   	where 	stat_clear* := <map(generate-clear-edit-statement)>
@@ -225,7 +272,7 @@ rules// clear function
  			; statement := mobl-stat* 
  			  |[
  			  		var value = x_entity . all ( ) . filter ( "sync" , "=" , true ) . filter ( "dirty" , "=" , true );
-				  	foreach(ent in value){
+				  	foreach(ent in value) {
 				  		if(!excludes.contains(ent.id)){
 				  			ent.dirty = false;
 				  		}
