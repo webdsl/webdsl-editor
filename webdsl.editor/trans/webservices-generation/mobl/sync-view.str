@@ -16,6 +16,9 @@ rules
  			; viewelem := mobl-def 
  			  |[
  			  	screen syncSimpleView() {
+ 			  		header( "Sync Entities" ) {
+      					backButton( "back" )
+    				}
  			  		tabSet(
  			  			[e_tabs*]
  			  		)
@@ -37,9 +40,6 @@ rules
  			; control := mobl-def 
  			  |[
  			  	control x_controlname() {
-    				header( "Sync Entities" ) {
-      					backButton( "back" , onclick = { back(); } )
-    				}
     				se_vardecl
     				searchBox ( phrase )
     				list ( ent in e_collection ) {
