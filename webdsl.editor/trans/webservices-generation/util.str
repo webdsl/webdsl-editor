@@ -45,4 +45,11 @@ rules
   	where 	properties := <all-entity-properties-tuples; map(\(x,y) -> <add-anno(|FromEntity(x))> y\)>
 
   all-properties-with-entity-anno: entityname -> properties
-  	where 	properties := <all-properties-with-entity-anno-inculding-entityproperties; filter(not(has-anno(?FromEntity("Entity"))))> entityname 
+  	where 	properties := <all-properties-with-entity-anno-inculding-entityproperties; filter(not(has-anno(?FromEntity("Entity"))))> entityname
+  	
+  entity-extends-or-is-extended: entityname -> entityname
+  	where  <SubClass>  entityname
+  	
+  entity-extends-or-is-extended: entityname -> entityname
+  	where  	parent := <Extends>  entityname
+  			; not(?<"Entity"> parent)

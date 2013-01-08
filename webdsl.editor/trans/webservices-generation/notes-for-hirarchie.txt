@@ -34,7 +34,11 @@ flatten:
 		
 entity-multiple entrances:
 	mobl model: 
-		1. add sync+ lastsynced for every top level node by list
-			.b for subtypes need a annotation FromEntity
-		
+		1. add sync+ lastsynced for every top level node
+			.b mobl to flatten hirarchie only top one needs it(once, no rename)
+	mobl_view:
+		1. the normal view should be for free
+		2. sync view needs tabs for every type
+			a. map the screen to control every topEntity(might differ for entities)
+			b. make the screen with just a tabset	
 		

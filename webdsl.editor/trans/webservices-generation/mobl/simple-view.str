@@ -16,7 +16,7 @@ rules
   			; views := <map(make-simple-view-for-mobl-entity)> moblentities  
   			; syncView := <make-mobl-sync-view>
   			; showObject := <make-show-object-control>  moblentities
-  			; defs := <concat>[templates, views, [syncView],[showObject]]
+  			; defs := <concat>[templates, views, syncView,[showObject]]
   			; result :=  < make-valid-page-from-mobl-defs(|dirname, "simpleView")> defs
   			; module-to-moblfile(|dirname, "simpleView")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
