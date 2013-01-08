@@ -110,17 +110,30 @@ rules// generation
   	 
   generate-top-level-webservice: x -> service
  	where 	x_varname := <new> "ent"
- 			; (x_topEntityType, prop) := <TopEntity>
+ 			; topEntities := <TopEntity ; map(Fst)>
+            ; stat_loops* := <map(generate-top-level-webservice-forloops)> topEntities
             ; body := webdsl 
               |[
               	var result := JSONArray();
-              	for(x_varname : x_topEntityType in  x_topEntityType.all()){
-              		result.put(x_varname.toSimpleJSON());
-              	}
+              	stat_loops*
               ]|  		
             ; service := <generate-service(|"getTopLevelEntities")> body
         	; service-to-file(|"getTopLevelEntities") 
-        	     
+   
+  generate-top-level-webservice-forloops: x_entity -> statement 
+  	where 	x_entityString := $["[x_entity]"]
+  			; statement := webdsl 
+	  		|[	
+	  			var array := JSONArray();
+	  			var jsonobj := JSONObject();
+	  			for(topent : x_entity in  x_entity.all()){
+	              	array.put(topent.toSimpleJSON());
+	            }
+	            jsonobj.put("name", x_entityString );
+	            jsonobj.put("value", array);
+	            result.put(jsonobj);
+	  		]|    
+  		 	     
   service-to-file(|name): service -> service
   	where 	modname := $[[DirServices()]/[name]]
   			; ast := <make-valid-page-from-defs(|modname)>[service]

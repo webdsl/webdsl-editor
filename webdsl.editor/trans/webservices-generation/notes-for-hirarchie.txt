@@ -62,3 +62,7 @@ entity-multiple entrances:
 	mobl-mapper:
 		1. most of the mappers stay the same since the information is correct in json
 		2. need a new TopLevelMapper to fix the different TopLevels
+		
+	webdsl-generate-TopLevelSyncService
+		1. instead of one it has a list of entity types containing the entities to send
+	
