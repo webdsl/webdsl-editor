@@ -30,4 +30,11 @@ flatten:
 	edit-mapper-functions:
 		1. map to good name when renamed
 		2. map to good entity
+
+		
+entity-multiple entrances:
+	mobl model: 
+		1. add sync+ lastsynced for every top level node by list
+			.b for subtypes need a annotation FromEntity
+		
 		

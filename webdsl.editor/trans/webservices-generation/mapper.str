@@ -55,7 +55,7 @@ rules
 
 	helper-is-derived-property: property -> property
 		where 	<get-property-name> property
-		    	; propertyname := <get-original-propname-name <+ id>   // todo: hirarchie flatten
+		    	; propertyname := <try(get-original-propname-name)>   // todo: hirarchie flatten
 				; class := <has-anno(?FromEntity(x)); !x> property
 				; <IsDerivedProperty>  (class,propertyname)
 rules // mapper from super to sub classes

@@ -25,11 +25,11 @@ rules
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	
-  			 topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
-  			; rules (TopEntity := topEntity )
+  			topEntity* := <collect-all(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  			; rules (TopEntity := topEntity* )
   			; dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname
-  			; <Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property> topEntity 
+  			; <map(Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property)> topEntity* 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
@@ -75,7 +75,7 @@ rules //lookup
   	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where 	<get-property-type; ?GenericSort(_,_)> property
     		; propertyname := <get-property-name> property
-    		; propertyname' := <get-original-propname-name <+ id>   // todo: hirarchie flatten
+    		; propertyname' := <try(get-original-propname-name)>   // todo: hirarchie flatten
     		; class' := <(get-anno(?FromEntity(x)); !x) <+ !class> property    // todo: hirarchie flatten
     		; (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
     		; x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop)  // todo: hirarchie flatten
@@ -84,7 +84,7 @@ rules //lookup
   	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where 	<get-property-type; ?GenericSort(_,_)> property
     		; propertyname := <get-property-name> property
-    		; propertyname' := <get-original-propname-name <+ id>   // todo: hirarchie flatten
+    		; propertyname' := <try(get-original-propname-name)>   // todo: hirarchie flatten
    			; anno := <ExtraInverseAnno> (class, propertyname')
     where not	(<InverseProperty> (class, propertyname'))
    
@@ -158,7 +158,7 @@ rules //generation
   			; propertyname := <get-property-name> property
   			; newProperty := <generate-inverse-property(|class)> property
   			; x_newPropertyName := <get-property-name> newProperty 
-  			; parent := <get-highest-parent>class // TODO: fix the flat hirarchie stuff 
+  			; parent := <find-highest-parent>class // TODO: fix the flat hirarchie stuff 
   			; rules(
   				ExtraInverseProperty:+ entity -> newProperty
   				ExtraInverseAnno: (parent, propertyname) -> mobl-anno |[inverse : x_newPropertyName ]|
@@ -172,11 +172,13 @@ rules //generation
   		
   generate-top-level-SyncProperty: entityname -> entityname
    	where 	property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
-   			; rules( ExtraProperty:+ entityname -> property)
+   			; entityname':= <find-highest-parent> entityname
+   			; rules( ExtraProperty:+ entityname' -> property) // TODO again some hirarchie stuff should look out
    
   generate-top-level-lastSynced-Property: entityname -> entityname
    	where 	property := PropertyNoAnno("lastSynced", Simple(), SimpleSort("Int"))
-   			; rules( ExtraProperty:+ entityname -> property)			  
+   			; entityname':= <find-highest-parent> entityname
+   			; rules( ExtraProperty:+ entityname' -> property) // TODO again some hirarchie stuff should look out		  
    
   generate-inverse-property(|class): property ->  Property(name, Ref() , GenericSort("List", [SimpleSort(class)]), [InverseAnno(class, propertyname)])
     where 	proptype := <get-property-type; ?GenericSort("List", _)> property
@@ -232,7 +234,7 @@ rules // type transformations
   	where 	<fetch(?type)> MoblDateTimeTypes 
 
   type-to-mobl-type: SimpleSort(x_type) -> mobl-t|[x_newType]|
-   	where 	x_newType := <IsEntity; get-highest-parent> x_type // TODO: this only works for flatten subentities
+   	where 	x_newType := <IsEntity; find-highest-parent> x_type // TODO: this only works for flatten subentities
    	where not (<is-builtin-entity> x_type)
   
   type-to-mobl-type: GenericSort(_, type) -> mobl-t|[Collection<t_paramtype>]| 

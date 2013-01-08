@@ -132,7 +132,7 @@ rules //transformation
 	 			<+ ?DerivedProperty(x_name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
 	 		; not (<?"typeField"> x_name)		// TODO: flatten hirarchie
-	 		; x_orgname := <get-original-propname-name <+ id>  x_name //TODO : lookupname
+	 		; x_orgname := <try(get-original-propname-name)>  x_name //TODO : lookupname
 	 		; exp := <exp-to-value-statement> (x_orgname, type)  
 	 		; stat_put := <generate-json-put> (x_name, exp)
 	 		; statements := webdsl 
@@ -152,7 +152,7 @@ rules //transformation
 	 			<+ ?DerivedProperty(x_name, _, type, _, _)
 	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
 	 		; not (<?"typeField"> x_name)	// TODO: flatten hirarchie
-	 		; x_orgname := <get-original-propname-name <+ id>  x_name //TODO : lookupname
+	 		; x_orgname := <try(get-original-propname-name)>  x_name //TODO : lookupname
 	 		; stat_pre := <property-to-value-array-pre(|)> (x_orgname, type) 
 	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), x_orgname) else exp := Var($[array[x_orgname]]) end	
 	 		; value := <exp-to-value-statement> (exp, type)
