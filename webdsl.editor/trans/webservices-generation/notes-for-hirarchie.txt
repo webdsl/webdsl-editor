@@ -59,3 +59,6 @@ entity-multiple entrances:
 			2. need to set for all TopEntities Last Synced
 		generate-mobl-clear-function
 			1. there is a list of TopEntities instead of one, we make no difference for clearing any more just clear them all.
+	mobl-mapper:
+		1. most of the mappers stay the same since the information is correct in json
+		2. need a new TopLevelMapper to fix the different TopLevels

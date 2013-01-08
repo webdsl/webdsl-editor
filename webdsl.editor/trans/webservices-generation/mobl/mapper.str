@@ -4,6 +4,8 @@ imports
   		lib/mobl/editor-common.generated 
   		webservices-generation/mobl/model-to-mobl
      
+     	webservices-generation/util
+  	  
   	  	util  
 	  	lib/-
 rules 
@@ -17,8 +19,9 @@ rules
   			  	add-elem-to-list(|<void-mobl-mapper>);
   			  	add-elem-to-list(|<time-mobl-mapper>);
   			  	add-elem-to-list(|<error-mobl-mapper>);
-  			  	add-elem-to-list(|mobl-def |[import webservices::mobl::model]|);
-  			  	make-valid-page-from-mobl-defs(|dirname, "mapper")> filteredEntities
+  			  	add-elem-to-list(|<topEntities-mobl-mapper>);
+  			  	add-elem-to-list(|mobl-def |[import webservices::mobl::model]|)> filteredEntities
+  			; <make-valid-page-from-mobl-defs(|dirname, "mapper")> result
   			; module-to-moblfile(|dirname, "mapper")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
 		 
@@ -37,6 +40,31 @@ rules
     				}
   				}	
               ]|
+  
+  topEntities-mobl-mapper: x -> mapper
+	where 	stat_typeif* := <map(Fst; generate-mobl-topentity-check)> <TopEntity>
+			; mapper := mobl-stat 
+              |[
+              	function TopLevelEntities_Mapper (json : JSON) {
+      				foreach(topent : JSON in json.result) {
+						stat_typeif*
+      				}
+  				}	
+              ]|
+  
+  generate-mobl-topentity-check: x_entity -> statement
+  	where  	x_entityString := String(x_entity)
+  			; x_parent := <find-highest-parent> x_entity
+  			; statement := mobl-stat* 
+  			|[
+  				if ( topent.name == x_entityString ) {
+  					foreach(ent : JSON in topent.value) {
+  						if(! x_parent.load(ent.id)) {
+  							x_parent . fromSelectJSON ( ent );
+  						}
+  					}
+				}
+  			]|	
               
   time-mobl-mapper: x -> mapper
     where 	mapper := mobl-stat 
