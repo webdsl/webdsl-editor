@@ -57,5 +57,5 @@ entity-multiple entrances:
 		generate-mobl-total-sync:
 			1. let go of the tree structure not sure if this would do anything at all. just do all the entities
 			2. need to set for all TopEntities Last Synced
-			
-		
+		generate-mobl-clear-function
+			1. there is a list of TopEntities instead of one, we make no difference for clearing any more just clear them all.

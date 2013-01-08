@@ -22,6 +22,7 @@ rules
   			; <map(generate-mobl-sync-service)> entities
   			; generate-mobl-timestamp-service 
   			; generate-mobl-edit-service   
+  			; gettopentitiesfunction:= <generate-mobl-get-top-entities-function> 
   			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
   			; totalsyncfunction := <generate-mobl-total-sync-function> entities
   			; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
@@ -36,7 +37,7 @@ rules
   			  	import webservices::mobl::simpleView
   			  ]|  
   			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, clearEditFunction, restoreFunction, 
-  			  						<generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>]]
+  			  						gettopentitiesfunction, <generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>]]
   			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
   			; module-to-moblfile(|dirname, "sync")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
@@ -166,15 +167,20 @@ rules // generation of sync-functions
     				log(e_logstring + ( ( now() - begin ) / 1000 ).toString());
  				}
  			  ]|
- 			  
- get-all-mobl-objects-of-entity-statement: x_entity -> statement
+ 
+  get-all-mobl-objects-of-entity-statement: x_entity -> statement
  	where	x_servicename := $[sync[x_entity]]
-          	; stat_objectstatement* := <TopEntity; map(Fst; generate-get-top-entities-statements)> 
-          	; statement := mobl-stat* 
+          	; statement := mobl-stat |[ Sync.x_servicename(getTopEntitiesObjects());]|
+ 			  
+ generate-mobl-get-top-entities-function: x -> statement
+ 	where	stat_objectstatement := <TopEntity; map(Fst; generate-get-top-entities-statements)> 
+          	; statement := mobl-def
           	  |[ 
-          		var array : [JSON] = [];
-    			stat_objectstatement*
-    			Sync.x_servicename(array);
+          	  	function getTopEntitiesObjects() : [JSON] {
+          			var array : [JSON] = [];
+    				stat_objectstatement
+    				return array;
+    			}
           	  ]|
   
   generate-get-top-entities-statements: x_entity -> statements
@@ -265,23 +271,8 @@ rules// clear function
 					stat_clear*	
 				}  		
   			]|
-  			
-  generate-clear-edit-statement: x_entity -> statement
-  	where	x_topEntity := <TopEntity; Fst>
- 			; <?x_topEntity> x_entity
- 			; statement := mobl-stat* 
- 			  |[
- 			  		var value = x_entity . all ( ) . filter ( "sync" , "=" , true ) . filter ( "dirty" , "=" , true );
-				  	foreach(ent in value) {
-				  		if(!excludes.contains(ent.id)){
-				  			ent.dirty = false;
-				  		}
-				  	}
- 			  ]|
   
   generate-clear-edit-statement: x_entity -> statement
-  	where	x_topEntity := <TopEntity; Fst>
- 	where not(<?x_topEntity> x_entity)
  	where	statement := mobl-stat* 
  			  |[
  			  		var value = x_entity . all ( ). filter ( "dirty" , "=" , true );
