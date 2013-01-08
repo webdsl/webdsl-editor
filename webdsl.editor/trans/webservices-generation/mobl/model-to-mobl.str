@@ -25,8 +25,7 @@ rules
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   	where	
-  			topEntity* := <collect-all(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
-  			; rules (TopEntity := topEntity* )
+  			topEntity* := <declare-top-entities> ast
   			; dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname
   			; <map(Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property)> topEntity* 

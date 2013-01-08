@@ -15,6 +15,7 @@ imports
 	webservices-generation/mobl/sync-services
 	webservices-generation/sync-services
 	webservices-generation/related-entities
+	webservices-generation/util	
 		 
   	util 
   	lib/- 
@@ -28,8 +29,7 @@ rules
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         	  
-  	where	topEntity := <collect-one(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
-  			; rules (TopEntity := topEntity )
+  	where	topEntity* := <declare-top-entities> ast
   			; <generate-related-entities-functions> project-path
   			; dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
@@ -38,7 +38,7 @@ rules
   			; testservice :=  <generate-test-webservice> 
   			; generate-timestamp-webservice   
   			; generate-mobl-services
-  			; generate-sync-services(|<Fst>topEntity)
+  			; generate-sync-services(|<Fst>topEntity*)
   			; <generate-edit-mappers> project-path  
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,

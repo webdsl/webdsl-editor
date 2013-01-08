@@ -53,3 +53,12 @@ rules
   entity-extends-or-is-extended: entityname -> entityname
   	where  	parent := <Extends>  entityname
   			; not(?<"Entity"> parent)
+  	
+  declare-top-entities: ast -> topEntity*
+  	where 	topEntity* := <collect-all(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  			; rules (TopEntity := topEntity* )		  
+  
+  is-top-entity-by-dr: entityName -> entityName
+  	where	TopEntities:= <TopEntity>
+  			; <map(Fst); fetch-elem(?entityName)> TopEntities
+  
