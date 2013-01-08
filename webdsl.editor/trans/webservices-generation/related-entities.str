@@ -15,11 +15,10 @@ rules //builder
   generate-related-entities-functions : project-path -> project-path
   	where	dirname := "webservices/related-entities"
   			; <create-dir-in-workspace> dirname 
-  			; (topEntityType, topEntityProp) := <TopEntity>
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities
   			; properties := <map(get-all-properties)> filteredEntities
-  			; main-defs := <generate-main-defs-for-related-entities(|topEntityType)> filteredEntities 
+  			; main-defs := <generate-main-defs-for-related-entities> filteredEntities 
   			; result:= <map(props-to-related-entities-functions(|dirname))> properties
   			; <main-file-to-file(generate-main-model-file(|dirname, main-defs )|dirname)> filteredEntities  
   			; <refresh-workspace-file> $[[project-path]/[dirname]]  
@@ -73,21 +72,25 @@ rules//transformation
   property-to-add: property -> statement
 	where	(?Property(x_name, _, GenericSort(_, _), _) 
 	 			<+ ?PropertyNoAnno(x_name, _, GenericSort(_, _)))
-			; statement := webdsl	|[ 
+			; statement := webdsl	
+			  	|[ 
    			  		if(this.x_name != null) {
    			  			set.addAll(this.x_name);
    			  		}
    			  	]|
+   			  	
 rules // main file
-  generate-main-defs-for-related-entities(|x_topEntity): entities -> defs
+  generate-main-defs-for-related-entities: entities -> defs
 	where	def0 := <set-where-not-seen-function>
-			; def1 := <generate-get-related-entities-function> entities
-			; def2* := <map(generate-get-entities-for-topEntity(|x_topEntity))> entities
+			; def1 := <is-top-level-entity-function> 
+			; def2 := <generate-get-related-entities-function> entities
+			; def3* := <map(generate-get-entities-for-topEntity)> entities
 	  		; defs := def* 
 			 |[
 			 	def0
 			  	def1
-			  	def2*	
+			  	def2
+			  	def3*	
 			  ]|
 	  	
 	generate-get-related-entities-function: entities -> function
@@ -110,25 +113,24 @@ rules // main file
 					}
 				]|
 				
-	generate-get-entities-for-topEntity(|x_topEntity): x_entity -> function
-		where not (<?x_topEntity> x_entity )
+	generate-get-entities-for-topEntity: x_entity -> function
 		where 	e_name :=	String(x_entity)
-				; e_name2 := String(x_topEntity)
-				; x_functioname := $[getAll[x_entity]For[x_topEntity]]  
+				; x_functioname := $[getAll[x_entity]ForTopEntity]  
 				; function := def
 				|[
-					function x_functioname (tl :x_topEntity) : Set<x_entity> {
+					function x_functioname (tl : Entity) : Set<x_entity> {
+						if(tl.getTypeString() == e_name) {
+							return {tl as x_entity};
+						}
 						var todo := Set<Entity>();
 						var seen := Set<UUID>();
 						var found := Set<x_entity>();
-						todo.addAll(getSetWhereNotSeen(todo, seen, tl.getRelatedEntities()));
+						todo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(tl)));
 						while( todo.length > 0 ) {
 	  	 					var newTodo := Set<Entity>();
 							for(ent: Entity in todo where ent != null) {
-								var type := ent.getTypeString();
-								var isToplevel := (type == e_name2);
-								if(!isToplevel) {
-									if (type == e_name) {
+								if(!isTopLevelEntity(ent)) {
+									if (ent.getTypeString() == e_name) {
 										found.add(ent as x_entity); 
 									}
 									newTodo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(ent)));
@@ -140,16 +142,15 @@ rules // main file
 					}  	
 				]| 
 
-	generate-get-entities-for-topEntity(|x_topEntity): x_entity -> function
-		where 	<?x_topEntity> x_entity 
-				; x_functioname := $[getAll[x_entity]For[x_topEntity]]  
-				; function := def
-				|[
-					function x_functioname (tl : x_topEntity) : Set<x_entity> {
-						return {tl};
-					}
-				]| 
-
+	is-top-level-entity-function: x -> function
+		where 	e_tlentities* := <TopEntity; map(Fst;\x -> String(x)\)>
+				; function := def 
+					|[
+						function isTopLevelEntity(ent : Entity) : Bool {
+							var toplevelEntities := {e_tlentities*};
+							return ent.getTypeString() in toplevelEntities ;
+						}	
+					]|
 
 	set-where-not-seen-function = !def 
 		|[	function getSetWhereNotSeen(set : Set<Entity>, seen : Set<UUID>, add : Set<Entity> ) : Set<Entity>{
@@ -164,5 +165,4 @@ rules // main file
 				return newset;
 			}
 		]|
-		 		
-						 			  	
+		 						 			  	

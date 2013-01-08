@@ -66,3 +66,7 @@ entity-multiple entrances:
 	webdsl-generate-TopLevelSyncService
 		1. instead of one it has a list of entity types containing the entities to send
 	
+	get-related-entities
+		1. you have to make the function more global and let it except entities so that at the good point it will find out what kind it is.
+		2. check if it is a type equals with the incomming type so yes return param as set;
+		3. every TL Entity becomes an end
