@@ -62,3 +62,8 @@ rules
   	where	TopEntities:= <TopEntity>
   			; <map(Fst); fetch-elem(?entityName)> TopEntities
   
+  is-top-entity-mobl-by-dr: entityName -> entityName
+  	where 	get-subclasses-of-entity
+  			; filter(is-top-entity-by-dr)
+  			; not(?[])
+  	

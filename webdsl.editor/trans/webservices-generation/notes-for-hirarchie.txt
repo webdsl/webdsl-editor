@@ -46,4 +46,9 @@ entity-multiple entrances:
 	generate-mobl-unsynced-functions:
 		1. change that there is a list now so filter all top Entities by sync = true
 			b. note that this is a bit incorrect within hierarchie, than it is impossible to make difference between classes in one functions
-	
+	generate-mobl-services:
+		1. TopLevelSync: needs to point to a new mapper which can handle multiple types
+		2. SyncDirty: 
+			a. needs to deal with list instead of single element 
+			b. sync=true doesn't work on combined classes. use version =! 0 instead to be save
+		3. normal services: the get a list of json Objects as param

@@ -52,15 +52,13 @@ rules
 			  ]|
 			  	
   generate-mobl-top-level-service: x -> x
-  	where	(name,prop) := <TopEntity> 	
-          	; x_mapper := $[[name]Mapper]	
-          	; service := mobl-serviceElem 
+  	where  service := mobl-serviceElem 
           	  |[
           	  	resource getTopLevelEntities(): void{
           	  		uri = "webservice/getTopLevelEntities"
      				method = "PUT"
       				data = {}
-      				mapper = x_mapper
+      				mapper = TopLevelEntities_Mapper
           	  	}
           	  ]|	
           	; rules (ServiceMobl:+= service)
@@ -71,7 +69,7 @@ rules
           	; x_mapper := $[[entity]Mapper]		
            	; service := mobl-serviceElem 
           	  |[
-          	  	resource  x_servicename (arg : JSON): void{
+          	  	resource  x_servicename (arg : [JSON]): void{
           	  		uri = e_uri
      				method = "PUT"
       				data = JSON.stringify(arg)
@@ -122,19 +120,29 @@ rules // editService
  			  ]|    
  			   
   generate-sync-edit-mobl-statements: x_entity -> statements
-    where 	x_topEntity := <TopEntity; Fst>
- 			; <?x_topEntity> x_entity
+    where 	<is-top-entity-mobl-by-dr> x_entity
+    		; <entity-extends-or-is-extended> x_entity
     		; x_entityname := $["[x_entity]"]
     		; statements := mobl-stat*
    				|[
-					var value = x_entity.all().filter("sync", "=",true).filter("dirty", "=", true).selectJSON(["*"]);	
+					var value = x_entity.all().filter("version", "!=", 0).filter("dirty", "=", true).selectJSON(["*"]);	
+					var json = Dynamic(name=x_entityname, value=value);
+					array.push(json);
+   				]|
+    
+  generate-sync-edit-mobl-statements: x_entity -> statements
+    where 	<is-top-entity-mobl-by-dr> x_entity
+    		; not(<entity-extends-or-is-extended> x_entity)
+    		; x_entityname := $["[x_entity]"]
+    		; statements := mobl-stat*
+   				|[
+					var value = x_entity.all().filter("sync", "=", true).filter("dirty", "=", true).selectJSON(["*"]);	
 					var json = Dynamic(name=x_entityname, value=value);
 					array.push(json);
    				]|
   
   generate-sync-edit-mobl-statements: x_entity -> statements
-    where 	x_topEntity := <TopEntity; Fst>
- 	where not( <?x_topEntity> x_entity )
+    where not(<is-top-entity-mobl-by-dr> x_entity)
     where	x_entityname := $["[x_entity]"]
     		; statements := mobl-stat*
    				|[
