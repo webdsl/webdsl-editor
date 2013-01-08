@@ -4,6 +4,7 @@ imports
   		lib/mobl/editor-common.generated 
      
     	webservices-generation/mobl/model-to-mobl
+    	webservices-generation/util
   	  	util 
 	  	lib/-
 rules 
@@ -41,7 +42,7 @@ rules // function generation
       		]|
       						  
    generate-mobl-unsynced-elemfunction: x_entityname -> function
-  	where 	(x_entityname, _) := <TopEntity>
+  	where 	is-top-entity-by-dr
   			; x_functionname := $[getUnsynced[x_entityname]]
           	; t_entity := x_entityname  	
           	; function := mobl-def 
@@ -52,7 +53,7 @@ rules // function generation
           	  ]|			     
   
   generate-mobl-unsynced-elemfunction: x_entityname -> function
-  	where not((x_entityname, _) := <TopEntity>)
+  	where not(is-top-entity-by-dr)
   	where	x_functionname := $[getUnsynced[x_entityname]]
           	; t_entity := x_entityname  	
           	; function := mobl-def 

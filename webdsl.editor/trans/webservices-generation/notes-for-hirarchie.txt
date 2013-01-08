@@ -41,4 +41,9 @@ entity-multiple entrances:
 		2. sync view needs tabs for every type
 			a. map the screen to control every topEntity(might differ for entities)
 			b. make the screen with just a tabset	
-		
+	json:
+		1. doesn't change anything
+	generate-mobl-unsynced-functions:
+		1. change that there is a list now so filter all top Entities by sync = true
+			b. note that this is a bit incorrect within hierarchie, than it is impossible to make difference between classes in one functions
+	
