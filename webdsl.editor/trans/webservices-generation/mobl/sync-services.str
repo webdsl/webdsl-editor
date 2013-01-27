@@ -126,7 +126,7 @@ rules // editService
     		; x_entityname := $["[x_entity]"]
     		; statements := mobl-stat*
    				|[
-					var value = x_entity.all().filter("version", "!=", 0).filter("dirty", "=", true).selectJSON(["*"]);	
+					var value = x_entity.all().filter("version", "!=", 0).filter("dirty", "=", true).filter("new", "=", false).selectJSON(["*"]);	
 					var json = Dynamic(name=x_entityname, value=value);
 					array.push(json);
    				]|
@@ -137,7 +137,7 @@ rules // editService
     		; x_entityname := $["[x_entity]"]
     		; statements := mobl-stat*
    				|[
-					var value = x_entity.all().filter("sync", "=", true).filter("dirty", "=", true).filter("version", "!=", 0).selectJSON(["*"]);	
+					var value = x_entity.all().filter("sync", "=", true).filter("dirty", "=", true).filter("new", "=", false).filter("version", "!=", 0).selectJSON(["*"]);	
 					var json = Dynamic(name=x_entityname, value=value);
 					array.push(json);
    				]|
@@ -147,7 +147,7 @@ rules // editService
     where	x_entityname := $["[x_entity]"]
     		; statements := mobl-stat*
    				|[
-					var value = x_entity.all().filter("dirty", "=", true).selectJSON(["*"]);	
+					var value = x_entity.all().filter("dirty", "=", true).filter("new", "=", false).selectJSON(["*"]);	
 					var json = Dynamic(name=x_entityname, value=value);
 					array.push(json);
    				]|				        
