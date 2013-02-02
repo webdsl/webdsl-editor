@@ -153,7 +153,7 @@ rules //generation
     where not	(<InverseProperty> (class, propname))
     
   declare-extra-prop(|class): property -> property
-  	where 	entity := <get-property-type; srt-to-type> property
+  	where 	entity := <get-property-type; get-inner-type-name> property
   			; propertyname := <get-property-name> property
   			; newProperty := <generate-inverse-property(|class)> property
   			; x_newPropertyName := <get-property-name> newProperty 
