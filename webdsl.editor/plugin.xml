@@ -174,7 +174,7 @@
     
     <!-- .app file icons -->
     <extension point="org.eclipse.core.contenttype.contentTypes">
-      <content-type base-type="org.eclipse.core.runtime.xml"
+      <content-type base-type="org.eclipse.core.runtime.properties"
         file-extensions="app"
         id="webdsl.appfile"
         name="WebDSL Application File"
