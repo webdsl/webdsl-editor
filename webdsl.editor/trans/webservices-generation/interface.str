@@ -18,7 +18,7 @@ imports
 	webservices-generation/util	
 		 
   	util 
-  	lib/- 
+  	lib/editor-common.generated 
 
 overlays
 	DirServices = "webservices/services"

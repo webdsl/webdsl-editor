@@ -1,7 +1,7 @@
 module webservices-generation/overlays
 
 imports
-	  	lib/-
+	  	lib/editor-common.generated
 	  	include/-
 overlays// super properties
 	AllEntityProperties1 =    [VersionProperty1(), IdProperty1(), NameProperty1()]    

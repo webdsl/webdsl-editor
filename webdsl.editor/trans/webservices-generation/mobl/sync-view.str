@@ -6,7 +6,7 @@ imports
         webservices-generation/util
         
   	  	util  
-	  	lib/-
+	  	lib/editor-common.generated
 rules 
 	
   make-mobl-sync-view: x -> [viewelem | controls]

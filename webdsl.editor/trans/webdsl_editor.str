@@ -8,7 +8,7 @@ imports
   
   typecheck/import		// for ExtraWarnings
   trans/-
-  lib/-
+  lib/editor-common.generated
   
   //for builders
   entity-extraction/generate-entity-files

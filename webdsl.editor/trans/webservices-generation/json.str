@@ -15,7 +15,7 @@ imports
 
 		
   	util
-  	lib/-
+  	lib/editor-common.generated
 
 rules //builder
 	

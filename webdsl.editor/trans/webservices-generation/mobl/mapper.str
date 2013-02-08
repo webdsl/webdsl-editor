@@ -7,7 +7,7 @@ imports
      	webservices-generation/util
   	  
   	  	util  
-	  	lib/-
+	  	  lib/editor-common.generated
 rules 
 	
   make-mobl-mapper-for-all-entities: x-> x

@@ -8,7 +8,7 @@ imports
   	libwebdsl-front
 
   	util 
-  	lib/-
+  	lib/editor-common.generated
   	webservices-generation/util
   	
   	lib/mobl/MoBL

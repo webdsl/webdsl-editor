@@ -10,7 +10,7 @@ imports
 
   	  	
   	  	util 
-	  	lib/-
+	  	lib/editor-common.generated
 rules 
 	
   generate-mobl-services: x -> x

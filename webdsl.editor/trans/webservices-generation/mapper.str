@@ -5,7 +5,7 @@ imports
     	webservices-generation/mobl/model-to-mobl
     	
   	  	util 
-	  	lib/-
+	  	lib/editor-common.generated
 	  	webservices-generation/overlays
 rules 
 	

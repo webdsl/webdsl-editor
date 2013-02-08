@@ -10,7 +10,7 @@ imports
 	webservices-generation/util
 	
   	util 
-  	lib/-
+  	lib/editor-common.generated
   		
 signature constructors
 	Node : entity * list(node) -> node 

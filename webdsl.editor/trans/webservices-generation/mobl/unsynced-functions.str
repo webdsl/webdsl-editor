@@ -6,7 +6,7 @@ imports
     	webservices-generation/mobl/model-to-mobl
     	webservices-generation/util
   	  	util 
-	  	lib/-
+	  	lib/editor-common.generated
 rules 
 	 
 		

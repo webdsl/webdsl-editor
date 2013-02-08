@@ -6,7 +6,7 @@ imports
   		webservices-generation/mobl/sync-view
      
   	  	util  
-	  	lib/-
+	  	lib/editor-common.generated
 rules 
 	
   make-mobl-model-viewers: moblentities-> moblentities

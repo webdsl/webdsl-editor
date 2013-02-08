@@ -3,7 +3,7 @@ imports
     	webservices-generation/interface
     	webservices-generation/util
   	  	util 
-	  	lib/-
+	  	lib/editor-common.generated
 rules 
 	
   generate-sync-services: x -> x

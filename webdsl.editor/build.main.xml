@@ -43,7 +43,7 @@
   <property name="build.stratego.args"
     value="--library
                         -I &quot;${trans}&quot; -I &quot;${basedir}&quot; -I &quot;${include}&quot; -I &quot;${lib}&quot;
-                        -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm
+                        -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm -la stratego-parallel
                         -I ${webdsl.home}" />
   
   <import file="dr-analysis/build.xml" />

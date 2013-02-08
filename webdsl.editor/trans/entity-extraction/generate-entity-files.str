@@ -7,7 +7,7 @@ imports
 	libwebdsl-generator
   	libwebdsl-front
   	util
-  	lib/-
+    lib/editor-common.generated
   	
 rules //builder
 	

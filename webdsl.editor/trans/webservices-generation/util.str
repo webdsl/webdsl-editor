@@ -3,7 +3,7 @@ module webservices-generation/util
 imports   	
 	libwebdsl-generator
 	trans/util
-	lib/-
+	lib/editor-common.generated
 
 rules
   get-subclasses-of-entity: entity -> children
