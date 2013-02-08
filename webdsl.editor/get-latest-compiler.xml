@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="get-latest-compiler" default="download-and-set-import">
+	
+  <target name="download-and-set-import">
+    <antcall target="download" />
+    <antcall target="set-import" />
+    <eclipse.convertPath fileSystemPath="." property="resourcePath"/>
+    <eclipse.refreshLocal resource="${resourcePath}" depth="infinite"/>
+  </target>
+
+  <!-- Putting the compiler in workspace dir above project to prevent Spoofax from analyzing the .str files and making Eclipse die -->
+  <property name="cdir" location="../.downloaded-webdsl-compiler"/>
+
+  <target name="download">
+  	<echo>downloading WebDSL compiler to: ${cdir}</echo>
+  	<delete dir="${cdir}" />
+  	<mkdir dir="${cdir}" />
+  	<get dest="${cdir}" src="http://hydra.nixos.org/job/webdsl/trunk/buildJavaZip/latest/download/1/webdsl-java.zip"/>
+  	<unzip src="${cdir}/webdsl-java.zip" dest="${cdir}"/>    
+  </target>
+	
+  <target name="set-import">
+  	<tstamp/>
+  	<copy file="import.webdsl.properties" tofile="import.webdsl.${DSTAMP}.${TSTAMP}.properties" failonerror="false"/> 
+  	<delete file="import.webdsl.properties" failonerror="false" />
+  	<copy file="import.webdsl.from-install-dir.properties" tofile="import.webdsl.properties" />
+    <replace file="import.webdsl.properties" token="@@webdsl@@" value="${cdir}/webdsl"/>
+  </target>
+	
+</project>
