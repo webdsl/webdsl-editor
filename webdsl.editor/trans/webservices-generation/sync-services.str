@@ -11,7 +11,7 @@ rules
   			; filteredEntities := <filter(not(is-builtin-entity); where(entity-has-no-super))> entities   
   			; <map(generate-sync-service)> filteredEntities
   			; <generate-edit-sync-service> filteredEntities  
-   			  
+   			; <generate-new-sync-service> filteredEntities    
    			  
   generate-sync-service: x_entityname -> x_entityname
   	where 	name := $[sync[x_entityname]]
@@ -55,7 +55,7 @@ rules
 	      	  ]|
 rules //edit	      	  
   generate-edit-sync-service: entities -> entities
-	where	stat_ifs := <generate-ifs-for-checking-type> entities
+	where	stat_ifs := <generate-kind-if-else-block-with-for(generate-ifs-for-edit-checking-type)> entities
 			; name := "syncDirtyObjects"
 			; body := webdsl 
 	      	  |[
@@ -77,47 +77,122 @@ rules //edit
 	  		  ]|
 	  		; service := <generate-service(|name)> body
 	        ; service-to-file(|name)    			      	  
-	
- generate-ifs-for-checking-type: [] -> statement
- 	where 	statement :=  webdsl |[errors.put("type is undefined: " + kind);]|    
  	
- generate-ifs-for-checking-type: [x|xs] -> statement
- 	where	stat_elseblock := <generate-ifs-for-checking-type> xs
- 			; x_entityname := String(x)
- 			; x_mappername := $[mapperEdited[x]] // TODO: should do something with flatten hirarchie
+ generate-ifs-for-edit-checking-type: x_entity -> statement
+ 	where	x_entityname := String(x_entity)
+ 			; x_mappername := $[mapperEdited[x_entity]] // TODO: should do something with flatten hirarchie
  			; statement :=  webdsl 
  			  |[
- 			  	 if(kind == x_entityname) {
-				  		for ( count : Int from 0 to entities.length() ) {
-				  			var localErrors := JSONArray();
-				  			var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x ) ;
-				  			if (entity == null) {
-				  				localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
-				  			} else {
-				  				if (entity.version <= entities.getJSONObject(count).getInt("version")) {
-				  					x_mappername(entity, entities.getJSONObject(count), localErrors);
-				  					var exceptions := entity.validateSave();
-					                addValidateExceptionsToErrors(exceptions, localErrors);
-									if(containsErrorInJSONArray(localErrors)) {
-										rollbackAndStartNewTransaction();
-									} else {
-										var uncheckedExceptions := commitAndStartNewTransaction();
-										addValidationExceptionsToLocalErrors(uncheckedExceptions, localErrors);
-									}
-					  			} else {
-					  				localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
-					  			}	
-				  			}
-				  			if(localErrors.length() > 0) {
-				  				var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
-					  			if(containsErrorInJSONArray(localErrors)) {
-					  				var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x );
-					  				jsonErrorObject.put("restore", entity.toJSON());
-					  			}
-					  			errors.put(jsonErrorObject);
-				  			}
-				  		}
+				  	var localErrors := JSONArray();
+				  	var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;
+				  	if (entity == null) {
+				  		localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
 				  	} else {
-				  		stat_elseblock
+				  		if (entity.version <= entities.getJSONObject(count).getInt("version")) {
+				  			x_mappername(entity, entities.getJSONObject(count), localErrors);
+				  			var exceptions := entity.validateSave();
+					        addValidateExceptionsToErrors(exceptions, localErrors);
+							if(containsErrorInJSONArray(localErrors)) {
+								rollbackAndStartNewTransaction();
+							} else {
+								var uncheckedExceptions := commitAndStartNewTransaction();
+								addValidationExceptionsToLocalErrors(uncheckedExceptions, localErrors);
+							}
+					  	} else {
+					  		localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
+					  	}	
 				  	}
- 			  ]|   		  
+				  	if(localErrors.length() > 0) {
+				  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
+					  	if(containsErrorInJSONArray(localErrors) && entity != null) {
+					  		jsonErrorObject.put("restore", entity.toJSON());
+					  	}
+					  	errors.put(jsonErrorObject);
+				  	}
+ 			  ]|  
+ 			  
+ 			  
+ rules //new	      	  
+  generate-new-sync-service: entities -> entities
+	where	stat_creates := <generate-kind-if-else-block-with-for(generate-creates-for-new-checking-type)> entities
+			; stat_setprops := <generate-kind-if-else-block-with-for(generate-setprops-for-new-checking-type)> entities
+			; name := "syncNewObjects"
+			; body := webdsl 
+	      	  |[
+	      	  	var request := JSONArray(readRequestBody()) ;
+	      	  	var result := JSONArray();
+				for ( count : Int from 0 to request.length() ) {
+					
+					var jsontemp := request.getJSONObject(count);
+				  	var kind := jsontemp.getString("name");
+				  	var entities := jsontemp.getJSONArray("value");
+					stat_creates
+					stat_setprops
+				  		//may create
+				  		// make first all objects
+				  		// set all properties
+				  		// make revert if one of the objects is incorrect(should be automatic)
+				  		
+				  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
+				  		// editedProject(entity, projects.getJSONObject(count));
+				  		// 
+		
+  				}
+	  		  ]|
+	  		; service := <generate-service(|name)> body
+	        ; service-to-file(|name)    			      	  
+	
+ generate-creates-for-new-checking-type: x_entity -> statement
+ 	where	x_entityname := String(x_entity)
+ 			; statement :=  webdsl 
+ 			  |[
+				  	var localErrors := JSONArray();
+				  	var entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};
+				  	if (entity != null) {
+				  		entity.save();
+				  	} else {
+				  		// should throw an error but there is not really a good error to throw since the format is not vallid but can't map either
+				  		errors.put("object has now id");
+				  	}
+ 			  ]| 
+ 			  
+ generate-setprops-for-new-checking-type: x_entity -> statement
+ 	where	x_entityname := String(x_entity)
+ 			; x_mappername := $[mapperNew[x_entity]] // TODO: should do something with flatten hirarchie
+ 			; statement :=  webdsl 
+ 			  |[
+				  	var localErrors := JSONArray();
+				  	var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;
+				  	if (entity == null) {
+				  		localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
+				  	} else {
+				  		x_mappername(entity, entities.getJSONObject(count), localErrors);
+				  		var exceptions := entity.validateSave();
+					    addValidateExceptionsToErrors(exceptions, localErrors);
+				  	}
+				  	if(localErrors.length() > 0) {
+				  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
+						errors.put(jsonErrorObject);
+				  	}
+ 			  ]| 
+
+rules // if-else-kind-check 
+
+  generate-kind-if-else-block-with-for(generate-innerblock): [] -> statement
+ 	where 	statement :=  webdsl |[errors.put("type is undefined: " + kind);]|    
+ 	
+  generate-kind-if-else-block-with-for(generate-innerblock): [x|xs] -> statement
+	where	stat_innerblock := <generate-innerblock> x
+			; stat_else := <generate-kind-if-else-block-with-for(generate-innerblock)> xs
+	 		; x_entityname := String(x) 
+	 		; statement := webdsl |[
+	 			if(kind == x_entityname) {
+					for ( count : Int from 0 to entities.length() ) {
+				  		stat_innerblock
+				 	}
+				} else {
+					stat_else
+				}	 		  	
+	 	]|
+	 	
+	   		  
