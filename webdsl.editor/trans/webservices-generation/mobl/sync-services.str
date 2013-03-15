@@ -107,7 +107,7 @@ rules // editService
            ; rules (ServiceMobl:+= service)	
   
   generate-mobl-edit-sync-function: entities -> function  
-    where	stat_objectstatement* := <map(generate-sync-edit-mobl-statements)> entities			
+    where	stat_objectstatement* := <map(generate-sync-mobl-statements-add-json-to-array-helper(generate-sync-edit-mobl-exp))> entities			
  			; function := mobl-def 
  			  |[
  			  	 function syncEdits() : JSON {
@@ -118,41 +118,75 @@ rules // editService
     				setSyncFlag(false);
     				return errors;
  				}
- 			  ]|    
+ 			  ]|
+    
+  generate-sync-edit-mobl-general-exp: x_entity -> mobl-e|[x_entity.all().filter("dirty", "=", true).filter("new", "=", false)]|  
  			   
-  generate-sync-edit-mobl-statements: x_entity -> statements
+  generate-sync-edit-mobl-exp: x_entity -> exp
     where 	<is-top-entity-mobl-by-dr> x_entity
     		; <entity-extends-or-is-extended> x_entity
-    		; x_entityname := $["[x_entity]"]
-    		; statements := mobl-stat*
-   				|[
-					var value = x_entity.all().filter("version", "!=", 0).filter("dirty", "=", true).filter("new", "=", false).selectJSON(["*"]);	
-					var json = Dynamic(name=x_entityname, value=value);
-					array.push(json);
-   				]|
+    		; e_dirty := <generate-sync-edit-mobl-general-exp> x_entity  
+    		; exp := mobl-e |[e_dirty.filter("version", "!=", 0)]|
     
-  generate-sync-edit-mobl-statements: x_entity -> statements
+  generate-sync-edit-mobl-exp: x_entity -> exp
     where 	<is-top-entity-mobl-by-dr> x_entity
     		; not(<entity-extends-or-is-extended> x_entity)
-    		; x_entityname := $["[x_entity]"]
+    		; e_dirty := <generate-sync-edit-mobl-general-exp> x_entity  
+    		; exp := mobl-e |[ e_dirty.filter("sync", "=", true).filter("version", "!=", 0)]|	
+			
+  
+  generate-sync-edit-mobl-exp: x_entity -> <generate-sync-edit-mobl-general-exp> x_entity  
+    where not(<is-top-entity-mobl-by-dr> x_entity)		        
+
+	
+  generate-sync-mobl-statements-add-json-to-array-helper(value-generator): x_entity -> statements
+	where	x_entityname := $["[x_entity]"]
+			; e_val := <value-generator> x_entity
     		; statements := mobl-stat*
-   				|[
-					var value = x_entity.all().filter("sync", "=", true).filter("dirty", "=", true).filter("new", "=", false).filter("version", "!=", 0).selectJSON(["*"]);	
-					var json = Dynamic(name=x_entityname, value=value);
+   				|[	
+   					var value = e_val.selectJSON(["*"]);
+   					var json = Dynamic(name=x_entityname, value=value);
 					array.push(json);
    				]|
-  
-  generate-sync-edit-mobl-statements: x_entity -> statements
-    where not(<is-top-entity-mobl-by-dr> x_entity)
-    where	x_entityname := $["[x_entity]"]
-    		; statements := mobl-stat*
-   				|[
-					var value = x_entity.all().filter("dirty", "=", true).filter("new", "=", false).selectJSON(["*"]);	
-					var json = Dynamic(name=x_entityname, value=value);
-					array.push(json);
-   				]|				        
-
-	            
+	
+rules // new syncservice 
+	
+  generate-mobl-new-service: x -> x
+  	where  	service := mobl-serviceElem 
+          	  |[
+          	  	resource  sendNew (arg : [JSON]): JSON {
+          	  		uri = "webservice/syncNewObjects"
+     				method = "PUT"
+     				data = JSON.stringify(arg)
+      				mapper = errorMapper
+          	  	}
+          	  ]|
+           ; rules (ServiceMobl:+= service)
+   
+  generate-mobl-new-sync-function: entities -> function  
+    where	stat_objectstatement* := <map(generate-sync-mobl-statements-add-json-to-array-helper(generate-sync-new-mobl-exp))> entities			
+ 			; function := mobl-def 
+ 			  |[
+ 			  	 function syncNew() : JSON {
+ 			  	 	setSyncFlag(true);
+   				 	var array : [JSON] = [];
+    				stat_objectstatement*
+    				var errors = Sync.sendNew(array);
+    				setSyncFlag(false);
+    				return errors;
+ 				}
+ 			  ]| 	
+ 			  
+  generate-sync-new-mobl-general-exp: x_entity -> mobl-e|[x_entity.all().filter("new", "=", true)]|  
+ 			   
+  generate-sync-new-mobl-exp: x_entity -> exp
+    where 	<is-top-entity-mobl-by-dr> x_entity
+    		; e_new := <generate-sync-new-mobl-general-exp> x_entity  
+    		; exp := mobl-e |[e_new.filter("sync", "=", true)]|
+    
+  generate-sync-new-mobl-exp: x_entity -> <generate-sync-new-mobl-general-exp> x_entity  
+    where not(<is-top-entity-mobl-by-dr> x_entity)	
+    		            
 rules // generation of sync-functions
 	 
  generate-mobl-sync-functions: entity -> function
