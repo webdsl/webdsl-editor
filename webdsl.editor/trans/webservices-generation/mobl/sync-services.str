@@ -21,12 +21,15 @@ rules
   			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity); where(entity-has-no-super))> None()	// TODO : flatten - removes subentities
   			; <map(generate-mobl-sync-service)> entities
   			; generate-mobl-timestamp-service 
-  			; generate-mobl-edit-service   
+  			; generate-mobl-edit-service 
+  			; generate-mobl-new-service    
   			; gettopentitiesfunction:= <generate-mobl-get-top-entities-function> 
   			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
   			; totalsyncfunction := <generate-mobl-total-sync-function> entities
   			; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
+  			; newsyncfunction := <generate-mobl-new-sync-function>  entities  
   			; clearEditFunction := <generate-mobl-clear-edit-function>  entities 
+  			; clearNewFunction := <generate-mobl-clear-new-function>  entities
   			; restoreFunction := <generate-mobl-restore-object-function> entities
   			; service := <bundle-services> None()
   			; imports :=  mobl-def* 
@@ -36,7 +39,7 @@ rules
   			  	import webservices::mobl::unsync
   			  	import webservices::mobl::simpleView
   			  ]|  
-  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, clearEditFunction, restoreFunction, 
+  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, newsyncfunction, clearEditFunction, clearNewFunction, restoreFunction, 
   			  						gettopentitiesfunction, <generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>]]
   			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
   			; module-to-moblfile(|dirname, "sync")
@@ -78,6 +81,8 @@ rules
           	  	}
           	  ]|
            ; rules (ServiceMobl:+= service)
+ 
+
  
 rules //timestamp service 
 	
@@ -265,14 +270,20 @@ rules // generation of sync-functions
  			; stat_setlastSynced* := <map(Fst; generate-set-LastSynced-loops)> <TopEntity>
  			; list := mobl-stat* 
  			  |[
+ 			  	setStatusSync("sync Objects");
  			  	var time = Sync.getTimeStamp();
  			  	stat_firstsyncs*
  			  	stat_setlastSynced*
+ 			  	setStatusSync("done");
  			  ]|
  			  
   make-sync-call: entityname -> call
  	where x_servicename := $[syncAll[entityname]]
- 		  ; call := mobl-stat |[x_servicename();]|
+ 		  ; x_statusmessage :=	$["sync [entityname] Objects"]
+ 		  ; call := mobl-stat* |[
+ 		    	x_servicename(); 					
+ 		    	setStatusSync(x_statusmessage);
+ 			]|
 
   generate-set-LastSynced-loops: x_entity -> statement
   	where	x_parent := <find-highest-parent> x_entity
@@ -317,6 +328,23 @@ rules// clear function
 				  	}
  			  ]|
  			  
+  generate-mobl-clear-new-function: entities -> function
+  	where 	stat_clear* := <map(generate-clear-new-statement)>
+  			; function := mobl-def 
+  			|[
+				function clearNew () {
+					stat_clear*	
+				}  		
+  			]|
+ 
+ generate-clear-new-statement: x_entity -> statement
+ 	where	statement := mobl-stat* 
+ 			  |[
+ 			  		var value = x_entity . all ( ). filter ( "new" , "=" , true );
+				  	foreach(ent in value) {
+				  		remove(ent);
+				  	}
+ 			  ]|			  
 rules// get list of id's from errors
 	  			  
    generate-mobl-get-listof-Ids-function: x -> function
@@ -338,34 +366,65 @@ rules//some sync integration
   generate-mobl-sync-integration-functions : x -> defs
   	where  defs := mobl-def* 
   			|[
-  				function testSync( errorCTRL : Control3<JSON, ?,Function1<JSON , void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
-					var errors = syncEdits();
-					clearDirty(getListofIds(errors));
+  				
+  				function newSync( errorCTRL : Control3<JSON, ?,Function1<JSON , void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
+					setStatusSync("sync new Objects");
+					var errors = syncNew();
 					if(errors.length == 0) {
-						continueSync();
+						continueSyncAfterNew(errorCTRL, detailCTRL);
 					} else {
-						showErrorsEmptyScreen(errors, errorCTRL, detailCTRL, ingnoreAndContinue);
+						showErrorsEmptyScreen(errors, errorCTRL, detailCTRL, continueSyncAfterNew);
+					}	
+				}
+  				
+  				function editSync( errorCTRL : Control3<JSON, ?,Function1<JSON , void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
+					setStatusSync("sync dirty Objects");
+					var errors = syncEdits();
+					if(errors.length == 0) {
+						continueSyncAfterEdit();
+					} else {
+						showErrorsEmptyScreen(errors, errorCTRL, detailCTRL, ingnoreAndContinueEdit);
 					}	
 				}
 				
-			    function ingnoreAndContinue(jsonArray : JSON) {
+			    function ingnoreAndContinueEdit(jsonArray : JSON) {
 				  	foreach(error in jsonArray) {
 				  			if(error.restore) {
 				  				restoreObject(error.ent, error.restore);
 				  			}	
 				  	}
-				  	continueSync();
+				  	continueSyncAfterEdit();
 				  }
 				  
-				  function continueSync ( ) {
+				 function ingnoreAndContinueNew(jsonArray : JSON) {
+				  	clearNew();
+				  	continueSyncAfterEdit();
+				  }
+				  
+				  function continueSyncAfterNew (errorCTRL : Control3<JSON, ?,Function1<JSON , void>> = showErrors, detailCTRL : Control2<String, String> = showObject) {
+				    clearNew();
+				    editSync(errorCTRL, detailCTRL);
+				  }
+				  
+				  function continueSyncAfterEdit () {
 				    clearDirty([]);
 				    syncAll();
 				  }
 				  
-				  function getTopLevelEntitiesByService(){
+				  function getTopLevelEntitiesByService() {
 					setSyncFlag(true);
 					Sync.getTopLevelEntities();
 					setSyncFlag(false);
+				  }
+				  
+				  var Status = "";
+  
+				  function getStatusSync() : String {
+				  	return Status;
+				  }
+					  
+				  function setStatusSync(status : String) {
+				    Status = status;
 				  }
   			]|		
 
