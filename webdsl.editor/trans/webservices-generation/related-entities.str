@@ -9,7 +9,9 @@ imports
 		
   	util
   	lib/editor-common.generated
-
+  	libwebdsl-front
+  	libwebdsl-generator
+	
 rules //builder
 	
   generate-related-entities-functions : project-path -> project-path

@@ -4,6 +4,9 @@ imports
     	webservices-generation/util
   	  	util 
 	  	lib/editor-common.generated
+	  	
+	  	libwebdsl-front
+  		libwebdsl-generator
 rules 
 	
   generate-sync-services: x -> x

@@ -11,6 +11,8 @@ imports
   	  	
   	  	util 
 	  	lib/editor-common.generated
+	  	
+  		libwebdsl-generator
 rules 
 	
   generate-mobl-services: x -> x
