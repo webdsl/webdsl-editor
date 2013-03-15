@@ -174,8 +174,9 @@ rules //edit
  			; statement :=  webdsl 
  			  |[	var localErrors := JSONArray();
  			  		var entity := (null as x_entity); //vardecl hack
- 			  		if( json.has("typeField") && json.getString("typeField") != null) {
- 			  			var subtype := json.getString("typeField");	
+ 			  		var jsontemp := entities.getJSONObject(count);
+ 			  		if( jsontemp.has("typeField") && jsontemp.getString("typeField") != null) {
+ 			  			var subtype := jsontemp.getString("typeField");	
 	  					stat_subtype			
 	  				} else	{
 	  					errors.put("object has no typefield");
@@ -211,7 +212,7 @@ rules //edit
  			; statement := webdsl 
 			 	|[
 			 		if(subtype == x_entitystring ) {
-			 			var entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};	
+			 			entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};	
 			 		} else {
 			 			stat_subtype
 			 		}
