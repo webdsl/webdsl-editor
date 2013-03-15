@@ -26,14 +26,16 @@ rules
   
   generate-edit-mapper(|dirname): t@(x_entityname, props) -> t
   	where  	not(<entity-has-no-super; SubClass> x_entityname) // TODO: for flatten hirarchie
-  			; x_functionname := $[mapperEdited[x_entityname]]
+  			; x_functioneditname := $[mapperEdited[x_entityname]]
+  			; fun0 := <generate-new-mapper>x_entityname
   			; filteredprop := <filter(not(helper-is-derived-property))> props
   			; stat_props* := <filter(json-to-properties-conversion-null-check)>filteredprop
   			; function := webdsl 
-  				|[
-  					function x_functionname(ent : x_entityname, json : JSONObject, localerrors : JSONArray) {
+  				|[ 
+  					function x_functioneditname(ent : x_entityname, json : JSONObject, localerrors : JSONArray) {
   						stat_props*
-  					}		
+  					}	
+  					fun0
   			 	]|
   			;  <mapper-to-file(|$[[dirname]/[x_entityname]])> function
   
@@ -42,6 +44,7 @@ rules
   			; childeren := <get-subclasses-of-entity> x_entityname
   			; stat_typecheck* := <generate-mapper-to-submapper(|x_entityname)> childeren
   			; x_functionname := $[mapperEdited[x_entityname]]
+  			; fun0 := <generate-new-mapper> x_entityname  
   			; filteredprop := <filter(not(helper-is-derived-property))> props
   			; stat_props* := <filter(json-to-properties-conversion-null-check)>filteredprop
   			; function := webdsl 
@@ -49,7 +52,9 @@ rules
   					function x_functionname(ent : x_entityname, json : JSONObject, localerrors : JSONArray) {
   						stat_typecheck*
   						stat_props*
-  					}		
+  					}
+  					fun0
+	  						
   			 	]|
   			;  <mapper-to-file(|$[[dirname]/[x_entityname]])> function
 
@@ -246,4 +251,16 @@ rules //conversion to json
 				  		ent.x_propname := collection; 
 				  	}
     		  ]|          		  
+ 
+ rules //new mapper
+ 	
+ 	generate-new-mapper: x_entityname -> function
+ 		where 	x_functioneditname := $[mapperEdited[x_entityname]]
+ 				; x_functionnewname := $[mapperNew[x_entityname]]
+ 				; function := webdsl |[
+ 				function x_functionnewname(ent : x_entityname, json : JSONObject, localerrors : JSONArray) {
+  						x_functioneditname(ent, json, localerrors);
+  					}
+ 		]|
+ 	
  
