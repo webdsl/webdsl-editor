@@ -144,12 +144,16 @@ rules // main file
 
 	is-top-level-entity-function: x -> function
 		where 	e_tlentities* := <TopEntity; map(Fst;\x -> String(x)\)>
-				; function := def 
+				; function := def* 
 					|[
 						function isTopLevelEntity(ent : Entity) : Bool {
-							var toplevelEntities := {e_tlentities*};
-							return ent.getTypeString() in toplevelEntities ;
+							return isTopLevelEntity(ent.getTypeString());
 						}	
+						
+						function isTopLevelEntity(str : String) : Bool {
+							var toplevelEntities := {e_tlentities*};
+							return str in toplevelEntities ;
+						}
 					]|
 
 	set-where-not-seen-function = !def 

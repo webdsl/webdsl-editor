@@ -167,18 +167,55 @@ rules //edit
 	        ; service-to-file(|name)    			      	  
 	
  generate-creates-for-new-checking-type: x_entity -> statement
- 	where	x_entityname := String(x_entity)
+ 	where	<SubClass> x_entity
+ 			; x_entityname := String(x_entity)
+ 			; stat_subtype := <generate-type-if-check-create> [x_entity|<get-subclasses-of-entity>x_entity]
  			; statement :=  webdsl 
- 			  |[
-				  	var localErrors := JSONArray();
-				  	var entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};
-				  	if (entity != null) {
+ 			  |[	var localErrors := JSONArray();
+ 			  		var entity := (null as x_entity); //vardecl hack
+ 			  		if( json.has("typeField") && json.getString("typeField") != null) {
+ 			  			var subtype := json.getString("typeField");	
+	  					stat_subtype			
+	  				} else	{
+	  					errors.put("object has no typefield");
+	  				}
+ 			  		if (entity != null) {
 				  		entity.save();
 				  	} else {
 				  		// should throw an error but there is not really a good error to throw since the format is not vallid but can't map either
-				  		errors.put("object has now id");
-				  	}
+				  		errors.put("object has no id");
+				  	}	  
  			  ]| 
+ 			  
+   generate-creates-for-new-checking-type: x_entity -> statement
+ 	where	not(<SubClass> x_entity)
+ 			; x_entityname := String(x_entity)
+ 			; stat_subtype := <generate-type-if-check-create> [x_entity|<get-subclasses-of-entity>x_entity]
+ 			; statement :=  webdsl 
+ 			  |[	var localErrors := JSONArray();
+ 					var entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};	
+ 			  		if (entity != null) {
+				  		entity.save();
+				  	} else {
+				  		// should throw an error but there is not really a good error to throw since the format is not vallid but can't map either
+				  		errors.put("object has no id");
+				  	}	  
+ 			  ]| 
+ 			  
+  generate-type-if-check-create: [] -> []
+
+ generate-type-if-check-create: [x_entity|xs] -> statement
+ 	where	x_entitystring := $["[x_entity]"] 
+ 			; stat_subtype := <generate-type-if-check-create> xs
+ 			; statement := webdsl 
+			 	|[
+			 		if(subtype == x_entitystring ) {
+			 			var entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};	
+			 		} else {
+			 			stat_subtype
+			 		}
+			 	]|
+			 
  			  
  generate-setprops-for-new-checking-type: x_entity -> statement
  	where	x_entityname := String(x_entity)
