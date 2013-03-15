@@ -78,7 +78,7 @@ rules //edit
 						var jsontemp := request.getJSONObject(count);
 					  	var kind := jsontemp.getString("name");
 					  	var entities := jsontemp.getJSONArray("value");
-					  	if (jsontemp != null && kind != null && entities := null) {
+					  	if (jsontemp != null && kind != null && entities != null) {
 							stat_ifs
 					  		//is not already edited
 					  		//may edit
@@ -144,7 +144,7 @@ rules //edit
 						var jsontemp := request.getJSONObject(count);
 					  	var kind := jsontemp.getString("name");
 					  	var entities := jsontemp.getJSONArray("value");
-					  	if (jsontemp != null && kind != null && entities := null) {
+					  	if (jsontemp != null && kind != null && entities != null) {
 							stat_creates
 							stat_setprops
 						  		//may create
