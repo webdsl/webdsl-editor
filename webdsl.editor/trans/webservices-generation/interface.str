@@ -48,6 +48,7 @@ rules
 			  |[
 			  	imports webservices/related-entities/main 
 			  	imports webservices/mappers/main
+			  	imports webservices/json/main
 			  ]|
 			; defs' := <concat> [modules,imports, defs]
 			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'

@@ -27,6 +27,7 @@ rules //builder
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
   			; filteredEntities := <filter(not(is-builtin-entity))> entities  
+  			; <try(map(make-entity-with-properties))> entities  // TODO : for store rename props  + add-anno for getting rename working
   			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
   			; result:= <map(props-to-jsonfile(|dirname))> properties
   			; <main-file-to-file(generate-main-model-file(|dirname, [<MakeJSONFromRefFunction>None()])|dirname)> filteredEntities  
@@ -39,8 +40,7 @@ rules //builder
 rules //lookup
 	
   all-properties-including-entity-properties: entityName -> (entityName, props*)
-  	where 	 < make-entity-with-properties > entityName // TODO : for store rename props  + add-anno for getting rename working
-  			; extraprops :=  <map(add-anno(|FromEntity(entityName)))> <(get-extra-type-property; MkSingleton ) <+ ![]> entityName //TODO :extra prop added
+  	where 	extraprops :=  <map(add-anno(|FromEntity(entityName)))> <(get-extra-type-property; MkSingleton ) <+ ![]> entityName //TODO :extra prop added
   			; props := <concat> [<all-properties-with-entity-anno> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1(), extraprops]
   			; props* := <map(rename-prop-by-dr)> props //check for overwriting of nameProperty
  
