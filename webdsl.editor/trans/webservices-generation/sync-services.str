@@ -140,6 +140,7 @@ rules //edit
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
 	      	  	var result := JSONArray();
+	      	  	var rollback := false;
 	      	  	if(request != null) {
 					for ( count : Int from 0 to request.length() ) {
 						var jsontemp := request.getJSONObject(count);
@@ -172,6 +173,9 @@ rules //edit
 	  			} else {
 	  				errors.put("not valid parameter format");	
 	  			}
+	  			if(rollback) {
+  					rollbackAndStartNewTransaction();
+  				}
 	  		  ]|
 	  		; service := <generate-service(|name)> body
 	        ; service-to-file(|name)    			      	  
@@ -243,6 +247,7 @@ rules //edit
 					    addValidateExceptionsToErrors(exceptions, localErrors);
 				  	}
 				  	if(localErrors.length() > 0) {
+				  		rollback := true; //workaround problems webdsl
 				  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
 						errors.put(jsonErrorObject);
 				  	}
