@@ -21,16 +21,28 @@ rules
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
 	  			var result := JSONArray() ;
-	  			for ( count : Int from 0 to request.length() ) {
-	  				var JSONEntList := request.getJSONObject(count).getJSONArray("value");
-	  				var entname := request.getJSONObject(count).getString("name");
-	  				for(innercount : Int from 0 to JSONEntList.length()) {
-		  				var tl := ( loadEntity(entname, JSONEntList.getJSONObject(innercount).getString("id").parseUUID())) ;
-		  				var timestamp :=  JSONEntList.getJSONObject(innercount).getLong("lastSynced") ;
-		  				stat_forloop
-						stat_childloop
-					}
-	  			}
+	  			if(request != null) {
+		  			for ( count : Int from 0 to request.length() ) {	
+		  				var JSONEntList := request.getJSONObject(count).getJSONArray("value");
+		  				var entname := request.getJSONObject(count).getString("name");
+		  				if(JSONEntList != null && entname != null) {
+			  				for(innercount : Int from 0 to JSONEntList.length()) {
+				  				var tl := ( loadEntity(entname, JSONEntList.getJSONObject(innercount).getString("id").parseUUID())) ;
+				  				var timestamp :=  JSONEntList.getJSONObject(innercount).getLong("lastSynced") ;
+				  				if(tl != null && timestamp != null) {
+				  					stat_forloop
+									stat_childloop
+								} else {
+									errors.put("not valid parameter format missing/incorrect id/lastSynced");
+								}
+							}
+						} else {
+							errors.put("not valid parameter format missing/incorrect value/name");
+						}	
+		  			}
+		  		} else {
+		  			errors.put("not valid parameter format");		
+		  		}
 	  		  ]|   			 
 	       	; service := <generate-service(|name)> body
 	        ; service-to-file(|name) 
@@ -61,20 +73,26 @@ rules //edit
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
 	      	  	var result := JSONArray();
-				for ( count : Int from 0 to request.length() ) {
-					
-					var jsontemp := request.getJSONObject(count);
-				  	var kind := jsontemp.getString("name");
-				  	var entities := jsontemp.getJSONArray("value");
-					stat_ifs
-				  		//is not already edited
-				  		//may edit
-				  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
-				  		// editedProject(entity, projects.getJSONObject(count));
-				  		// 
-		
-  				}
-	  		  ]|
+	      	  	if(request != null) {
+					for ( count : Int from 0 to request.length() ) {
+						var jsontemp := request.getJSONObject(count);
+					  	var kind := jsontemp.getString("name");
+					  	var entities := jsontemp.getJSONArray("value");
+					  	if (jsontemp != null && kind != null && entities := null) {
+							stat_ifs
+					  		//is not already edited
+					  		//may edit
+					  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
+					  		// editedProject(entity, projects.getJSONObject(count));
+					  		// 
+					  	} else {
+					  		errors.put("not valid parameter format missing/incorrect value/name/object");
+					  	}
+	  				}
+	  			} else {
+	  				errors.put("not valid parameter format");	
+	  			}
+		  	]|
 	  		; service := <generate-service(|name)> body
 	        ; service-to-file(|name)    			      	  
  	
@@ -121,23 +139,29 @@ rules //edit
 	      	  |[
 	      	  	var request := JSONArray(readRequestBody()) ;
 	      	  	var result := JSONArray();
-				for ( count : Int from 0 to request.length() ) {
-					
-					var jsontemp := request.getJSONObject(count);
-				  	var kind := jsontemp.getString("name");
-				  	var entities := jsontemp.getJSONArray("value");
-					stat_creates
-					stat_setprops
-				  		//may create
-				  		// make first all objects
-				  		// set all properties
-				  		// make revert if one of the objects is incorrect(should be automatic)
-				  		
-				  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
-				  		// editedProject(entity, projects.getJSONObject(count));
-				  		// 
-		
-  				}
+	      	  	if(request != null) {
+					for ( count : Int from 0 to request.length() ) {
+						var jsontemp := request.getJSONObject(count);
+					  	var kind := jsontemp.getString("name");
+					  	var entities := jsontemp.getJSONArray("value");
+					  	if (jsontemp != null && kind != null && entities := null) {
+							stat_creates
+							stat_setprops
+						  		//may create
+						  		// make first all objects
+						  		// set all properties
+						  		// make revert if one of the objects is incorrect(should be automatic)
+						  		
+						  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
+						  		// editedProject(entity, projects.getJSONObject(count));
+						  		// 
+						  		} else {
+					  		errors.put("not valid parameter format missing/incorrect value/name/object");
+					  	}
+	  				}
+	  			} else {
+	  				errors.put("not valid parameter format");	
+	  			}
 	  		  ]|
 	  		; service := <generate-service(|name)> body
 	        ; service-to-file(|name)    			      	  
