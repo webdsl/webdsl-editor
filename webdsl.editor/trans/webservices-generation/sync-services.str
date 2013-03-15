@@ -147,7 +147,6 @@ rules //edit
 					  	var entities := jsontemp.getJSONArray("value");
 					  	if (jsontemp != null && kind != null && entities != null) {
 							stat_creates
-							stat_setprops
 						  		//may create
 						  		// make first all objects
 						  		// set all properties
@@ -156,9 +155,19 @@ rules //edit
 						  		// var entity := ( loadEntity("Project", projects.getJSONObject(count).getString("id").parseUUID()) as Project ) ;
 						  		// editedProject(entity, projects.getJSONObject(count));
 						  		// 
-						  		} else {
+						  } else {
 					  		errors.put("not valid parameter format missing/incorrect value/name/object");
-					  	}
+					  	  }
+	  				}
+	  				for ( count : Int from 0 to request.length() ) {
+						var jsontemp := request.getJSONObject(count);
+					  	var kind := jsontemp.getString("name");
+					  	var entities := jsontemp.getJSONArray("value");
+					  	if (jsontemp != null && kind != null && entities != null) {
+							stat_setprops
+						  } else {
+					  		errors.put("not valid parameter format missing/incorrect value/name/object");
+					  	  }
 	  				}
 	  			} else {
 	  				errors.put("not valid parameter format");	
