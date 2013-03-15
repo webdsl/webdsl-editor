@@ -123,6 +123,7 @@ rules //edit
 				  	if(localErrors.length() > 0) {
 				  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
 					  	if(containsErrorInJSONArray(localErrors) && entity != null) {
+					  		var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;//hack for rollback vars are not safe anymore
 					  		jsonErrorObject.put("restore", entity.toJSON());
 					  	}
 					  	errors.put(jsonErrorObject);
