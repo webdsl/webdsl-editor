@@ -19,6 +19,9 @@ imports
   webservices-generation/mobl/model-to-mobl 
   webservices-generation/interface
 
+  benchmark/extract-benchmark
+  benchmark/generate-entities
+
 signature constructors
   FILE : Term -> Term
   

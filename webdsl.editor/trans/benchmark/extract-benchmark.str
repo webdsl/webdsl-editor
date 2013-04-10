@@ -1,0 +1,288 @@
+module trans/benchmark/extract-benchmark
+
+imports
+  libwebdsl-front
+  libwebdsl-generator
+  trans/fact-extraction/datalog
+
+rules
+
+  extract-benchmark : // use on main app file
+    a@(node, position, ast, path, project-path) -> ("benchmark.app", result)
+    with {| CompatibleEntities
+        : <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+        ; pageSigsWithLiterals* := <all-keys-CurrentTemplateDecl; map(CurrentTemplateDecl); filter(extract-page-url-sig)> // (n, t*, l*) tuples, where l* contains constants values for the arguments
+        ; maxPageArgs := <map(Snd; length); list-max> pageSigsWithLiterals* // The largest number of page arguments in the application
+        ; def0 := <generate-native-class-for-url-trimmer> maxPageArgs
+        ; entity* := <all-keys-EntDecl>
+        ; <map(build-compatible-entities)> entity*
+        ; allArgTypes* := <map(Snd); concat; make-set; map(try(bagof-CompatibleEntities; not(?[]))); flatten-list; make-set> pageSigsWithLiterals* // All types of page arguments, including sub-entity-types
+        ; fetchord := <map(simple-sort-with-compatible-sorts); order-by-dependency> allArgTypes* // Sort the entities so that sub entities are fetched before their super entities
+        ; vars* := <map(generate-variable-names-for-collections)> fetchord
+        ; stat_values* := <map(get-values(|vars*))> vars*
+        ; pcs* := <all-keys-CurrentTemplateDecl; mapconcat(extract-page-calls)>
+        ; stat_pageurls* := <map(generate-page-url-code(|vars*, pcs*))> pageSigsWithLiterals*
+        ; stat_delta := Stat(stat |[ var delta : Int; ]|) // Stat(_) is required for pp-webdsl-to-string to print the semicolon
+        ; stat_offset := Stat(stat |[ var offset : Int; ]|)
+        ; e_appName := String(<AppName>)
+        ; result := <(pp-webdsl-to-string <+ debug(!"pp-webdsl-to-string failed: ");fail)> module |[
+            module benchmark
+
+            native class utils.URLFilter as URLFilter {
+              static filter(Bool) : String
+              static filter(Int) : String
+              static filter(Long) : String
+              static filter(String) : String
+            }
+
+            def0
+
+            page benchmark(instancesPerType : Int) {
+              var urllst : List<String>
+              init {
+                stat_delta
+                stat_offset
+                stat_values*
+                stat_pageurls*
+              }
+
+              "RUNNINGTOMCAT=1" break
+              "BASEURL=\"http://localhost:8080/\"" break
+							"WARS=\"" output(e_appName) ".war " output(e_appName) ".war?disableopt\"" break
+							"dbserver=\"localhost\"" break
+							"dbuser=\"<username>\"" break
+							"dbpass=\"<password>\"" break
+							"dbname=\"" output(e_appName) "\"" break
+              "SESSIONSQL=\"SELECT id FROM _SessionManager LIMIT 1;\"" break
+              "SQLS=\"existing\"" break
+              "WARMUP=50" break
+              "ITERATIONS=1000" break
+              "PAGES=\""
+              for(url : String in urllst) {
+                output(url)
+              } separated-by { " " }
+              "\""
+            }
+            
+            access control rules
+            rule page benchmark(instancesPerType : Int){true}
+          ]|
+        |}
+
+  generate-native-class-for-url-trimmer :
+    maxPageArgs -> nativeUrlTrimmer
+    with removeTrailingDefaultValuesFunctions := <range; map(!NativeSimpleType("String")); generate-removeTrailingDefaultValues-functions> maxPageArgs 
+    ; nativeUrlTrimmer := NativeClass(Qualified("utils", "URLTrimmer"), NativeClassAlias("URLTrimmer"), None(), removeTrailingDefaultValuesFunctions)
+
+  simple-sort-with-compatible-sorts :
+    srt -> (srt, compat)
+    where allcompat := <bagof-CompatibleEntities> srt
+    ; compat := <remove-all(?srt)> allcompat
+
+  order-by-dependency :
+    lst -> ordered
+    with (undependent, dependent) := <partition(?(<id>, []))> lst
+    ; if [] := undependent then
+        ordered := []
+      else
+        remaining := <map(remove-resolved-dependencies(|undependent))> dependent
+        ; tail := <order-by-dependency> remaining
+        ; ordered := <conc> (undependent, tail)
+      end
+
+  remove-resolved-dependencies(|resolved) :
+    (elem, old_dependencies) -> (elem, new_dependencies)
+    with new_dependencies := <diff> (old_dependencies, resolved)
+
+  generate-removeTrailingDefaultValues-functions :
+    [] -> [NativeClassFunction(NativeClassFunctionStatic(), "removeTrailingDefaultValues", [NativeSimpleType("String")], NativeClassFunctionReturn(NativeSimpleType("String")))]
+
+  generate-removeTrailingDefaultValues-functions :
+    args@[_|rest] -> [NativeClassFunction(NativeClassFunctionStatic(), "removeTrailingDefaultValues", [NativeSimpleType("String")|args], NativeClassFunctionReturn(NativeSimpleType("String")))|restFnc]
+    with restFnc := <generate-removeTrailingDefaultValues-functions> rest
+
+  extract-page-calls :
+    genname -> pcs
+    with Define(_, _, _, _, body) := <CurrentTemplateDecl> genname
+    ; pcs := <collect(?PageCall(_, _))> body
+
+  get-test-values : SimpleSort("Bool") -> exp |[ [false, true] ]|
+  get-test-values : SimpleSort("Float") -> exp |[ [0F,3.4028235E38,1.17549435E-38F,1.4E-45F] ]|
+  get-test-values : SimpleSort("Int") -> exp |[ [0, 1, -2147483648, 2147483647] ]|
+  get-test-values = (?SimpleSort("Long") <+ ?SimpleSort("TimeInterval")); !exp |[ [0L,-9223372036854775808L,9223372036854775807L] ]|
+  get-test-values = (?SimpleSort("String") <+ ?SimpleSort("Email") <+ ?SimpleSort("Patch") <+ ?SimpleSort("Secret")); !exp |[ [""] ]|
+  get-test-values = (?SimpleSort("Text") <+ ?SimpleSort("WikiText")); !exp |[ [""] ]|
+  get-test-values : SimpleSort("URL") -> exp |[ [""] ]|
+
+  generate-variable-names-for-collections :
+    SimpleSort(x_class) -> (SimpleSort(x_class), x_name)
+    with x_name := <concat-strings; newname>[<lower-case> x_class, "s"]
+
+  get-values(|vars*) :
+    (srt@SimpleSort(x_class), x_name) -> webdsl |[
+      stat_decl
+      stat_count
+      delta := x_count / instancesPerType;
+      if (delta <= 1) {
+        x_name := select ent.x_naturalid from x_class as ent where ent.class = ~e_class limit ~instancesPerType;
+      } else {
+        offset := 0;
+        while(offset < x_count) {
+          x_name.addAll(e_hql);
+          offset := offset + delta;
+        }
+      }
+      stat_addsublsts*
+    ]|
+    where <is-entity-type> srt
+    with e_class := String(x_class)
+    ; x_naturalid := <natural-id-name-include-superclass <+ EntityIdName> x_class
+    ; x_idtype := <natural-id-type-include-superclass <+ EntityIdType> x_class
+    ; x_count := <concat-strings; newname>[<lower-case> x_class, "Count"]
+    ; stat_addsublsts* := <bagof-CompatibleEntities; filter(add-sub-entity-lists(|vars*, x_name))> srt
+    ; stat_decl := Stat(stat |[ var x_name : List<x_idtype>; ]|)
+    ; stat_count := Stat(stat |[ var x_count : Int := select count(*) from x_class as ent where ent.class = ~e_class; ]|)
+    ; e_hql := Paren(exp |[select ent.x_naturalid from x_class as ent where ent.class = ~e_class order by ent.x_naturalid asc limit ~offset,1]|) // force parentheses to avoid ambiguities  
+
+  add-sub-entity-lists(|vars*, x_name) :
+    subsrt -> stat |[ x_name.addAll(x_sublst); ]|
+    with x_sublst := <fetch-elem(?(subsrt, <id>))> vars*
+    where not( x_name := x_sublst )
+
+  get-values(|vars*) :
+    (srt@SimpleSort(x_class), x_name) -> Stat(stat |[ var x_name : List<x_class> := e_Val; ]|)
+    where <not(is-entity-type)> srt
+    ; e_Val := <get-test-values> srt
+
+  get-values(|vars*) :
+    (srt@SimpleSort(x_class), x_name) -> Stat(stat |[ var x_name : List<x_class>; ]|)
+    where <not(is-entity-type)> srt
+    ; <not(get-test-values)> srt
+
+  extract-page-url-sig :
+    Define(mod*, x, fargs, _, body) -> (n, t*, l*)
+    where <fetch(?Page())> mod*
+    with (n, t*) := <normalize-signature> (x, fargs)
+    ; l* := <map(extract-arg-literals-from-body(|body))> fargs
+
+  extract-arg-literals-from-body(|body) = ?Arg(x, srt); <collect(extract-arg-literals-from-body(|x, srt)); flatten-list> body
+
+  extract-arg-literals-from-body(|x, srt) :
+    Eq(x, e) -> e
+    where <is-literal; strip-annos> e
+
+  extract-arg-literals-from-body(|x, srt) :
+    Eq(e, x) -> e
+    where <is-literal> e
+
+  extract-arg-literals-from-body(|x, srt) :
+    NotEq(e, x) -> e
+    where <is-literal> e
+
+  extract-arg-literals-from-body(|x, srt) :
+    NotEq(x, e) -> e
+    where <is-literal> e
+
+  extract-arg-literals-from-body(|x, srt) :
+    TemplateCase(e*, talt*) -> e_Lits
+    where i := <add-indices; fetch-elem(?(<id>, Var(x)))> e*
+    ; e_Lits := <filter(extract-arg-literals-from-body(|x, srt, i))> talt*
+
+  extract-arg-literals-from-body(|x, srt, i) :
+    TemplateCaseAlt(const*, _) -> e_Lit
+    where e_Lit := <index(|i); is-literal; strip-annos> const*
+
+  is-literal = ?Int(_) <+ ?Long(_) <+ ?Float(_) <+ ?String(_)
+
+  extract-literals-from-calls(|n, callArgs, l*) :
+    (idx, srt) -> (srt, [valsCalls*, valsBody*])
+    with valsCalls* := <filter(index(|idx); is-literal)> callArgs
+    ; valsBody* := <index(|idx)> l*
+
+  prepare-arguments-for-page-url(|vars*) :
+    (srt, []) -> (srt, x_vals)
+    with x_vals := <fetch-elem(?(srt, <id>))> vars*
+
+  prepare-arguments-for-page-url(|vars*) :
+    (srt, literals) -> (srt, ListCreation(mff))
+    where not([] := literals)
+    ; mff := <map(strip-annos); most-frequent-first> literals
+
+  most-frequent-first =
+    ?lst
+    ; make-set
+    ; map(get-frequency(|lst))
+    ; qsort(sort-most-frequent-first)
+    ; map(Fst)
+
+  sort-most-frequent-first =
+    ?((_, f1), (_, f2))
+    ; <lt> (f1, f2)
+
+  get-frequency(|lst) :
+    elem -> (elem, freq)
+    with freq := <filter(?elem);length> lst
+
+  generate-page-url-code(|vars*, pcs*) :
+    (n, t*, l*) -> stat
+    with callArgs := <filter(?PageCall(n, <id>))> pcs*
+        ; <add-indices; map(extract-literals-from-calls(|n, callArgs, l*); prepare-arguments-for-page-url(|vars*))> t*
+        ; stat := <generate-page-url-code-helper(|n, [])>
+
+  generate-page-url-code-helper(|n, elems*) :
+    [] -> stat |[ urllst.add(e_Url); ]|
+    with e_Url := <add-page-arguments> (String(n), elems*)
+
+  declare-dr-for-var-rename =
+    ?(from, to)
+    ; rules( RenameVar : Var(from) -> Var(to) )
+
+  generate-page-url-code-helper(|n, elems*) :
+    [(srt@SimpleSort(x_class), e_vals)|srts] -> stat |[
+      for(x_elem : x_type in e_vals) {
+        stat_inner
+      }
+    ]|
+    with x_type := <(is-entity-type < <natural-id-type-include-superclass <+ EntityIdType> x_class + !x_class)> srt
+    ; x_elem := <lower-case; newname> x_class
+    ; newelems* := [(x_elem, x_class)|elems*]
+    ; stat_inner := <generate-page-url-code-helper(|n, newelems*)> srts
+
+  add-page-arguments :
+    (e_PageName, []) -> e_PageName
+
+  add-page-arguments :
+    (e_PageName, elems*) -> exp |[ e_PageName + URLTrimmer.removeTrailingDefaultValues(e_args*) ]|
+    where not([] := elems*)
+    with e_url := <foldr(!None(), page-arg-to-expression-helper)> elems*
+    ; argTypes := <map(!String(<Snd>))> elems*
+    ; e_args* := [e_url|argTypes]
+
+  page-arg-to-expression-helper :
+    (arg, None()) -> e
+    with e := <page-arg-to-expression> arg
+  
+  page-arg-to-expression-helper :
+    (arg, e1) -> exp |[ e1 + "/" + e2 ]|
+    where not(None() := e1)
+    with e2:= <page-arg-to-expression> arg
+
+  page-arg-to-expression : (x, "Bool")   -> exp |[URLFilter.filter(x)]|
+  page-arg-to-expression : (x, "Int")    -> exp |[URLFilter.filter(x)]|
+  page-arg-to-expression : (x, "Long")   -> exp |[URLFilter.filter(x)]|
+  page-arg-to-expression : (x, "String") -> exp |[URLFilter.filter(x)]|
+
+  page-arg-to-expression :
+    (x, x_class) -> exp |[URLFilter.filter(x.toString())]|
+    where not(<?"Bool" <+ ?"Int" <+ ?"Long" <+ ?"String">x_class)
+
+strategies
+
+  build-compatible-entities = ?x_class; build-compatible-entities(|x_class); !SimpleSort(x_class) 
+
+  build-compatible-entities(|x_subclass) =
+    not(?"Entity")
+    ; ?x_class
+    ; rules(CompatibleEntities :+ SimpleSort(x_class) -> SimpleSort(x_subclass))
+    ; <try(Extends; build-compatible-entities(|x_subclass))> x_class

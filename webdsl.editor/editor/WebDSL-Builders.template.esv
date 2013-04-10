@@ -40,6 +40,8 @@ builders
 //acoda disabled   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
   builder   : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)
   builder   : "Extract Datalog"         = datalog-extraction (openeditor) (realtime) (meta)
+  builder   : "Extract Benchmark"         = extract-benchmark (openeditor) (realtime) (meta)
+  builder   : "Generate random entities"         = generate-entities (openeditor) (realtime) (meta)
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
   builder 	: "Generate entity files"			  = generate-entity-files (source)

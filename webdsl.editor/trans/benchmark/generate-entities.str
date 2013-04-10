@@ -1,0 +1,187 @@
+module trans/benchmark/generate-entities
+
+imports
+  libwebdsl-front
+  libwebdsl-generator
+  trans/fact-extraction/datalog
+  trans/benchmark/extract-benchmark
+
+rules
+
+  generate-entities : // use on main app file
+    a@(node, position, ast, path, project-path) -> ("random.app", result)
+    with {| CompatibleEntities
+        : <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+        ; entity* := <all-keys-EntDecl; filter(not(?"SessionManager" <+ ?"SecurityContext" <+ ?"dummy_webdsl_entity" <+ ?"Exception"))>
+        ; srts := <map(build-compatible-entities)> entity*
+        ; fetchord := <filter(simple-sort-with-compatible-sorts); order-by-dependency> srts // Sort the entities so that sub entities are generated before their super entities
+        ; vars* := <map(generate-variable-names-for-collections)> fetchord
+        ; stat_instances* := <map(generate-instances-for-entity(|vars*))> vars*
+        ; stat_refProps* := <filter(set-reference-properties(|vars*))> vars*
+        ; stat_tld := Stat(stat |[ var tld : List<String> := ["ac","ad","ae","af","ag","ai","al","am","an","ao","aq","ar","as","asia","at","au","aw","ax","az","ba","bb","bd","be","bf","bg","bh","bi","biz","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","com","cr","cs","cu","cv","cx","cy","cz","dd","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","eu","fi","fj","fk","fm","fo","fr","ga","gb","gd","ge","gf","gg","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","im","in","info","io","iq","ir","is","it","je","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","me","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","museum","mv","mw","mx","my","mz","na","nc","ne","net","nf","ng","ni","nl","no","np","nr","nu","nz","om","org","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","rs","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","ss","st","su","sv","sx","sy","sz","tc","td","tf","tg","th","tj","tk","tl","tm","tn","to","tp","tr","tt","tv","tw","tz","ua","ug","uk","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","yu","za","zm"]; ]|)
+        ; stat_firstNames := Stat(stat |[ var firstNames : List<String> := ["Abigail","Aiden","Alexander","Amelia","Ava","Camila","Charlie","Chloe","Daniel","Dylan","Emily","Emma","Eric","Esther","Ethan","Eva","Grace","Harry","Isabella","Jack","Jacob","James","Jason","Jessica","Joshua","Justin","Katie","Kevin","Leah","Lewis","Liam","Lily","Logan","Lucas","Luciana","Lucy","Madison","Maria","Matthew","Mia","Michael","Noah","Oliver","Olivia","Rachel","Riley","Ruby","Ryan","Sarah","Sophia","Thomas","Victoria","William"]; ]|)
+        ; stat_surNames := Stat(stat |[ var surNames : List<String> := ["Adams","Allen","Anderson","Bailey","Baker","Barnes","Bell","Bennett","Brooks","Brown","Butler","Campbell","Carter","Clark","Clarke","Collins","Cook","Cooper","Cox","Cruz","Davies","Davis","Díaz","Edwards","Evans","Fisher","Flores","Foster","García","Gómez","González","Gray","Green","Gutiérrez","Hall","Harris","Hernández","Hill","Howard","Hughes","Jackson","James","Jenkins","Johnson","Jones","Kelly","King","Lee","Lewis","Long","López","Martin","Martínez","Miller","Mitchell","Moore","Morales","Morgan","Morris","Murphy","Myers","Nelson","Nguyen","Ortiz","Parker","Patel","Pérez","Perry","Peterson","Phillips","Powell","Price","Ramírez","Reed","Reyes","Richardson","Rivera","Roberts","Robinson","Rodríguez","Rogers","Ross","Russell","Sánchez","Sanders","Scott","Smith","Stewart","Sullivan","Taylor","Thomas","Thompson","Torres","Turner","Walker","Ward","Watson","White","Williams","Wilson","Wong","Wood","Wright","Young"]; ]|)
+        ; stat_text := Stat(stat |[ var txt : Text := randomString(r); ]|)
+        ; stat_wikiText := Stat(stat |[ var txt : Text := "0.  " + randomString(r); ]|)
+        ; stat_protocol := Stat(stat |[ var protocol : List<String> := ["http", "https", "ftp"]; ]|)
+        ; e_domain := Paren(exp |[ /[^a-zA-Z0-9_\-\.]/.replaceAll(randomString(r), "_") ]|)
+        ; e_path := Paren(exp |[ /[^a-zA-Z0-9\/]/.replaceAll(randomString(r), "/") ]|)
+        /*; e_RandomVals := Paren(exp |[ max - min ]|)
+        ; e_RandomVal := Paren(exp |[ random() * e_RandomVals.floatValue() ]|)*/
+        ; stat_Random := Stat(stat |[ var r : Random := Random(); ]|)
+        ; result := <(pp-webdsl-to-string <+ debug(!"pp-webdsl-to-string failed: ");fail)> module |[
+            module random
+
+            native class java.util.Random as Random {
+              constructor()
+            	nextBoolean() : Bool
+            	nextInt() : Int
+            	nextInt(Int) : Int
+            	nextFloat() : Float
+            	nextLong() : Long
+            }
+
+            function randomTopLevelDomain(r : Random) : String {
+              stat_tld
+              return tld[r.nextInt(tld.length)]; 
+            }
+
+            function randomBool(r : Random) : Bool {
+              return r.nextBoolean();
+            }
+            function randomInt(r : Random) : Int {
+              return r.nextInt();
+            }
+            function randomLong(r : Random) : Long {
+              return r.nextLong();
+            }
+            function randomTimeInterval(r : Random) : TimeInterval {
+              return r.nextLong();
+            }
+            function randomFloat(r : Random) : Float {
+               return r.nextFloat();
+            }
+            function randomString(r : Random) : String {
+              stat_firstNames
+              stat_surNames
+              return firstNames[r.nextInt(firstNames.length)] + " " + firstNames[r.nextInt(firstNames.length)] + " " + surNames[r.nextInt(surNames.length)];
+            }
+            function randomText(r : Random) : Text {
+              stat_text
+              for(i : Int from 0 to r.nextInt(500)) {
+                txt := txt + "\n" + randomString(r);
+              }
+              return txt;
+            }
+            function randomWikiText(r : Random) : WikiText {
+              stat_wikiText
+              for(i : Int from 0 to r.nextInt(500)) {
+                txt := txt + "\n" + i + ".  " + randomString(r);
+              }
+              return txt;
+            }
+            function randomSecret(r : Random) : Secret {
+              return randomUUID().toString();
+            }
+            function randomEmail(r : Random) : Email {
+              return e_domain + "@" + e_domain + "." + randomTopLevelDomain(r);
+            }
+            function randomURL(r : Random) : URL {
+              stat_protocol
+              return url(protocol[r.nextInt(protocol.length)] + "://" + e_domain + "." + randomTopLevelDomain(r) + "/" + e_path);
+            }
+            function randomPatch(r : Random) : Patch {
+            	return "";
+            }
+            function randomDate(r : Random) : Date {
+              return randomDateTime(r);
+            }
+            function randomTime(r : Random) : Time {
+              return randomDateTime(r);
+            }
+            function randomDateTime(r : Random) : DateTime {
+              return now().addSeconds(r.nextInt());
+            }
+
+            // randomUUID is built-in
+
+            page random(instancesPerEntity : Int, maxColSize : Int) {
+              init {
+              	stat_Random
+                stat_instances*
+                stat_refProps*
+              }
+            }
+            
+            access control rules
+            rule page random(instancesPerEntity : Int, maxColSize : Int){true}
+          ]|
+        |}
+
+  generate-instances-for-entity(|vars*) :
+    (srt@SimpleSort(x_class), x_lst) -> webdsl |[
+      stat_decl
+      for(i : Int from 0 to instancesPerEntity) {
+        stat_const
+        x_lst.add(x_elem);
+        x_elem.save();
+      }
+      stat_addsublsts*
+    ]|
+    with stat_decl := Stat(stat |[ var x_lst : List<x_class>; ]|)
+    ; x_elem := <lower-case; newname> x_class
+    ; allSimpleProps* := <all-properties; filter(generate-simple-property-assignment)> x_class
+    ; e_Const := ObjectCreation(srt, allSimpleProps*)
+    ; stat_const := Stat(stat |[ var x_elem : x_class := e_Const; ]|) 
+    ; stat_addsublsts* := <bagof-CompatibleEntities; filter(add-sub-entity-lists(|vars*, x_lst))> srt
+
+  generate-simple-property-assignment :
+    prop -> ObjectPropertyAssignment(name, e)
+    where Simple() := <get-property-kind> prop
+    ; <not(is-derived-prop-cons)> prop
+    ; type := <get-property-type; not(?SimpleSort("File") <+ ? SimpleSort("Image"))> prop
+    with name := <get-property-name> prop
+    ; x_random := <concat-strings> ["random", <?SimpleSort(<id>)> type]
+    ; e := <?"randomUUID" < !exp |[ randomUUID() ]| + !exp |[ x_random(r) ]|> x_random
+
+  set-reference-properties(|vars*) :
+    (srt@SimpleSort(x_class), x_lst) -> webdsl |[
+      for(x_elem : x_class in x_lst) {
+        stat_allRefProps*
+        stat_colProps*
+      }
+    ]|
+    with x_elem := <lower-case; newname> x_class
+    ; props* := <all-properties> x_class
+    ; stat_allRefProps* := <filter(generate-ref-property-assignment(is-entity-type|vars*, x_elem))> props*
+    ; stat_allColProps* := <filter(generate-ref-property-assignment(is-generic-sort|vars*, x_elem))> props*
+    ; if [] := stat_allColProps* then
+        stat_colProps* := []
+      else
+        stat_colProps* := [webdsl |[
+          for(i : Int from 0 to r.nextInt(maxColSize)) {
+            stat_allColProps*
+          }
+        ]|]
+      end
+    where not([] := stat_allRefProps*) <+ not([] := stat_colProps*)
+
+  generate-ref-property-assignment(s|vars*, x_elem) :
+    prop -> stat_set*
+    where <get-property-kind; (?Ref() <+ ?Comp())> prop
+    ; <not(is-derived-prop-cons)> prop
+    ; <get-property-annos; not(fetch-elem(?InverseAnno(_, _)))> prop // Not the owning side of an inverse relation (only one side needs to be set)
+    ; name := <get-property-name> prop
+    ; type := <get-property-type; where(s)> prop
+    ; stat_set* := <generate-ref-property-assignment-helper(|vars*, x_elem)> (name, type)
+
+  generate-ref-property-assignment-helper(|vars*, x_elem) :
+    (x_name, type) -> stat |[ x_elem.x_name := x_lst[r.nextInt(x_lst.length)]; ]|
+    where (_, x_lst) := <fetch-elem(?(type, _))> vars*
+
+  generate-ref-property-assignment-helper(|vars*, x_elem) :
+    (x_name, type) -> stat |[ x_elem.x_name.add(x_lst[r.nextInt(x_lst.length)]); ]|
+    where <is-generic-sort> type
+    ; simplesrt := <try-strip-generic-sort> type
+    ; (_, x_lst) := <fetch-elem(?(simplesrt, _))> vars*
