@@ -7,7 +7,7 @@ imports
   		webservices-generation/mobl/unsynced-functions
      	webservices-generation/model-tree
      	webservices-generation/util
-
+		webservices-generation/mobl/authentication
   	  	
   	  	util 
 	  	lib/editor-common.generated
@@ -42,7 +42,8 @@ rules
   			  	import webservices::mobl::simpleView
   			  ]|  
   			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, newsyncfunction, clearEditFunction, clearNewFunction, restoreFunction, 
-  			  						gettopentitiesfunction, <generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>]]
+  			  						gettopentitiesfunction, <generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>],
+  			  						<generate-mobl-authenication-service-entry-points <+ ![]>]
   			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
   			; module-to-moblfile(|dirname, "sync")
   			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
@@ -446,4 +447,33 @@ rules//some sync integration
 				      x_entity . fromSelectJSON ( ent );
 				}
   			]|	
+  			
+rules //authentication		
+  	generate-mobl-authenication-service-entry-points: x -> services
+		where 
+			principal := <PrincipalDecl>
+			; services :=  mobl-def* 
+			  |[
+			  	  service Authentication {
+			  	  	resource logout ( ) : Bool {
+				      uri="webservice/logout"
+				      method="PUT"
+				      mapper=boolMapper
+				    }
+				   
+				    resource getDeviceKey ( username : String, password : String , devicename : String) : String {
+				      uri="webservice/getDeviceKey"
+				      method="PUT"
+				      data =  JSON.stringify(Dynamic ( username = username , devicename = devicename, pw=password ))
+				      mapper=deviceKeyMapper
+				    }
+				    
+				    resource authenticate ( username : String, devicekey : String , devicename : String) : Bool {
+				      uri="webservice/authenticate"
+				      method="PUT"
+				      data =  JSON.stringify(Dynamic ( username = username , devicename = devicename, devicekey=devicekey ))
+				      mapper=boolMapper
+				    }
+			  	  }
+			  ]|
    
