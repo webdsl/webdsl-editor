@@ -23,7 +23,7 @@ imports
 
 overlays
 	DirServices = "webservices/services"
-rules
+rules 
 	 
   generate-webservices: (selected, position, ast, path, project-path) -> None()
   	where 	<try(simplify-application-constructor); ?Application(_, _) > ast

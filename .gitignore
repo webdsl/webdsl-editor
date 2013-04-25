@@ -21,3 +21,12 @@ webdsl.editor/webdsl-template/*
 webdsl.editor/build.generated.xml
 webdsl.editor/bin/*
 webdsl.editor/.servletapp/*
+webdsl.editor/lib-refactoring/behavior-preservation.generated.str
+webdsl.editor/lib-refactoring/correctness-preservation.generated.str
+webdsl.editor/lib-refactoring/namebinding-preservation.generated.str
+webdsl.editor/lib/analysis-library-internal.generated.str
+webdsl.editor/lib/analysis-library.generated.str
+webdsl.editor/lib/compilation-library.generated.str
+webdsl.editor/lib/editor-common.generated.str
+webdsl.editor/lib/index-library.generated.str
+webdsl.editor/lib/nbl-library.generated.str

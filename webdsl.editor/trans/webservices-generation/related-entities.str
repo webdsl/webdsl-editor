@@ -18,7 +18,7 @@ rules //builder
   	where	dirname := "webservices/related-entities"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
   			; properties := <map(get-all-properties)> filteredEntities
   			; main-defs := <generate-main-defs-for-related-entities> filteredEntities 
   			; result:= <map(props-to-related-entities-functions(|dirname))> properties

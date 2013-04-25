@@ -4,6 +4,8 @@ imports
 	libwebdsl-generator
 	trans/util
 	lib/editor-common.generated
+	
+	libwebdsl-front
 
 rules
   get-subclasses-of-entity: entity -> children
@@ -66,4 +68,13 @@ rules
   	where 	get-subclasses-of-entity
   			; filter(is-top-entity-by-dr)
   			; not(?[])
-  	
+
+ is-builtin-entity-webservices: entity -> entity
+   	where	(? EntityNoSuper(name, _) 
+     			<+ ?Entity(name, _, _))
+     			<+ is-string; ?name
+     		; <is-builtin-entity> name	
+     		<+ (builtin-entities := [
+     		  	"AuthenticationKey"
+     		  ]
+     		; <fetch(?name)> builtin-entities)  

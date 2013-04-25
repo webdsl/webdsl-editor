@@ -30,7 +30,7 @@ rules
   			; <create-dir-in-workspace> dirname
   			; <map(Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property)> topEntity* 
   			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
   			; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
   			; completeEntities := <map(generate-extra-properties-for-collections); map(try(generate-extra-type-property)); filter(where(entity-has-no-super)); map(make-entity-with-properties)> filteredEntities //TODO: filter only subEntitties + add type property
   			; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
@@ -234,7 +234,7 @@ rules // type transformations
 
   type-to-mobl-type: SimpleSort(x_type) -> mobl-t|[x_newType]|
    	where 	x_newType := <IsEntity; find-highest-parent> x_type // TODO: this only works for flatten subentities
-   	where not (<is-builtin-entity> x_type)
+   	where not (<is-builtin-entity-webservices> x_type)
   
   type-to-mobl-type: GenericSort(_, type) -> mobl-t|[Collection<t_paramtype>]| 
    	where	<Hd; is-entity-type> type

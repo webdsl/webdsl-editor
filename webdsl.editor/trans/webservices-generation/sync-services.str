@@ -11,7 +11,7 @@ rules
 	
   generate-sync-services: x -> x
 	where 	entities := <all-keys-EntDecl> None()	  
-  			; filteredEntities := <filter(not(is-builtin-entity); where(entity-has-no-super))> entities   
+  			; filteredEntities := <filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> entities   
   			; <map(generate-sync-service)> filteredEntities
   			; <generate-edit-sync-service> filteredEntities  
    			; <generate-new-sync-service> filteredEntities    

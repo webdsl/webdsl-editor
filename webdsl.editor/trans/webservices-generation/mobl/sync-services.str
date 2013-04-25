@@ -20,7 +20,7 @@ rules
   			; <create-dir-in-workspace> dirname
   			; generate-mobl-unsynced-functions  
   			; generate-mobl-top-level-service
-  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity); where(entity-has-no-super))> None()	// TODO : flatten - removes subentities
+  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> None()	// TODO : flatten - removes subentities
   			; <map(generate-mobl-sync-service)> entities
   			; generate-mobl-timestamp-service 
   			; generate-mobl-edit-service 

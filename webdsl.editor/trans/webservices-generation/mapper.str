@@ -13,7 +13,7 @@ rules
 	where 	dirname := "webservices/mappers"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities
+  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
   			; entitywithproperties := <map(where(make-entity-with-properties);\x -> (x, <all-properties-with-entity-anno> x)\)> filteredEntities //TODO : here set DR for renamed properties
    			; mappers := <map(generate-edit-mapper(|dirname))> entitywithproperties  
    			; <main-file-to-file(generate-main-model-file(|dirname, []) |dirname)> filteredEntities  
@@ -203,7 +203,7 @@ rules //conversion to json
   json-to-properties-conversion : prop -> statement
     where  	t@SimpleSort(x_type) := <get-property-type> prop
     		; <is-entity-type> t  
-    where not(<is-builtin-entity> x_type)		  
+    where not(<is-builtin-entity-webservices> x_type)		  
     where	x_propname := <get-property-name> prop
     	    ; x_renamedName := <rename-prop-by-dr; get-property-name> prop // TODO: flatten uses rename   
     		; x_stringPropname := String(x_renamedName)       		; x_typename := String(x_type)  
@@ -221,7 +221,7 @@ rules //conversion to json
     		  
     json-to-properties-conversion : prop -> statement
     where  	t@GenericSort(genericsort, [SimpleSort(x_type)]) := <get-property-type> prop
-    where not(<is-builtin-entity> x_type)		  
+    where not(<is-builtin-entity-webservices> x_type)		  
     where	x_propname := <get-property-name> prop
     		; if <?"List"> genericsort 
     		  	then e_collCreation :=  webdsl:e |[ List<x_type>()]|

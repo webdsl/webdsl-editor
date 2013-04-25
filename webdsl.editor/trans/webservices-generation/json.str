@@ -26,7 +26,7 @@ rules //builder
   	where	dirname := "webservices/json"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities  
+  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities  
   			; <try(map(make-entity-with-properties))> entities  // TODO : for store rename props  + add-anno for getting rename working
   			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
   			; result:= <map(props-to-jsonfile(|dirname))> properties
