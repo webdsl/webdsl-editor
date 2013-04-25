@@ -13,12 +13,14 @@ rules
 	generate-authentication-webservice-module: x -> x
 		where 	principal := <PrincipalDecl> 
 				; generate_webservices_authenticate_device
-				; principalent := <?AccessControlPrincipal(<!SimpleSort(<id>)>,_)> principal
+				; principalent := <?AccessControlPrincipal(<id>,_)> principal
+				; usernameprop :=  <?AccessControlPrincipal(_,[<id>|_])> principal
+				; <generate_webservices_authenticate_device_by_key> (principalent, usernameprop)
 				; defs := <general-defs-for-authentication-webservices-entity> principalent
 				; result := <make-valid-page-from-defs(|$[webservices/authentication])> defs
 				; <write-ast-to-file(|$[webservices/authentication.app])> result  
 	
-	generate_webservices_authenticate_device: x -> x
+	generate_webservices_authenticate_device: x -> x 
 	  	where 	name := $[getDeviceKey]
       		; body := webdsl 
 	      	  |[
@@ -45,6 +47,58 @@ rules
 	  		  ]|   			 
 	       	; service := <generate-service(|name)> body
 	        ; service-to-file(|name) 
+
+
+	generate_webservices_authenticate_device_by_key: (entity,usernameprop) -> None()
+	  	with 	name := $[authenticate]
+	  		; x_findfun := <concat-strings> ["find", entity, "By", <capitalize-string> usernameprop]
+      		; body := webdsl 
+	      	  |[
+	      	  	  var request := JSONObject(readRequestBody()) ;
+				  var result := JSONObject() ;
+				  if ( json.has("username") && json.get("username") != json.NULL )
+				  {
+				    if ( json.has("devicekey") && json.get("devicekey") != json.NULL )
+				    {
+				      if ( json.has("devicename") && json.get("devicename") != json.NULL )
+				      {
+				       var principlelist := x_findfun(json.getString("username"));
+				       if(principlelist.length > 1) {
+				        	var user := principlelist[0];
+				        	var key := user.getDeviceKey(json.getString("devicename"));
+				        	if(key != null) {
+				        		var devicekey := json.getString("devicekey").parseUUID();
+				        		if(devicekey != null && devicekey == key.id){
+				        			securityContext.principal := user;
+				        			result.put("answer", true);
+				        		} else {
+				        			errors.put("invalid device key");
+				        		}
+				        	} else {
+				        		errors.put("invalid device name");
+				        	}
+				       	} else {
+				        	errors.put("unknown user");
+						}
+				      }
+				      else
+				      {
+				        errors.put("missing device name");
+				      }
+				    }
+				    else
+				    {
+				      errors.put("missing device key");
+				    }
+				  }
+				  else
+				  {
+				    errors.put("missing username");
+				  }
+	  		  ]|   			 
+	       	; service := <generate-service(|name)> body
+	        ; service-to-file(|name) 	          
+
 	
 	
 	general-defs-for-authentication-webservices-entity: (x_entityname) -> defs
@@ -53,7 +107,7 @@ rules
 					 	deviceKeySet  -> Set<AuthenticationKey>
 					 	
 					 	function generateAuthenticationKey(deviceDescription : String) : UUID {
-					 		var key := getDeviceKey(deviceDescription);
+					 		var key := getDeviceKey(deviceDescription).id;
 					 		if(key == null){
 					 			var newKey := AuthenticationKey {
 					 				deviceDescription := deviceDescription	
@@ -65,10 +119,10 @@ rules
 					 		return key;	
 					 	}
 					 	
-					 	function getDeviceKey(deviceDescription : String) : UUID {
+					 	function getDeviceKey(deviceDescription : String) : AuthenticationKey {
 					 		var filteredList := [key | key : AuthenticationKey in deviceKeySet where  deviceDescription == key.deviceDescription ];
 					 		if(filteredList.length == 1) {
-					 			return filteredList[0].id;	
+					 			return filteredList[0];	
 					 		} else {
 					 			return null;
 					 		}
