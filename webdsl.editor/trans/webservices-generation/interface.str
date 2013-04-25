@@ -16,6 +16,7 @@ imports
 	webservices-generation/sync-services
 	webservices-generation/related-entities
 	webservices-generation/util	
+	webservices-generation/authentication
 		 
   	util 
   	lib/editor-common.generated 
@@ -39,17 +40,27 @@ rules
   			; generate-timestamp-webservice   
   			; generate-mobl-services
   			; generate-sync-services
+  			; if(generate-authentication-webservice-module)then 
+  			  	imports := def*
+					|[
+					  	imports webservices/related-entities/main 
+					  	imports webservices/mappers/main
+					  	imports webservices/json/main
+					  	imports webservices/authentication
+					]|
+  			  else 
+		  		imports := def*
+					|[
+					  	imports webservices/related-entities/main 
+					  	imports webservices/mappers/main
+					  	imports webservices/json/main
+					]|
+		  	end   
   			; <generate-edit-mappers> project-path  
   			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
   			  		   <generate-available-services-function>, <generate-interface-service>,
   			  		   <get-general-service-functions>]
-			; imports := def*
-			  |[
-			  	imports webservices/related-entities/main 
-			  	imports webservices/mappers/main
-			  	imports webservices/json/main
-			  ]|
 			; defs' := <concat> [modules,imports, defs]
 			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
 			; <write-ast-to-file(|$[[dirname]/interface.app])> result
