@@ -3,6 +3,7 @@ module webservices-generation/authentication
 imports
 	webservices-generation/util	
 	webservices-generation/interface
+	
 		 
   	util 
   	lib/editor-common.generated 
@@ -25,13 +26,13 @@ rules
       		; body := webdsl 
 	      	  |[
 	      	  	  var request := JSONObject(readRequestBody()) ;
-				  var result := JSONObject();
+				  var result := "";
 				  if(json.has("username") && json.get("username") != json.NULL) {
 				 		if(json.has("pw") && json.get("pw") != json.NULL) {
 				 			if(json.has("devicename") && json.get("devicename") != json.NULL) {
 				 				var succes := authenticate(json.getString("username"), json.getString("pw") as Secret);  
 				 				if (succes) {
-				 					result.put("key", securityContext.principal.generateAuthenticationKey(json.getString("devicename")));
+				 					result := securityContext.principal.generateAuthenticationKey(json.getString("devicename")).toString();
 				 				} else {
 				 					errors.put("no valid combination");
 				 				}
@@ -55,7 +56,7 @@ rules
       		; body := webdsl 
 	      	  |[
 	      	  	  var request := JSONObject(readRequestBody()) ;
-				  var result := JSONObject() ;
+				  var result := false ;
 				  if ( json.has("username") && json.get("username") != json.NULL )
 				  {
 				    if ( json.has("devicekey") && json.get("devicekey") != json.NULL )
@@ -70,7 +71,7 @@ rules
 				        		var devicekey := json.getString("devicekey").parseUUID();
 				        		if(devicekey != null && devicekey == key.id){
 				        			securityContext.principal := user;
-				        			result.put("answer", true);
+				        			result := true;
 				        		} else {
 				        			errors.put("invalid device key");
 				        		}
@@ -99,6 +100,17 @@ rules
 	       	; service := <generate-service(|name)> body
 	        ; service-to-file(|name) 	          
 
+
+generate_webservices_deauthenticate: x -> None()
+	  	with 	name := $[logout]
+      		; body := webdsl 
+	      	  |[
+	      	  	  var request := JSONObject(readRequestBody()) ;
+				  var result := true;
+				  securityContext.principal := null;
+	  		  ]|   			 
+	       	; service := <generate-service(|name)> body
+	        ; service-to-file(|name) 	  
 	
 	
 	general-defs-for-authentication-webservices-entity: (x_entityname) -> defs
