@@ -1,0 +1,91 @@
+module webservices-generation/mobl/authentication
+
+imports
+	webservices-generation/util	
+	webservices-generation/mobl/model-to-mobl
+	
+	lib/mobl/editor-common.generated 
+		 
+  	util 
+  	lib/editor-common.generated 
+  	libwebdsl-generator
+  	libwebdsl-front
+
+rules
+	
+	generate-mobl-authenication-module: x -> x
+	  	where	dirname := "webservices/mobl"
+	  			; <create-dir-in-workspace> dirname  
+	  			; result := <generate-mobl-authenication-module-defs>
+	  			; <make-valid-page-from-mobl-defs(|dirname, "authentication")> result
+	  			; module-to-moblfile(|dirname, "authentication")
+	  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+	
+
+  	generate-mobl-authenication-module-defs: x -> defs
+		where defs := mobl-def* 
+			|[
+				import webservices::mobl::sync
+				function hasDeviceKey() : Bool {
+					var username = LocalStorage.getString("un");
+					var devicename = LocalStorage.getString("dn");
+					var devicekey = LocalStorage.getString("dk");
+					if (username && username.length > 0 && devicename && devicename.length > 0 && devicekey && devicekey.length > 0 ){
+						return true;
+					} else {
+						return false;
+					}
+				}
+
+				function authenticate() : Bool {
+					
+					var username = LocalStorage.getString("un");
+					var devicename = LocalStorage.getString("dn");
+					var devicekey = LocalStorage.getString("dk");
+					if(username && username.length > 0 && devicename && devicename.length > 0 && devicekey && devicekey.length > 0 ){
+						var status = Authentication.authenticate(username, devicekey, devicename);
+						if(status){
+							return true;
+						} else {
+							removeInformation();
+						} 
+					} else {
+						return false;
+					}					
+				}
+
+				function registerDevice(username : String, devicename : String, password : String) : Bool {
+					var deviceKey = Authentication.getDeviceKey(username, password, devicename);
+					if(deviceKey != "") {
+						storeDeviceAuthentication(username, devicename, deviceKey);
+						return true;
+					} else {
+						return false;
+					}
+				}
+				
+				function storeDeviceAuthentication(username : String, devicename : String, devicekey : String) {
+					LocalStorage.setItem("un", username);
+					LocalStorage.setItem("dn", devicename);
+					LocalStorage.setItem("dk", devicekey);
+				}
+				
+				function logoutDevice() : Bool{
+					if(Authentication.logout())	{
+						removeInformation();
+					}  else {
+						return false;
+					}	
+				}	
+				
+				function removeInformation(){
+					resetDatabase();
+					LocalStorage.removeItem("un");
+					LocalStorage.removeItem("dk");
+					LocalStorage.removeItem("dn");
+					reload();
+				}
+
+			]|
+	
+	

@@ -4,6 +4,7 @@ imports
 	webservices-generation/util	
 	webservices-generation/interface
 	
+	webservices-generation/mobl/authentication
 		 
   	util 
   	lib/editor-common.generated 
@@ -14,9 +15,11 @@ rules
 	generate-authentication-webservice-module: x -> x
 		where 	principal := <PrincipalDecl> 
 				; generate_webservices_authenticate_device
+				; generate-mobl-authenication-module
 				; principalent := <?AccessControlPrincipal(<id>,_)> principal
 				; usernameprop :=  <?AccessControlPrincipal(_,[<id>|_])> principal
 				; <generate_webservices_authenticate_device_by_key> (principalent, usernameprop)
+				; generate_webservices_deauthenticate  
 				; defs := <general-defs-for-authentication-webservices-entity> principalent
 				; result := <make-valid-page-from-defs(|$[webservices/authentication])> defs
 				; <write-ast-to-file(|$[webservices/authentication.app])> result  
