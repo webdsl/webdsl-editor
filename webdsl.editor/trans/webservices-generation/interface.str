@@ -46,6 +46,7 @@ rules
   			  	imports := def*
 					|[
 					  	imports webservices/related-entities/main 
+					  	imports webservices/access-control/main 
 					  	imports webservices/mappers/main
 					  	imports webservices/json/main
 					  	imports webservices/authentication
@@ -64,7 +65,8 @@ rules
   			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
   			  		   <generate-available-services-function>, <generate-interface-service>,
   			  		   <get-general-service-functions>]
-			; defs' := <concat> [modules,imports, defs]
+  			; ac := <generate-access-control-for-services> 		   
+			; defs' := <concat> [modules,imports, defs, ac]
 			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
 			; <write-ast-to-file(|$[[dirname]/interface.app])> result
 			  	
@@ -142,7 +144,7 @@ rules// generation
 	  			var array := JSONArray();
 	  			var jsonobj := JSONObject();
 	  			for(topent : x_entity in  x_entity.all()){
-	  				if(x_entity.mayReadSynchronize()) {
+	  				if(topent.mayReadSynchronize()) {
 	  					array.put(topent.toSimpleJSON());array.put(topent.toSimpleJSON());
 	  				}
 	            }
@@ -202,4 +204,33 @@ rules //general functions
 			}
 			return false; 
 		 }
-  	]|	 	   	  	      	
+  	]|	 	
+  	
+rules//acces control 
+	
+	generate-access-control-for-services: x -> [section]
+		where 	PrincipalDecl
+				; services := <bagof-Service>
+				; acdef* := <map(generate-access-control-for-service)> services
+	      		; section := webdsl 
+	      		  |[
+	      		  	access control rules{
+	      		  		rule page webservice(*){
+	      		  			true
+	      		  		}
+	      		  		acdef*
+	      		  	}
+
+	      		  ]|   
+	
+	generate-access-control-for-services: x -> []
+		where not (PrincipalDecl)	
+	
+	generate-access-control-for-service: serviceName -> acdef
+		where	x_pagename := $[[ServicePrefix][serviceName]]
+				; acdef := acdef 
+				|[
+					rule page x_pagename(){
+						true
+					}
+				]|  	      	
