@@ -15,6 +15,7 @@ imports
 	webservices-generation/mobl/sync-services
 	webservices-generation/sync-services
 	webservices-generation/related-entities
+	webservices-generation/access-control
 	webservices-generation/util	
 	webservices-generation/authentication
 		 
@@ -32,6 +33,7 @@ rules
         	  
   	where	topEntity* := <declare-top-entities> ast
   			; <generate-related-entities-functions> project-path
+  			; <generate-access-control-entities-functions> project-path 
   			; dirname := DirServices()
   			; <create-dir-in-workspace> dirname 
   			; make-mobl-mapper-for-all-entities
@@ -52,6 +54,7 @@ rules
 		  		imports := def*
 					|[
 					  	imports webservices/related-entities/main 
+					  	imports webservices/access-control/main 
 					  	imports webservices/mappers/main
 					  	imports webservices/json/main
 					]|

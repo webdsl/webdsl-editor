@@ -1,0 +1,77 @@
+module webservices-generation/access-control
+
+imports
+	libstratego-lib
+	  
+	lib/editor-common.generated
+  	libwebdsl-front
+  	libwebdsl-generator
+		
+  	util
+  	lib/editor-common.generated
+  	webservices-generation/util
+  	entity-extraction/generate-entity-files
+	
+rules //builder
+	
+  generate-access-control-entities-functions : project-path -> project-path
+  	where	dirname := "webservices/access-control"
+  			; <create-dir-in-workspace> dirname 
+  			; entities := <all-keys-EntDecl> None()	 
+  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
+  			; result:= <map(generate-access-control-methods-entities(|dirname))> filteredEntities
+  			; <main-file-to-file(generate-main-model-file(|dirname, [] )|dirname)> filteredEntities 
+  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+
+
+  				  
+rules//file generation 
+	
+  generate-access-control-methods-entities(|dirname): entityname -> entityname
+  	with	<file-exists> $[[<project-path>]/[dirname]]
+  			; filename := $[[<project-path>]/[dirname]/[entityname].app]
+	  		; <make-valid-page-with-extends-entity-for-access-control(|$[[dirname]/[entityname]])
+	  		   ; write-ast-to-file(|filename)> entityname  
+	
+  make-valid-page-with-extends-entity-for-access-control(|dirname) : x_entityName -> ModuleDefs(dirname, deflist, [])
+	where	ebd0* := <build-access-control-entities-functions>x_entityName
+	 	 	; deflist := def* 
+	 		  	|[
+	 		  		extend entity x_entityName {
+	 		  			ebd0*
+	 		  		}
+	 		  	]|
+
+rules
+	
+  	build-access-control-entities-functions: x -> [ <build-access-control-entities-functions-read>,
+  	 												<build-access-control-entities-functions-modify>,
+  	 												<build-access-control-entities-functions-create>]
+	
+ 	build-access-control-entities-functions-read: x_entityname -> function
+		where 	function := def 
+			  |[ 
+			  	function mayReadSynchronize() : Bool {
+			  		return true;
+			  	}
+			  ]|
+ 
+ 	build-access-control-entities-functions-modify: x_entityname -> function
+		where 	function := def 
+			  |[ 
+			  	function mayModifySynchronize() : Bool {
+			  		return true;
+			  	}
+			  ]|
+	
+	build-access-control-entities-functions-create: x_entityname -> function
+	 	where 	function := webdsl 
+			  |[ 
+			  	static function  mayCreateSynchronize() : Bool {
+			  		return true;
+			  	}
+			  ]|
+			  
+			  
+			  
+  						 			  	
