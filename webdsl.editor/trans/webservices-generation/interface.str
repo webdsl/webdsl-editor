@@ -142,7 +142,9 @@ rules// generation
 	  			var array := JSONArray();
 	  			var jsonobj := JSONObject();
 	  			for(topent : x_entity in  x_entity.all()){
-	              	array.put(topent.toSimpleJSON());
+	  				if(x_entity.mayReadSynchronize()) {
+	  					array.put(topent.toSimpleJSON());array.put(topent.toSimpleJSON());
+	  				}
 	            }
 	            jsonobj.put("name", x_entityString );
 	            jsonobj.put("value", array);

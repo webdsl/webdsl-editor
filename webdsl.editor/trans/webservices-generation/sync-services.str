@@ -64,7 +64,7 @@ rules
   	where 	x_functionname := $[getAll[x_entity]ForTopEntity]
   			; statement :=  stat 
 	      	  |[
-	      	  	for(ent: x_entity in x_functionname(tl) where timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp ) ){
+	      	  	for(ent: x_entity in x_functionname(tl) where (timestamp == 0 || (ent.modified != null && ent.modified.getTime() > timestamp )) && ent.mayReadSynchronize() ){
 	  				result.put(addDirtyFalse(ent.toJSON()));
 	  			}
 	      	  ]|
@@ -104,33 +104,39 @@ rules //edit
  			; x_mappername := $[mapperEdited[x_entity]] // TODO: should do something with flatten hirarchie
  			; statement :=  webdsl 
  			  |[
-				  	var localErrors := JSONArray();
-				  	var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;
-				  	if (entity == null) {
-				  		localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
-				  	} else {
-				  		if (entity.version <= entities.getJSONObject(count).getInt("version")) {
-				  			x_mappername(entity, entities.getJSONObject(count), localErrors);
-				  			var exceptions := entity.validateSave();
-					        addValidateExceptionsToErrors(exceptions, localErrors);
-							if(containsErrorInJSONArray(localErrors)) {
-								rollbackAndStartNewTransaction();
-							} else {
-								var uncheckedExceptions := commitAndStartNewTransaction();
-								addValidationExceptionsToLocalErrors(uncheckedExceptions, localErrors);
-							}
+ 			  		for ( count : Int from 0 to entities.length() ) {
+					  	var localErrors := JSONArray();
+					  	var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;
+					  	if (entity == null) {
+					  		localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
 					  	} else {
-					  		localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
-					  	}	
-				  	}
-				  	if(localErrors.length() > 0) {
-				  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
-					  	if(containsErrorInJSONArray(localErrors) && entity != null) {
-					  		var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;//hack for rollback vars are not safe anymore
-					  		jsonErrorObject.put("restore", entity.toJSON());
+					  		if(entity.mayModifySynchronize()){
+					  			if (entity.version <= entities.getJSONObject(count).getInt("version")) {
+							  		x_mappername(entity, entities.getJSONObject(count), localErrors);
+							  		var exceptions := entity.validateSave();
+								    addValidateExceptionsToErrors(exceptions, localErrors);
+									if(containsErrorInJSONArray(localErrors)) {
+										rollbackAndStartNewTransaction();
+									} else {
+										var uncheckedExceptions := commitAndStartNewTransaction();
+										addValidationExceptionsToLocalErrors(uncheckedExceptions, localErrors);
+									}
+					  			} else {
+						  			localErrors.put(makeJSONErrorObject("Object already has newer version", "warning"));
+						  		}	
+					  		} else {
+					  			localErrors.put(makeJSONErrorObject("No rights to modify this object", "warning"));
+					  		}
 					  	}
-					  	errors.put(jsonErrorObject);
-				  	}
+					  	if(localErrors.length() > 0) {
+					  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
+						  	if(containsErrorInJSONArray(localErrors) && entity != null) {
+						  		var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;//hack for rollback vars are not safe anymore
+						  		jsonErrorObject.put("restore", entity.toJSON());
+						  	}
+						  	errors.put(jsonErrorObject);
+					  	}
+					 }
  			  ]|  
  			  
  			  
@@ -187,37 +193,55 @@ rules //edit
  	where	<SubClass> x_entity
  			; x_entityname := String(x_entity)
  			; stat_subtype := <generate-type-if-check-create> [x_entity|<get-subclasses-of-entity>x_entity]
+ 			; x_errormessage :=  $["not allowed to create [x_entity]"]
  			; statement :=  webdsl 
- 			  |[	var localErrors := JSONArray();
- 			  		var entity := (null as x_entity); //vardecl hack
- 			  		var jsontemp := entities.getJSONObject(count);
- 			  		if( jsontemp.has("typeField") && jsontemp.getString("typeField") != null) {
- 			  			var subtype := jsontemp.getString("typeField");	
-	  					stat_subtype			
-	  				} else	{
-	  					errors.put("object has no typefield");
-	  				}
- 			  		if (entity != null) {
-				  		entity.save();
-				  	} else {
-				  		// should throw an error but there is not really a good error to throw since the format is not vallid but can't map either
-				  		errors.put("object has no id");
-				  	}	  
+ 			  |[	
+ 			  		if(entities.length() > 0){
+ 			  			if(x_entity.mayCreateSynchronize()) {
+ 			  				for ( count : Int from 0 to entities.length() ) {
+			 			  		var localErrors := JSONArray();
+			 			  		var entity := (null as x_entity); //vardecl hack
+			 			  		var jsontemp := entities.getJSONObject(count);
+			 			  		if( jsontemp.has("typeField") && jsontemp.getString("typeField") != null) {
+			 			  			var subtype := jsontemp.getString("typeField");	
+				  					stat_subtype			
+				  				} else	{
+				  					errors.put("object has no typefield");
+				  				}
+			 			  		if (entity != null) {
+							  		entity.save();
+							  	} else {
+							  		// should throw an error but there is not really a good error to throw since the format is not vallid but can't map either
+							  		errors.put("object has no id");
+							  	}
+							}	
+ 			  			} else {
+ 			  				errors.put(x_errormessage);
+ 			  			}
+ 			  		}		  
  			  ]| 
  			  
    generate-creates-for-new-checking-type: x_entity -> statement
  	where	not(<SubClass> x_entity)
  			; x_entityname := String(x_entity)
  			; stat_subtype := <generate-type-if-check-create> [x_entity|<get-subclasses-of-entity>x_entity]
+ 			; x_errormessage :=  $["not allowed to create [x_entity]"]
  			; statement :=  webdsl 
- 			  |[	var localErrors := JSONArray();
- 					var entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};	
- 			  		if (entity != null) {
-				  		entity.save();
-				  	} else {
-				  		// should throw an error but there is not really a good error to throw since the format is not vallid but can't map either
-				  		errors.put("object has no id");
-				  	}	  
+ 			  |[	
+ 			  	  if(x_entity.mayCreateSynchronize()) {
+	 			  		for ( count : Int from 0 to entities.length() ) {
+		 			  		var localErrors := JSONArray();
+		 					var entity :=  x_entity { id := entities.getJSONObject(count).getString("id").parseUUID()};	
+		 			  		if (entity != null) {
+						  		entity.save();
+						  	} else {
+						  		// should throw an error but there is not really a good error to throw since the format is not vallid but can't map either
+						  		errors.put("object has no id");
+						  	}	
+						} 
+					} else {
+						errors.put(x_errormessage);
+					} 
  			  ]| 
  			  
   generate-type-if-check-create: [] -> []
@@ -240,20 +264,24 @@ rules //edit
  			; x_mappername := $[mapperNew[x_entity]] // TODO: should do something with flatten hirarchie
  			; statement :=  webdsl 
  			  |[
-				  	var localErrors := JSONArray();
-				  	var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;
-				  	if (entity == null) {
-				  		localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
-				  	} else {
-				  		x_mappername(entity, entities.getJSONObject(count), localErrors);
-				  		var exceptions := entity.validateSave();
-					    addValidateExceptionsToErrors(exceptions, localErrors);
-				  	}
-				  	if(localErrors.length() > 0) {
-				  		rollback := true; //workaround problems webdsl
-				  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
-						errors.put(jsonErrorObject);
-				  	}
+ 			  	if(x_entity.mayCreateSynchronize()) {
+ 			  		for ( count : Int from 0 to entities.length() ) {
+					  	var localErrors := JSONArray();
+					  	var entity := ( loadEntity(x_entityname, entities.getJSONObject(count).getString("id").parseUUID()) as x_entity ) ;
+					  	if (entity == null) {
+					  		localErrors.put(makeJSONErrorObject("Object does not exist", "warning") );	
+					  	} else {
+					  		x_mappername(entity, entities.getJSONObject(count), localErrors);
+					  		var exceptions := entity.validateSave();
+						    addValidateExceptionsToErrors(exceptions, localErrors);
+					  	}
+					  	if(localErrors.length() > 0) {
+					  		rollback := true; //workaround problems webdsl
+					  		var jsonErrorObject := makeJSONEntityErrorObject(localErrors, x_entityname, entities.getJSONObject(count).getString("id"));
+							errors.put(jsonErrorObject);
+					  	}
+					}
+				 }
  			  ]| 
 
 rules // if-else-kind-check 
@@ -267,9 +295,7 @@ rules // if-else-kind-check
 	 		; x_entityname := String(x) 
 	 		; statement := webdsl |[
 	 			if(kind == x_entityname) {
-					for ( count : Int from 0 to entities.length() ) {
-				  		stat_innerblock
-				 	}
+				  	stat_innerblock
 				} else {
 					stat_else
 				}	 		  	
