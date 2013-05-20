@@ -20,13 +20,15 @@ imports
  
 rules 
 
-  generate-mobl-model: (selected, position, ast, path, project-path) -> None()
+  generate-mobl-model-builder: (selected, position, ast, path, project-path) -> None()
     where 	<try(simplify-application-constructor); ?Application(_, _) > ast
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
-        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-  	where	
-  			topEntity* := <declare-top-entities> ast
-  			; dirname := "webservices/mobl"
+        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks  
+        	; topEntity* := <declare-top-entities> ast
+        	; <generate-mobl-model(|project-path)>  topEntity*    
+  	
+  generate-mobl-model(|project-path): topEntity* -> topEntity*
+  	where	dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname
   			; <map(Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property)> topEntity* 
   			; entities := <all-keys-EntDecl> None()	 

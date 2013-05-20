@@ -8,9 +8,10 @@ imports
   	libwebdsl-front
   	
   	entity-extraction/generate-entity-files
-	
+	webservices-generation/json
 	webservices-generation/overlays
 	webservices-generation/mapper
+	webservices-generation/mobl/model-to-mobl
 	webservices-generation/mobl/mapper
 	webservices-generation/mobl/sync-services
 	webservices-generation/sync-services
@@ -30,8 +31,10 @@ rules
   	where 	<try(simplify-application-constructor); ?Application(_, _) > ast
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-        	  
+        	   
   	where	topEntity* := <declare-top-entities> ast
+  			; <generate-mobl-model(|project-path)> topEntity*   
+  			; <generate-json-functions-for-entities> project-path
   			; <generate-related-entities-functions> project-path
   			; <generate-access-control-entities-functions> project-path 
   			; dirname := DirServices()

@@ -19,10 +19,13 @@ imports
 
 rules //builder
 	
-  generate-json-functions-for-entities: (selected, position, ast, path, project-path) -> None()
+  generate-json-functions-for-entities-builder: (selected, position, ast, path, project-path) -> None()
   	where 	<try(simplify-application-constructor); ?Application(_, _) > ast
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  			;  <generate-json-functions-for-entities> project-path
+  			 
+ generate-json-functions-for-entities: project-path -> project-path
   	where	dirname := "webservices/json"
   			; <create-dir-in-workspace> dirname 
   			; entities := <all-keys-EntDecl> None()	 
