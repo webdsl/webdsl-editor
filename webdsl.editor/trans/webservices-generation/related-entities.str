@@ -38,9 +38,9 @@ rules//file generation
 	  		   ; write-ast-to-file(|filename)> t  
 	
   make-valid-page-with-extends-entity-for-related-functions(|dirname) : (x_entityName,props) ->
-		ModuleDefs(dirname, def, [])
+		ModuleDefs(dirname, def2, [])
 	where	ebd0* := [<build-related-entities-function>props]
-	 	 	; def := def* 
+	 	 	; def2 := def* 
 	 		  	|[
 	 		  		extend entity x_entityName {
 	 		  			ebd0*
@@ -50,7 +50,7 @@ rules//file generation
 rules//transformation
 	
   build-related-entities-function: props -> function
-	 where 	filterdProperties := <filter(not(is-simple-prop))> props  
+	 where 	filterdProperties := <filter(not(get-property-type;is-simple-sort))> props  
 	 		; stat_puts* := <filter(property-to-add)> filterdProperties
 			; function := def 
 			  |[ 

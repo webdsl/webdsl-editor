@@ -80,7 +80,7 @@ rules //file generation
 rules //transformation
 	
 	build-simple-json-function: props -> function
-	 where 	filterdProperties := <filter(where(is-simple-prop); not(?VersionProperty1() + ?NameProperty1()))> props  
+	 where 	filterdProperties := <filter(where(get-property-type;is-simple-sort); not(?VersionProperty1() + ?NameProperty1()))> props  
 	 		; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
 	 		; function := fun 
 	 		  |[
