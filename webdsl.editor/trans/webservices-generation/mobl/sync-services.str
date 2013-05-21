@@ -18,7 +18,7 @@ rules
   generate-mobl-services: x -> x
 	where  dirname := "webservices/mobl"
   			; <create-dir-in-workspace> dirname
-  			; generate-mobl-unsynced-functions  
+  			// ; generate-mobl-unsynced-functions  
   			; generate-mobl-top-level-service
   			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> None()	// TODO : flatten - removes subentities
   			; <map(generate-mobl-sync-service)> entities
@@ -38,7 +38,6 @@ rules
   			  |[
   			  	import webservices::mobl::mapper
   			  	import webservices::mobl::model
-  			  	import webservices::mobl::unsync
   			  	import webservices::mobl::simpleView
   			  ]|  
   			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, newsyncfunction, clearEditFunction, clearNewFunction, restoreFunction, 
@@ -432,21 +431,36 @@ rules//some sync integration
   			]|		
 
   generate-mobl-restore-object-function: entities -> function
-  	where 	stat_ifs := <map(generate-mobl-restore-single-object-from-JSON)>entities
+  	where 	stat_ifs := <generate-mobl-restore-single-object-from-JSON> entities
   			; function := mobl-def	
   			|[
   				function restoreObject ( type : String , ent : JSON ) {
 				  	stat_ifs
 				}
   			]|
-  generate-mobl-restore-single-object-from-JSON: x_entity -> statement
+  generate-mobl-restore-single-object-from-JSON: [x_entity] -> statement
   	where  	x_entityString := String(x_entity)
   			; statement :=mobl-stat* 
   			|[
   				if ( type == x_entityString ) {
 				      x_entity . fromSelectJSON ( ent );
-				}
+				} 
+					
   			]|	
+ 
+ generate-mobl-restore-single-object-from-JSON: [x_entity|xs] -> statement
+  	where  	x_entityString := String(x_entity)
+  			; stat_else := <generate-mobl-restore-single-object-from-JSON> xs
+  			; statement :=mobl-stat* 
+  			|[
+  				if ( type == x_entityString ) {
+				      x_entity . fromSelectJSON ( ent );
+				} else{
+					stat_else
+				} 
+					
+  			]|	
+  			
   			
 rules //authentication		
   	generate-mobl-authenication-service-entry-points: x -> services
