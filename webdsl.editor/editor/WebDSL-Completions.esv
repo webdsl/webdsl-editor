@@ -139,5 +139,5 @@ completions
   completion template  EntityBodyDeclaration : <name> " -> " <Entity>
   completion template  EntityBodyDeclaration : "function " <name> "(x : Type, y : Type) : ReturnType {\n\t\n}" (blank) 
   completion template  EntityBodyDeclaration : "function " <name> "() {\n\t\n}" (blank)
-  
+  completion template  EntityBodyDeclaration : "webservice mapping {\n\t\n}" (blank)
    
