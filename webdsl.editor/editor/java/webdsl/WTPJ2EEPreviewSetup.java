@@ -80,8 +80,8 @@ public class WTPJ2EEPreviewSetup  {
      }
 
      public IRuntime createWebDSLJ2EEPreviewRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
-             IRuntimeType tomcat6runtimetype = getJ2EEPreviewRuntimeType();
-             IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(j2eepreviewruntimeid, monitor);
+             IRuntimeType tomcatRuntimeType = getJ2EEPreviewRuntimeType();
+             IRuntimeWorkingCopy rwc = tomcatRuntimeType.createRuntime(j2eepreviewruntimeid, monitor);
              rwc.setName(j2eepreviewruntimename);
              IRuntime rt = rwc.save(true, monitor);
              System.out.println("created runtime: "+rt);

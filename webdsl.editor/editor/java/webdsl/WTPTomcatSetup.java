@@ -34,13 +34,13 @@ public class WTPTomcatSetup  {
      public String webdslversion = 
          getWebDSLVersion();
      public String tomcatruntimeid = 
-         "webdsl_tomcat6runtime" + webdslversion; 
+         "webdsl_tomcat7runtime" + webdslversion; 
      public String tomcatruntimename = 
-         "Runtime Tomcat v6.0 WebDSL v" + webdslversion; 
+         "Runtime Tomcat v7.0 WebDSL v" + webdslversion; 
      public String tomcatserverid = 
-         "webdsl_tomcat6server" + webdslversion; 
+         "webdsl_tomcat7server" + webdslversion; 
      public String tomcatservername = 
-         "Tomcat v6.0 Server WebDSL v" + webdslversion; 
+         "Tomcat v7.0 Server WebDSL v" + webdslversion; 
      
      public String writeTomcatConfigFile(String plugindir){
          IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -80,7 +80,7 @@ public class WTPTomcatSetup  {
      }
      
      public IRuntimeType getTomcatRuntimeType(){
-         return getRuntimeType("Apache Tomcat v6.0");
+         return getRuntimeType("Apache Tomcat v7.0");
      }
      
      public IRuntime getWebDSLTomcatRuntime(){
@@ -88,10 +88,10 @@ public class WTPTomcatSetup  {
      }
 
      public IRuntime createWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor) throws CoreException{
-             IRuntimeType tomcat6runtimetype = getTomcatRuntimeType();
-             IRuntimeWorkingCopy rwc = tomcat6runtimetype.createRuntime(tomcatruntimeid, monitor);
+             IRuntimeType tomcatRuntimeType = getTomcatRuntimeType();
+             IRuntimeWorkingCopy rwc = tomcatRuntimeType.createRuntime(tomcatruntimeid, monitor);
              rwc.setLocation(Path.fromOSString(plugindir+"/webdsl-template/tomcat/tomcat"));
-             //System.out.println("Location of Tomcat 6 runtime: "+rwc.getLocation());
+             //System.out.println("Location of Tomcat runtime: "+rwc.getLocation());
              rwc.setName(tomcatruntimename);
              IRuntime rt = rwc.save(true, monitor);
              System.out.println("created runtime: "+rt);
@@ -99,15 +99,15 @@ public class WTPTomcatSetup  {
      }
      
      /**
-      * add tomcat 6 runtime for webdsl plugin if not created yet
+      * add tomcat runtime for webdsl plugin if not created yet
       */
      public IRuntime getOrCreateWebDSLTomcatRuntime(String plugindir, IProgressMonitor monitor)throws CoreException{
-         IRuntime plugintomcat6runtime = getWebDSLTomcatRuntime();
-         if(plugintomcat6runtime == null){
-             plugintomcat6runtime = createWebDSLTomcatRuntime(plugindir,monitor);
+         IRuntime pluginTomcatRuntime = getWebDSLTomcatRuntime();
+         if(pluginTomcatRuntime == null){
+             pluginTomcatRuntime = createWebDSLTomcatRuntime(plugindir,monitor);
          }
-         System.out.println("get or create runtime: "+plugintomcat6runtime);
-         return plugintomcat6runtime;
+         System.out.println("get or create runtime: "+pluginTomcatRuntime);
+         return pluginTomcatRuntime;
      }
      
      
@@ -116,22 +116,22 @@ public class WTPTomcatSetup  {
      }
      
      public IServer createWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
-         IRuntime plugintomcat6runtime = getOrCreateWebDSLTomcatRuntime(plugindir,monitor);
-         IRuntimeType tomcat6runtimetype = getTomcatRuntimeType();
-         IServerType st = getCompatibleServerType(tomcat6runtimetype);
+         IRuntime pluginTomcatRuntime = getOrCreateWebDSLTomcatRuntime(plugindir,monitor);
+         IRuntimeType tomcatRuntimeType = getTomcatRuntimeType();
+         IServerType st = getCompatibleServerType(tomcatRuntimeType);
          //System.out.println(st);
-         IServer plugintomcat6server = null;
-         IServerWorkingCopy server = st.createServer(tomcatserverid, null, plugintomcat6runtime, monitor);
+         IServer pluginTomcatServer = null;
+         IServerWorkingCopy server = st.createServer(tomcatserverid, null, pluginTomcatRuntime, monitor);
          server.setName(tomcatservername);
-         plugintomcat6server = server.saveAll(true, monitor); //saveAll will also save ServerConfiguration and Runtime if they were still WorkingCopy
-         System.out.println("created server: "+plugintomcat6server);
+         pluginTomcatServer = server.saveAll(true, monitor); //saveAll will also save ServerConfiguration and Runtime if they were still WorkingCopy
+         System.out.println("created server: "+pluginTomcatServer);
          
          copyKeystoreFile(project, plugindir);         
 
          writeTomcatConfigFile(plugindir);
-         plugintomcat6server.publish(IServer.PUBLISH_CLEAN, monitor);
+         pluginTomcatServer.publish(IServer.PUBLISH_CLEAN, monitor);
          
-         return plugintomcat6server;
+         return pluginTomcatServer;
      }
      
      public void copyKeystoreFile(IProject project, String plugindir){
@@ -143,20 +143,20 @@ public class WTPTomcatSetup  {
      }
      
      /**
-      * add tomcat 6 server for webdsl plugin of not created yet
+      * add tomcat server for webdsl plugin of not created yet
       */
      public IServer getOrCreateWebDSLTomcatServer(IProject project, String plugindir, IProgressMonitor monitor) throws CoreException{
-         IServer plugintomcat6server = getWebDSLTomcatServer(project,monitor);
-         if(plugintomcat6server==null){
-             plugintomcat6server = createWebDSLTomcatServer(project, plugindir, monitor);
+         IServer pluginTomcatServer = getWebDSLTomcatServer(project,monitor);
+         if(pluginTomcatServer==null){
+             pluginTomcatServer = createWebDSLTomcatServer(project, plugindir, monitor);
          }
-         System.out.println("get or create server: "+plugintomcat6server);
-         return plugintomcat6server;
+         System.out.println("get or create server: "+pluginTomcatServer);
+         return pluginTomcatServer;
      }
      
      public void initWtpServerConfig(String plugindir, final IProject project, final String projectName, IProgressMonitor monitor) throws CoreException{
-         IServer plugintomcat6server = getOrCreateWebDSLTomcatServer(project,plugindir,monitor);
-         addProjectModuleToServer(project,plugintomcat6server,monitor);
+         IServer pluginTomcatServer = getOrCreateWebDSLTomcatServer(project,plugindir,monitor);
+         addProjectModuleToServer(project,pluginTomcatServer,monitor);
      }
      
 }
