@@ -59,7 +59,7 @@ public class WTPJ2EEPreviewSetup  {
          configFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
          configFile.append("\t<launchConfiguration type=\"org.eclipse.jst.server.preview.launchConfigurationType\">\n");
          configFile.append("\t<booleanAttribute key=\"org.eclipse.jdt.launching.DEFAULT_CLASSPATH\" value=\"true\"/>\n");
-         configFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Xss8m -Xms48m -Xmx1024m -XX:MaxPermSize=384m\"/>\n");
+         configFile.append("\t<stringAttribute key=\"org.eclipse.jdt.launching.VM_ARGUMENTS\" value=\"-Xss8m -Xms48m -Xmx1024m -XX:MaxPermSize=128m\"/>\n");
          configFile.append("\t<stringAttribute key=\"server-id\" value=\""+j2eepreviewserverid+"\"/>\n");
          configFile.append("</launchConfiguration>\n");
          try {
