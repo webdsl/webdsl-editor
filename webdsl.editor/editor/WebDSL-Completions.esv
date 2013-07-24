@@ -140,4 +140,6 @@ completions
   completion template  EntityBodyDeclaration : "function " <name> "(x : Type, y : Type) : ReturnType {\n\t\n}" (blank) 
   completion template  EntityBodyDeclaration : "function " <name> "() {\n\t\n}" (blank)
   completion template  EntityBodyDeclaration : "webservice mapping {\n\t\n}" (blank)
+  
+  completion template  WebServiceMappingOption : "toplevel with name property :" <PropertyName> (blank)
    
