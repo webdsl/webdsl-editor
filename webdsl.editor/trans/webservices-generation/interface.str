@@ -130,7 +130,7 @@ rules// generation
   	 
   generate-top-level-webservice: x -> service
  	where 	x_varname := <new> "ent"
- 			; topEntities := <TopEntity ; map(Fst)>
+ 			; topEntities := <TopEntity2 ; map(Fst)>
             ; stat_loops* := <map(generate-top-level-webservice-forloops)> topEntities
             ; body := webdsl 
               |[

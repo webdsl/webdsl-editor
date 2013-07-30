@@ -1,3 +1,9 @@
+/webdsl.editor/.dependencies.webdsl
+/webdsl.editor/test/.dependencies.webdsl
+/webdsl.editor/test/.servletapp/src-webdsl-template/built-in.app
+/webdsl.editor/test/test2/.dependencies.webdsl
+/webdsl.editor/test/test2/.servletapp/src-webdsl-template/built-in.app
+/webdsl.editor/utils/StrategoMix.def
 webdsl.editor/.cache/*
 webdsl.editor/webdslzip/*
 webdsl.editor/dr-analysis/bin/*
