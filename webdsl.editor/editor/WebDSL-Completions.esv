@@ -141,8 +141,16 @@ completions
   completion template  EntityBodyDeclaration : "function " <name> "() {\n\t\n}" (blank)
   completion template  EntityBodyDeclaration : "synchronization configuration mapping {\n\t\n}" (blank)
   
-  completion template  WebServiceMappingOption : "toplevel name property :" <PropertyName> (blank)
+  completion template  SyncOption : "toplevel name property :" <PropertyName> (blank)
   
-  completion template  WebServiceMappingOption : "Restricted properties :" <PropertyName> (blank)
+  completion template  SyncOption : "Restricted properties :" <PropertyName> (blank)
+  
+  completion template  SyncOption : "access read:" <Exp> (blank)
+  
+  completion template  SyncOption : "access write:" <Exp> (blank)
+
+  completion template  SyncOption : "access create:" <Exp> (blank)
+
+
   
    
