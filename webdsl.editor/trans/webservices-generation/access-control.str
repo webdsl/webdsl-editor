@@ -49,29 +49,34 @@ rules
   	 												<build-access-control-entities-functions-create>]
 	
  	build-access-control-entities-functions-read: x_entityname -> function
-		where 	function := def 
+		where e_exp := <SyncACRead <+ !exp|[true]|> x_entityname
+			  ; function := def 
 			  |[ 
 			  	function mayReadSynchronize() : Bool {
-			  		return true;
+			  		return e_exp;
 			  	}
 			  ]|
+	
  
  	build-access-control-entities-functions-modify: x_entityname -> function
-		where 	function := def 
+		where e_exp := <SyncACWrite <+ !exp|[true]|> x_entityname 	
+			; function := def 
 			  |[ 
 			  	function mayModifySynchronize() : Bool {
-			  		return true;
+			  		return e_exp;
 			  	}
 			  ]|
 	
 	build-access-control-entities-functions-create: x_entityname -> function
-	 	where 	function := webdsl 
+	 	where e_exp := <SyncACCreate <+ !exp|[true]|> x_entityname	
+	 		; function := webdsl 
 			  |[ 
 			  	static function  mayCreateSynchronize() : Bool {
-			  		return true;
+			  		return e_exp;
 			  	}
 			  ]|
 			  
 			  
-			  
+	build-access-control-entities-functions-read-exp: entity -> exp
+		where exp := <SyncACRead> entity	  
   						 			  	
