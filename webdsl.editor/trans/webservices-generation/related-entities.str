@@ -145,7 +145,7 @@ rules // main file
 				]| 
 
 	is-top-level-entity-function: x -> function
-		where 	e_tlentities* := <TopEntity2; map(Fst;\x -> String(x)\)>
+		where 	e_tlentities* := <all-keys-TopEntity; map(\x -> String(x)\)>
 				; function := def* 
 					|[
 						function isTopLevelEntity(ent : Entity) : Bool {

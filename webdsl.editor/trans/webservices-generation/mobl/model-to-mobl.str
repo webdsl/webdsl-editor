@@ -24,7 +24,7 @@ rules
     where 	<try(simplify-application-constructor); ?Application(_, _) > ast
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks  
-        	; topEntity* := <declare-top-entities> ast
+        	; topEntity* := <get-all-top-entity-tuples>
         	; <generate-mobl-model(|project-path)>  topEntity*    
   	
   generate-mobl-model(|project-path): topEntity* -> topEntity*

@@ -56,13 +56,15 @@ rules
   	where  	parent := <Extends>  entityname
   			; not(?<"Entity"> parent)
   	
-  declare-top-entities: ast -> topEntity*
-  	where 	topEntity* := <collect-all(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
-  			; rules (TopEntity2 := topEntity* )		  
+  // declare-top-entities: ast -> topEntity*
+  // 	where topEntity* := <collect-all(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
+  // 		; rules (TopEntity2 := topEntity* )		  
   
   is-top-entity-by-dr: entityName -> entityName
-  	where	TopEntities:= <TopEntity2>
-  			; <map(Fst); fetch-elem(?entityName)> TopEntities
+  	where <TopEntity> entityName
+  
+  get-all-top-entity-tuples: x-> topents
+ 	where topents := <all-keys-TopEntity; map(\y -> (y, <TopEntity> y)\)>
   
   is-top-entity-mobl-by-dr: entityName -> entityName
   	where 	get-subclasses-of-entity

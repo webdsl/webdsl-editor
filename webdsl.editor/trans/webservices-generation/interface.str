@@ -32,7 +32,7 @@ rules
   	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
         	   
-  	where	topEntity* := <declare-top-entities> ast
+  	where	topEntity* := <get-all-top-entity-tuples>
   			; <generate-mobl-model(|project-path)> topEntity*   
   			; <generate-json-functions-for-entities> project-path
   			; <generate-related-entities-functions> project-path
@@ -130,7 +130,7 @@ rules// generation
   	 
   generate-top-level-webservice: x -> service
  	where 	x_varname := <new> "ent"
- 			; topEntities := <TopEntity2 ; map(Fst)>
+ 			; topEntities := <all-keys-TopEntity>
             ; stat_loops* := <map(generate-top-level-webservice-forloops)> topEntities
             ; body := webdsl 
               |[
