@@ -13,23 +13,22 @@ imports
 rules 
 	
   make-mobl-mapper-for-all-entities: x -> x
-  	where	dirname := "webservices/mobl"
-  			; <create-dir-in-workspace> dirname  
-  			; entities := <all-keys-EntDecl> None()	  
-  			; filteredEntities := <filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> entities
-  			; entitymappers := <map( make-mobl-mapper-for-entity)>
-  			; importstate := mobl-def |[import webservices::mobl::model]|
-  			; result := <concat> [entitymappers, <default-mappers>, <generate-mobl-authenication-service-mappers <+ ![]>, [importstate, <topEntities-mobl-mapper>]]
-  			; <make-valid-page-from-mobl-defs(|dirname, "mapper")> result
-  			; module-to-moblfile(|dirname, "mapper")
-  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+  	with dirname := "webservices/mobl"
+  		; <create-dir-in-workspace> dirname  
+  		; entities := <all-keys-EntDecl> None()	  
+  		; filteredEntities := <filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> entities
+  		; entitymappers := <map( make-mobl-mapper-for-entity)>
+  		; importstate := mobl-def |[import webservices::mobl::model]|
+  		; result := <concat> [entitymappers, <default-mappers>, <generate-mobl-authenication-service-mappers <+ ![]>, [importstate, <topEntities-mobl-mapper>]]
+  		; <make-valid-page-from-mobl-defs(|dirname, "mapper")> result
+  		; module-to-moblfile(|dirname, "mapper")
+  		; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
 		 
- 
   make-mobl-mapper-for-entity: x_name -> mapper
-	where 	x_functionName := $[[x_name]Mapper]
-            ; mapper := mobl-stat 
-              |[
-              	function x_functionName (json : JSON) {
+	with x_functionName := $[[x_name]Mapper]
+        ; mapper := mobl-stat 
+        	|[
+            	function x_functionName (json : JSON) {
    		 			if (json.errors && json.errors.length > 0) {
       					log(json.errors);
     				} else {
@@ -38,23 +37,23 @@ rules
       					}
     				}
   				}	
-              ]|
+			]|
   
   topEntities-mobl-mapper: x -> mapper
-	where 	stat_typeif* := <map(Fst; generate-mobl-topentity-check)> <TopEntity>
-			; mapper := mobl-stat 
-              |[
+	with stat_typeif* := <map(generate-mobl-topentity-check)> <all-keys-TopEntity>
+		; mapper := mobl-stat 
+        	|[
               	function TopLevelEntities_Mapper (json : JSON) {
       				foreach(topent : JSON in json.result) {
 						stat_typeif*
       				}
   				}	
-              ]|
+            ]|
   
   generate-mobl-topentity-check: x_entity -> statement
-  	where  	x_entityString := String(x_entity)
-  			; x_parent := <find-highest-parent> x_entity
-  			; statement := mobl-stat* 
+  	with x_entityString := String(x_entity)
+  		; x_parent := <find-highest-parent> x_entity
+  		; statement := mobl-stat* 
   			|[
   				if ( topent.name == x_entityString ) {
   					foreach(ent : JSON in topent.value) {
@@ -66,8 +65,8 @@ rules
   			]|	
               
   default-mappers: x -> mapper
-    where 	mapper := mobl-stat* 
-              |[
+    with mapper := mobl-stat* 
+			|[
               	function timeStampMapper (json : JSON) : Num {
    		 			if (json.errors && json.errors.length > 0) {
       					log(json.errors);
@@ -87,29 +86,27 @@ rules
       					return json.errors;
     				}
   				}		 
-  				]|
+			]|
 
-rules //authentication		 				
-  	generate-mobl-authenication-service-mappers: x -> services
-		where 
-			principal := <PrincipalDecl>
-			; services :=  mobl-def* 
-			  |[
-			  	   	function boolMapper ( json : JSON ) : Bool {
-					    if ( json . errors && json . errors . length > 0 )
-					    {
-					      log(json.errors);
-					    }
-					    	return json.result;
-					}
-					
-					function deviceKeyMapper ( json : JSON ) : String {
-					    if ( json . errors && json . errors . length > 0 )
-					    {
-					      log(json.errors);
-					    }
-					    	return json.result;
-					}
-			  ]|
-  
-  
+rules //authentication
+			 				
+  generate-mobl-authenication-service-mappers: x -> services
+	where principal := <PrincipalDecl>
+	with services := mobl-def* 
+			|[
+				function boolMapper ( json : JSON ) : Bool {
+				    if ( json . errors && json . errors . length > 0 )
+				    {
+				      log(json.errors);
+				    }
+				    	return json.result;
+				}
+				
+				function deviceKeyMapper ( json : JSON ) : String {
+				    if ( json . errors && json . errors . length > 0 )
+				    {
+				      log(json.errors);
+				    }
+				    	return json.result;
+				}
+			]|  

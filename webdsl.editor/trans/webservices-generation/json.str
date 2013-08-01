@@ -20,197 +20,196 @@ imports
 rules //builder
 	
   generate-json-functions-for-entities-builder: (selected, position, ast, path, project-path) -> None()
-  	where 	<try(simplify-application-constructor); ?Application(_, _) > ast
-  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
-        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-  			;  <generate-json-functions-for-entities> project-path
+  	where <try(simplify-application-constructor); ?Application(_, _) > ast
+  	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  		; <generate-json-functions-for-entities> project-path
   			 
- generate-json-functions-for-entities: project-path -> project-path
-  	where	dirname := "webservices/json"
-  			; <create-dir-in-workspace> dirname 
-  			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities  
-  			; <try(map(make-entity-with-properties))> entities  // TODO : for store rename props  + add-anno for getting rename working
-  			; properties := <map(all-properties-including-entity-properties)> filteredEntities 
-  			; result:= <map(props-to-jsonfile(|dirname))> properties
-  			; <main-file-to-file(generate-main-model-file(|dirname, [<MakeJSONFromRefFunction>None()])|dirname)> filteredEntities  
-  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+  generate-json-functions-for-entities: project-path -> project-path
+  	with dirname := "webservices/json"
+  		; <create-dir-in-workspace> dirname 
+  		; entities := <all-keys-EntDecl> None()	 
+  		; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities  
+  		; <try(map(make-entity-with-properties))> entities  //for store rename props  + add-anno for getting rename working
+  		; properties := <map(all-properties-including-entity-properties)> filteredEntities 
+  		; result:= <map(props-to-jsonfile(|dirname))> properties
+  		; <main-file-to-file(generate-main-model-file(|dirname, [<MakeJSONFromRefFunction>None()])|dirname)> filteredEntities  
+  		; <refresh-workspace-file> $[[project-path]/[dirname]]  
 			
   generate-json-functions-for-entities: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
 	where not (<?ApplicationDefs(_, _, _) <+ ?Application(_, _) > ast)
-	where fatal-err-msg(|"This builder is only supported on the application file")
+	with fatal-err-msg(|"This builder is only supported on the application file")
 	
 rules //lookup
 	
   all-properties-including-entity-properties: entityName -> (entityName, props*)
-  	where 	extraprops :=  <map(add-anno(|FromEntity(entityName)))> <(get-extra-type-property; MkSingleton ) <+ ![]> entityName //TODO :extra prop added
-  			; props := <concat> [<all-properties-with-entity-anno> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1(), extraprops]
-  			; props* := <map(rename-prop-by-dr)> props //check for overwriting of nameProperty
+  	with  extraprops :=  <map(add-anno(|FromEntity(entityName)))> <(get-extra-type-property; MkSingleton ) <+ ![]> entityName //extra prop added
+  		; props := <concat> [<all-properties-with-entity-anno> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1(), extraprops]
+  		; props* := <map(rename-prop-by-dr)> props //check for overwriting of nameProperty
  
   get-extra-type-property: entityname -> property
-  	where 	superclass := <Extends> entityname
-  			; not (<?"Entity"> superclass)
-  			; property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 		
+  	where superclass := <Extends> entityname
+  	where not (<?"Entity"> superclass)
+  	with property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 		
   
   get-extra-type-property: entityname -> property
-  	where 	<SubClass> entityname
-  			; property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 				  	  
+  	where <SubClass> entityname
+  	with property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 
+  					  	  
 rules //file generation 
 	
-	props-to-jsonfile(|dirname): t@(name,props) -> t
-  	with	<file-exists> $[[<project-path>]/[dirname]]
-  			; filename := $[[<project-path>]/[dirname]/[name].app]
-	  		; <make-valid-page-with-extends-entity(|$[[dirname]/[name]])
-	  		   ; write-ast-to-file(|filename)> t  
+ props-to-jsonfile(|dirname): t@(name,props) -> t
+  	with <file-exists> $[[<project-path>]/[dirname]]
+  		; filename := $[[<project-path>]/[dirname]/[name].app]
+	  	; <make-valid-page-with-extends-entity(|$[[dirname]/[name]])
+	  	; write-ast-to-file(|filename)> t  
 	
-	make-valid-page-with-extends-entity(|dirname) : (x_entityname ,props) ->
-		ModuleDefs(dirname, body, [])
-	 where 	parents := <get-superclasses-of-entity; filter(not(?"Entity"))> x_entityname
-	 		; ebd1 := <build-simple-json-function> props
-	 		; ebd2 := <build-json-function> props 
-	 		; ebd3 := <build-minimal-json-function> props
-	 		; ebd4* := <map(build-json-from-super-function)> parents
-	 		; body := def* 
-	 		  	|[
-	 		  		extend entity x_entityname {
-	 		  			ebd1
-	 		  			ebd2 
-	 		  			ebd3
-	 		  			ebd4*
-	 		  		}
-	 		  	]|
+  make-valid-page-with-extends-entity(|dirname): (x_entityname ,props) -> ModuleDefs(dirname, body, [])
+	 with parents := <get-superclasses-of-entity; filter(not(?"Entity"))> x_entityname
+	 	; ebd1 := <build-simple-json-function> props
+	 	; ebd2 := <build-json-function> props 
+	 	; ebd3 := <build-minimal-json-function> props
+	 	; ebd4* := <map(build-json-from-super-function)> parents
+	 	; body := def* 
+	 		|[
+	 		  	extend entity x_entityname {
+	 		  		ebd1
+	 		  		ebd2 
+	 		  		ebd3
+	 		  		ebd4*
+	 		  	}
+	 		]|
 	  
 rules //transformation
 	
-	build-simple-json-function: props -> function
-	 where 	filterdProperties := <filter(where(get-property-type;is-simple-sort); not(?VersionProperty1() + ?NameProperty1()))> props  
-	 		; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
-	 		; function := fun 
-	 		  |[
-	 		  	 function toSimpleJSON () : JSONObject {
-	 		  	 	var object := JSONObject();
-	 		  	 	stat_puts
+  build-simple-json-function: props -> function
+	with filterdProperties := <filter(where(get-property-type;is-simple-sort); not(?VersionProperty1() + ?NameProperty1()))> props  
+	 	; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
+	 	; function := fun 
+	 		|[
+	 			function toSimpleJSON () : JSONObject {
+	 		  		var object := JSONObject();
+	 		  		stat_puts
 	 		  	 	return object;
-	 		  	 }
-	 		  ]| 
+	 		  	}
+	 		]| 
 	 		  	
-	build-minimal-json-function: props -> function
-	 where 	filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons))> props  
-	 		; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
-	 		; function := fun 
-	 		  |[
-	 		  	 function toMinimalJSON () : JSONObject {
-	 		  	 	var object := JSONObject();
+  build-minimal-json-function: props -> function
+	 with filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons))> props  
+	 	; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
+	 	; function := fun 
+	 		|[
+	 			function toMinimalJSON () : JSONObject {
+	 		  		var object := JSONObject();
 	 		  	 	stat_puts
 	 		  	 	return object;
-	 		  	 }
-	 		  ]| 
-	build-json-function: props -> function
-	 where	stat_puts := <filter(property-to-json)> props
-			; function := fun 
-	 		  |[
-	 		  	 function toJSON () : JSONObject {
-	 		  	 	var object := JSONObject();
+	 		  	}
+	 		]| 
+	 		
+  build-json-function: props -> function
+	 with stat_puts := <filter(property-to-json)> props
+		; function := fun 
+	 		|[
+	 			function toJSON () : JSONObject {
+	 		  		var object := JSONObject();
 	 		  	 	stat_puts
 	 		  	 	return object;
-	 		  	 }
-	 		  ]| 
+	 		  	}
+	 		]| 
 	
   build-json-from-super-function: super -> function
-	 where 	x_functionname := $[toJSONFromSuper[super]]
-	 		; props := <all-properties-including-entity-properties; Snd> super
-			; stat_puts := <filter(property-to-json)> props
-	 where	function := fun 
-	 		  |[
-	 		  	 function x_functionname () : JSONObject {
+	 with x_functionname := $[toJSONFromSuper[super]]
+	 	; props := <all-properties-including-entity-properties; Snd> super
+		; stat_puts := <filter(property-to-json)> props
+	 	; function := fun 
+	 		|[
+	 			function x_functionname () : JSONObject {
 					var object := JSONObject();
-	 		  	 		stat_puts
-	 		  	 		return object;
-	 		  	 }
-	 		  ]| 
+	 		  	 	stat_puts
+	 		  	 	return object;
+	 		  	}
+	 		]| 
 	 
-	property-to-json-without-null: property -> statements
-	 where	(?Property(x_name, _, type, _) 
-	 			<+ ?PropertyNoAnno(x_name, _, type)
-	 			<+ ?DerivedProperty(x_name, _, type, _, _)
-	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
-	 		; not (<?"typeField"> x_name)		// TODO: flatten hirarchie
-	 		; x_orgname := <try(get-original-propname-name)>  x_name //TODO : lookupname
-	 		; exp := <exp-to-value-statement> (x_orgname, type)  
-	 		; stat_put := <generate-json-put> (x_name, exp)
-	 		; statements := webdsl 
-	 		  |[
-	 		  	if (this.x_orgname != null) {
+  property-to-json-without-null: property -> statements
+	 where (?Property(x_name, _, type, _) 
+	 		<+ ?PropertyNoAnno(x_name, _, type)
+	 		<+ ?DerivedProperty(x_name, _, type, _, _)
+	 		<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	 where not (<?"typeField"> x_name)
+	 with x_orgname := <try(get-original-propname-name)>  x_name 
+	 where exp := <exp-to-value-statement> (x_orgname, type)  
+	 with stat_put := <generate-json-put> (x_name, exp)
+	 	; statements := webdsl 
+	 		|[
+	 			if (this.x_orgname != null) {
 	 		  		stat_put
 	 		  	} 
-	 		  ]|
+	 		]|
     
-    property-to-json-without-null: property -> stat |[object.put("typeField", x_entity);]|// TODO: flatten hirarchie
-    	where 	<get-property-name; ?"typeField"> property
-    			; x_entity := <get-anno(?FromEntity(x)); !String(x) > property
+  property-to-json-without-null: property -> stat |[object.put("typeField", x_entity);]|
+  	where <get-property-name; ?"typeField"> property
+    with x_entity := <get-anno(?FromEntity(x)); !String(x) > property
    
-   property-to-json: property -> statements
-	 where	(?Property(x_name, _, type, _) 
-	 			<+ ?PropertyNoAnno(x_name, _, type)
-	 			<+ ?DerivedProperty(x_name, _, type, _, _)
-	 			<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
-	 		; not (<?"typeField"> x_name)	// TODO: flatten hirarchie
-	 		; x_orgname := <try(get-original-propname-name)>  x_name //TODO : lookupname
-	 		; stat_pre := <property-to-value-array-pre(|)> (x_orgname, type) 
-	 		; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), x_orgname) else exp := Var($[array[x_orgname]]) end	
-	 		; value := <exp-to-value-statement> (exp, type)
-	 		; stat_else :=  <generate-json-put>(x_name, value)
-	 		; stat_if :=  <generate-json-put> (x_name, exp|[null as JSONObject]|)
-			; statements := webdsl 
-			  |[
-              	if (this.x_orgname == null) {
+  property-to-json: property -> statements
+	where (?Property(x_name, _, type, _) 
+			<+ ?PropertyNoAnno(x_name, _, type)
+	 		<+ ?DerivedProperty(x_name, _, type, _, _)
+	 		<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	where not (<?"typeField"> x_name)
+	with x_orgname := <try(get-original-propname-name)>  x_name 
+	 	; stat_pre := <property-to-value-array-pre(|)> (x_orgname, type) 
+	 	; if <?SimpleSort(_)> type then exp := FieldAccess(Var("this"), x_orgname) else exp := Var($[array[x_orgname]]) end	
+	 where value := <exp-to-value-statement> (exp, type)
+	 with stat_else :=  <generate-json-put>(x_name, value)
+	 	; stat_if :=  <generate-json-put> (x_name, exp|[null as JSONObject]|)
+		; statements := webdsl 
+			|[
+            	if (this.x_orgname == null) {
               		stat_if
               	} else {
               		stat_pre
               		stat_else
               	}
-              ]| 
+            ]| 
               
-      property-to-json: property -> stat |[object.put("typeField", x_entity);]| // TODO: flatten hirarchie
-    	where 	<get-property-name; ?"typeField"> property
-    			; x_entity := <get-anno(?FromEntity(x)); !String(x) > property
+  property-to-json: property -> stat |[object.put("typeField", x_entity);]| 
+  	where <get-property-name; ?"typeField"> property
+    with x_entity := <get-anno(?FromEntity(x)); !String(x) > property
   
   generate-json-put: (name, e_value) -> stat |[object.put(e_name, e_value);]|
-  	where e_name := String(name)
+  	with e_name := String(name)
               	
 rules//type transformation
 	
-	exp-to-value-statement: (exp, SimpleSort(type)) -> exp
-		where not (<?"Time" <+ ?"Date" <+ ?"WikiText"> type)
-		where	<fetch(?type)> ToMoblStringTypes <+
-					<fetch(?type)> ToMoblNumTypes
+  exp-to-value-statement: (exp, SimpleSort(type)) -> exp
+	where not (<?"Time" <+ ?"Date" <+ ?"WikiText"> type)
+	where <fetch(?type)> ToMoblStringTypes <+
+			<fetch(?type)> ToMoblNumTypes
 					
+  exp-to-value-statement: (exp, SimpleSort("Bool")) -> exp
 	
-	exp-to-value-statement: (exp, SimpleSort("Bool")) -> exp
-	
-	
-	exp-to-value-statement: (e1, SimpleSort("WikiText")) -> exp|[e1.format()]|
+  exp-to-value-statement: (e1, SimpleSort("WikiText")) -> exp|[e1.format()]|
 
-	exp-to-value-statement: (e1, SimpleSort(type)) -> exp|[e1.getTime() / 1000L]|
-		where 	<fetch(?type)> MoblDateTimeTypes          											 
+  exp-to-value-statement: (e1, SimpleSort(type)) -> exp|[e1.getTime() / 1000L]|
+	where <fetch(?type)> MoblDateTimeTypes          											 
  	
- 	exp-to-value-statement: (e1, type) -> exp|[makeJSONObjectFromEntityRef(e1)]|  
- 		where <is-entity-type> type
+  exp-to-value-statement: (e1, type) -> exp|[makeJSONObjectFromEntityRef(e1)]|  
+ 	where <is-entity-type> type
  	
- 	exp-to-value-statement: (exp, GenericSort(_, _)) -> exp
+  exp-to-value-statement: (exp, GenericSort(_, _)) -> exp
  		
-
-    property-to-value-array-pre: (x_name, GenericSort(sort, [x_t@SimpleSort(type)])) -> statements
-		where 	x_arrayname := $[array[x_name]]
-				; x_varname := <new> type
-				; e_value := <exp-to-value-statement>(exp|[x_varname]|, x_t)
-				; statements := webdsl 
-				  |[
-				  	var x_arrayname := JSONArray();
-				  	for(x_varname : x_t in this.x_name) {
-				  		x_arrayname.put(e_value);
-				  	}
-				  ]|
+  property-to-value-array-pre: (x_name, GenericSort(sort, [x_t@SimpleSort(type)])) -> statements
+	with x_arrayname := $[array[x_name]]
+		; x_varname := <new> type
+		; e_value := <exp-to-value-statement>(exp|[x_varname]|, x_t)
+		; statements := webdsl 
+			|[
+				var x_arrayname := JSONArray();
+				for(x_varname : x_t in this.x_name) {
+					x_arrayname.put(e_value);
+				}
+			]|
+			
 rules// not allowed types	
 	
 	// exp-to-value-statement: (name, SimpleSort("Patch")) -> None()
@@ -225,5 +224,5 @@ rules// not allowed types
 	// exp-to-value-statement: (name, SimpleSort("File")) -> None()
 	// 	where fail
 
-	property-to-value-array-pre: (name, type ) -> []
-		where not (<?GenericSort(_, _)> type)
+  property-to-value-array-pre: (name, type ) -> []
+	where not (<?GenericSort(_, _)> type)

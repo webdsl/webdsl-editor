@@ -10,26 +10,26 @@ imports
 rules 
 	
   make-mobl-model-viewers: moblentities-> moblentities
-  	where	dirname := "webservices/mobl"
-  			; <create-dir-in-workspace> dirname  
-  			; templates := <SimpleViewStandaardDefs> None()
-  			; views := <map(make-simple-view-for-mobl-entity)> moblentities  
-  			; syncView := <make-mobl-sync-view>
-  			; showObject := <make-show-object-control>  moblentities
-  			; defs := <concat>[templates, views, syncView,[showObject]]
-  			; result :=  < make-valid-page-from-mobl-defs(|dirname, "simpleView")> defs
-  			; module-to-moblfile(|dirname, "simpleView")
-  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+  	with dirname := "webservices/mobl"
+  		; <create-dir-in-workspace> dirname  
+  		; templates := <SimpleViewStandaardDefs> None()
+  		; views := <map(make-simple-view-for-mobl-entity)> moblentities  
+  		; syncView := <make-mobl-sync-view>
+  		; showObject := <make-show-object-control>  moblentities
+  		; defs := <concat>[templates, views, syncView,[showObject]]
+  		; result :=  < make-valid-page-from-mobl-defs(|dirname, "simpleView")> defs
+  		; module-to-moblfile(|dirname, "simpleView")
+  		; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
 
 rules 
 	
   make-simple-view-for-mobl-entity: EntityNoSuper(_, x_name, props) -> result
-	where 	se_properties* := <add-elem-to-list(|IdMoblProperty()); filter(mobl-property-to-view)> props
-			; x_pagename := $[show[x_name]Simple]
-			; e_name := $["[x_name]"]  
-	  		; result :=	 mobl-def 
-	  		  |[ 
-	  		  	control x_pagename ( ent : x_name ) {
+	with se_properties* := <add-elem-to-list(|IdMoblProperty()); filter(mobl-property-to-view)> props
+		; x_pagename := $[show[x_name]Simple]
+		; e_name := $["[x_name]"]  
+	  	; result :=	 mobl-def 
+	  		|[ 
+	  			control x_pagename ( ent : x_name ) {
 	  		  		header ( e_name ) {
       					backButton ( "back" , onclick = { back(); } )
     				}
@@ -37,110 +37,119 @@ rules
     					se_properties*
     				}
     			}
-	  		  ]| 
+	  		]| 
 
   mobl-property-to-view: Property(_, name, type, _) -> view 
-  	where 	view := <type-to-view> (name, type) 
+  	with view := <type-to-view> (name, type) 
   	
   mobl-property-to-view: PropertyNoAnnos(_, name, type) -> view
-  	where 	view := <type-to-view> (name, type) 
+  	with view := <type-to-view> (name, type) 
   	
 rules// transform types to viewcalls
 	
-  type-to-view : (x_name, SimpleType("String")) -> result
-  	where e_name := $["[x_name]"] 
- 		  ; result := mobl-elem	|[showTextField(e_name,ent.x_name)]|
+  type-to-view: (x_name, SimpleType("String")) -> result
+  	with e_name := $["[x_name]"] 
+ 		; result := mobl-elem	|[showTextField(e_name,ent.x_name)]|
  		     
-  type-to-view : (x_name, SimpleType("Bool")) -> result
-  	where 	e_name := $["[x_name]"] 
-   		  	; result := mobl-elem	|[showBoolField(e_name,ent.x_name)]|
+  type-to-view: (x_name, SimpleType("Bool")) -> result
+  	 with e_name := $["[x_name]"] 
+   		; result := mobl-elem	|[showBoolField(e_name,ent.x_name)]|
 
-  type-to-view : (x_name, SimpleType("Num")) -> result
-  	where 	e_name := $["[x_name]"] 
-   		  	; result := mobl-elem	|[showNumField(e_name,ent.x_name)]|
+  type-to-view: (x_name, SimpleType("Num")) -> result
+  	with e_name := $["[x_name]"] 
+   		; result := mobl-elem	|[showNumField(e_name,ent.x_name)]|
 
-  type-to-view : (x_name, SimpleType("DateTime")) -> result
-  	where 	e_name := $["[x_name]"] 
-			; result := mobl-elem	|[showDateTimeField(e_name,ent.x_name)]| 
+  type-to-view: (x_name, SimpleType("DateTime")) -> result
+  	with e_name := $["[x_name]"] 
+		; result := mobl-elem	|[showDateTimeField(e_name,ent.x_name)]| 
 
-  type-to-view : (x_name, SimpleType(type)) -> result
-  	where not	( <string-starts-with(|"generatedPropertyForInverse")> x_name 
-  				 	<+  <fetch-elem(?type)> ["Bool", "String", "Num", "DateTime"])
-  	where  	e_name := $["[x_name]"] 
-			; x_pagename := $[show[type]Simple]
-			; result := mobl-elem	|[showEntityField(e_name,ent.x_name,x_pagename)]|
+  type-to-view: (x_name, SimpleType(type)) -> result
+  	where not( <string-starts-with(|"generatedPropertyForInverse")> x_name 
+  			<+  <fetch-elem(?type)> ["Bool", "String", "Num", "DateTime"])
+  	with e_name := $["[x_name]"] 
+		; x_pagename := $[show[type]Simple]
+		; result := mobl-elem	|[showEntityField(e_name,ent.x_name,x_pagename)]|
 
- type-to-view : (x_name, GenericType(_, [SimpleType(type)])) -> result
-  	where not	( <string-starts-with(|"generatedPropertyForInverse")> x_name )
-  	where  	e_name := $["[x_name]"] 
-			; x_pagename := $[show[type]Simple]
-			; result := mobl-elem	|[showEntitiesField(e_name,ent.x_name,x_pagename)]|
+ type-to-view: (x_name, GenericType(_, [SimpleType(type)])) -> result
+  	where not ( <string-starts-with(|"generatedPropertyForInverse")> x_name )
+  	with e_name := $["[x_name]"] 
+		; x_pagename := $[show[type]Simple]
+		; result := mobl-elem	|[showEntitiesField(e_name,ent.x_name,x_pagename)]|
 
 rules// generate showObjectControl
 	
-	make-show-object-control: entities -> control
-		where	se_when* := <map(make-mobl-when-checks-for-entitie-views)> entities 	
-				; control := mobl-def 
-					|[
-						control showObject(type : String, id : String ){
-					  	 se_when*	
-					  }
-					]|
+  make-show-object-control: entities -> control
+		with se_when* := <map(make-mobl-when-checks-for-entitie-views)> entities 	
+			; control := mobl-def 
+				|[
+					control showObject(type : String, id : String ){
+						se_when*	
+					 }
+				]|
+				
 	make-mobl-when-checks-for-entitie-views:  EntityNoSuper(_, x_entity, _) -> when
-		where 	e_entity := $["[x_entity]"]
-				; x_viewname := $[show[x_entity]Simple]
-				; when := mobl-elem 
-				  	|[ 
-				  		when( type == e_entity ) {
-				  			x_viewname(x_entity.load(id))
-				  		}	
-				  	]|
+		with e_entity := $["[x_entity]"]
+			; x_viewname := $[show[x_entity]Simple]
+			; when := mobl-elem 
+				|[ 
+				  	when( type == e_entity ) {
+				  		x_viewname(x_entity.load(id))
+				  	}		
+				]|
 overlays
 	
 	ArgumentVarName = "ent" 
 	IdMoblProperty = mobl-entBodyElem |[ id : String ]| 
   			
 rules //overlays 
-	SimpleViewStandaardDefs : x -> defs
+	
+  SimpleViewStandaardDefs: x -> defs
 			// hack becuase of vardecl for action and UI are different. but this is not doable with current PP
-	where 	se_vardecl := VarDeclInferredContrElem( "collection", CollectionCons( "Collection"
-  				, [ GenericType( "Tuple2", [SimpleType("JSON"), GenericType("Control2", [SimpleType("String"), SimpleType("String")])])]
-  				, [] ))
-			; defs := mobl-def* 
+	with se_vardecl := VarDeclInferredContrElem( "collection", CollectionCons( "Collection"
+                        , [ GenericType( "Tuple2", [SimpleType("JSON"), GenericType("Control2", [SimpleType("String"), SimpleType("String")])])]
+  				        , [] ))
+		; defs := mobl-def* 
 			|[
 				import webservices::mobl::model
 				import mobl::ui::generic
 				import mobl::ui::generic::datepicker
+			
 				screen showControl (viewer : Control1< Entity<?> >, value : Entity<?>) {
 				  viewer(value)
 				}
+			
 				screen showControlList (viewer : Control3 <String, Collection < Entity<?> >, Control1<Dynamic> >, headerName : String, values : Collection< Entity<?> >, dviewer : Control1<Dynamic>) {
 				  viewer(headerName, values, dviewer)
 				}
+			
 				control showField (name : String, value : String) {
 				  item {
 				    label(name, style = textFieldLabelStyle)
 				    textField(value, disabled = true)
 				  }
 				}
+			
 				control showTextField ( name : String , value : String ) {
 		    		item {
 		      			label ( name , style = textFieldLabelStyle )
 		      			textField ( value )
 		    		}
 		  		}
+			
 			  	control showBoolField ( name : String , value : Bool ) {
 			    	item {
 			      		label ( name , style = textFieldLabelStyle )
 			      		checkBox(value)
 			    	}	
 			  	}
+			
 			   	control showNumField ( name : String , value : Num ) {
 			    	item {
 			      		label ( name , style = textFieldLabelStyle )
 			      		numField(value)
 			    	}
 			  	}
+			
 			  	control showDateTimeField ( name : String , value : DateTime ) {
 			    	item {
 			      		label ( name , style = textFieldLabelStyle )
@@ -169,6 +178,7 @@ rules //overlays
 				    }
 				  }
 				}
+			
 				control showEntitiesField(name : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
 				  when ( values ) {
 				    item( onclick = { showControlList(showEntitiesList,name,values,viewer); } ) {
@@ -176,6 +186,7 @@ rules //overlays
 				    }
 				  }
 				}
+			
 				control showEntitiesList (headerName : String, values : Collection< Entity<?> >, viewer : Control1< Entity<?> >) {
 				  header( headerName ) {
 					backButton( "back", onclick = { back(); } )
@@ -186,12 +197,14 @@ rules //overlays
 				    }
 				  }
 				}  
+			
 				<javascript>
 			 	  __ns.back = function(callback) {
 				    history.back();
 					callback();
 				  };
 				</javascript>
+			
 			    external function back () : void
 			    
 				screen showObjectEmptyScreen(type : String, id : String , entityCTRL : Control2<String, String>) {

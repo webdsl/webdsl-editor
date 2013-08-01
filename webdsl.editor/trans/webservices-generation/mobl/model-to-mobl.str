@@ -21,208 +21,208 @@ imports
 rules 
 
   generate-mobl-model-builder: (selected, position, ast, path, project-path) -> None()
-    where 	<try(simplify-application-constructor); ?Application(_, _) > ast
-  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
-        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks  
-        	; topEntity* := <get-all-top-entity-tuples>
-        	; <generate-mobl-model(|project-path)>  topEntity*    
+    where <try(simplify-application-constructor); ?Application(_, _) > ast
+  	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks  
+        ; <generate-mobl-model> project-path
   	
-  generate-mobl-model(|project-path): topEntity* -> topEntity*
-  	where	dirname := "webservices/mobl"
-  			; <create-dir-in-workspace> dirname
-  			; <map(Fst; generate-top-level-SyncProperty; generate-top-level-lastSynced-Property)> topEntity* 
-  			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
-  			; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
-  			; completeEntities := <map(generate-extra-properties-for-collections); map(try(generate-extra-type-property)); filter(where(entity-has-no-super)); map(make-entity-with-properties)> filteredEntities //TODO: filter only subEntitties + add type property
-  			; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
-  			; module-to-moblfile(|dirname, "model")
-  			; <refresh-workspace-file> $[[project-path]/[dirname]]   
-  			//   make-mobl-model-viewers
+  generate-mobl-model(): project-path -> project-path
+  	with dirname := "webservices/mobl"
+  		; <create-dir-in-workspace> dirname
+  		; <map(generate-top-level-SyncProperty; generate-top-level-lastSynced-Property)> <all-keys-TopEntity> None()
+  		; entities := <all-keys-EntDecl> None()	 
+  		; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
+  		; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
+  		; completeEntities := <map(generate-extra-properties-for-collections); map(try(generate-extra-type-property)); filter(where(entity-has-no-super)); map(make-entity-with-properties)> filteredEntities
+  		; result := <map(entity-to-mobl-entity); make-mobl-model-viewers; make-valid-page-from-mobl-defs(|dirname, "model")> completeEntities
+  		; module-to-moblfile(|dirname, "model")
+  		; <refresh-workspace-file> $[[project-path]/[dirname]]   
   			  
  generate-mobl-model: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
 	where not (<?ApplicationDefs(_, _, _) <+ ?Application(_, _) > ast)
-	where fatal-err-msg(|"This builder is only supported on the application file")
+	with fatal-err-msg(|"This builder is only supported on the application file")
  
 rules // file stuff
 	
   module-to-moblfile(|dirname, file): mod -> mod
-  	where	<file-exists> $[[<project-path>]/[dirname]]
-  			; filename := $[[<project-path>]/[dirname]/[file].mobl]
-	  		; <write-mobl-ast-to-file(|filename)> mod  
+  	with <file-exists> $[[<project-path>]/[dirname]]
+  		; filename := $[[<project-path>]/[dirname]/[file].mobl]
+	  	; <write-mobl-ast-to-file(|filename)> mod  
 	  		  
 rules //lookup  			   
   
   make-entity-with-properties: entityname -> EntityNoSuper(entityname, props*)
-  	where 	props_entity* := <concat> [[VersionProperty1()], <get-properties-of-entity-mobl-model> entityname]
-  			; props_childeren := <get-subclasses-of-entity; map(get-properties-of-entity-mobl-model); flatten-list> entityname	//todo:  this is also something for flatening subclasses only don't like the subclasses having same property names thing
-  			; props_childeren* := <map(rename-prop-with-classname)> props_childeren
-  			; props* := <uniq> [props_entity*|props_childeren*]	
+  	with props_entity* := <concat> [[VersionProperty1()], <get-properties-of-entity-mobl-model> entityname]
+  		; props_childeren := <get-subclasses-of-entity; map(get-properties-of-entity-mobl-model); flatten-list> entityname	
+  		; props_childeren* := <map(rename-prop-with-classname)> props_childeren
+  		; props* := <uniq> [props_entity*|props_childeren*]	
   
   get-properties-of-entity-mobl-model: entityname -> props
-  	where  	props := <concat> [<all-properties-with-entity-anno> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
-  	// TODO: Also only got properties from own entity
+  	with props := <concat> [<all-properties-with-entity-anno> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
+  	//Also only got properties from own entity
   	
   check-searchable-anno: property -> mobl-anno |[searchable]| 
-   	where 	<is-searchable-prop> property  
-  			; <get-property-type; ?SimpleSort(type)> property
-  			; <fetch-elem(?type)> ToMoblStringTypes()  
+   	where <is-searchable-prop> property  
+  		; <get-property-type; ?SimpleSort(type)> property
+  		; <fetch-elem(?type)> ToMoblStringTypes()  
   			  
   check-inverse-anno: Property(_, _, _, annos) ->  mobl-anno |[inverse : x_name ]|
-    where	<fetch-elem(?InverseAnno(class, name))> annos
-    		; x_name := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+    where <fetch-elem(?InverseAnno(class, name))> annos
+    with  x_name := <get-renamed-prop <+ !name> (class, name) 
     
   check-inverse-anno(|class): property -> mobl-anno |[inverse : x_otherprop ]| 
-  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
-    where 	<get-property-type; ?GenericSort(_,_)> property
-    		; propertyname := <get-property-name> property
-    		; propertyname' := <try(get-original-propname-name)>   // todo: hirarchie flatten
-    		; class' := <(get-anno(?FromEntity(x)); !x) <+ !class> property    // todo: hirarchie flatten
-    		; (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
-    		; x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop)  // todo: hirarchie flatten
+  	where not(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where <get-property-type; ?GenericSort(_,_)> property
+    with propertyname := <get-property-name> property
+    	; propertyname' := <try(get-original-propname-name)>   
+    	; class' := <(get-anno(?FromEntity(x)); !x) <+ !class> property    
+    	; (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
+    	; x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop) 
   			
  check-inverse-anno(|class): property ->  anno
-  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
-    where 	<get-property-type; ?GenericSort(_,_)> property
-    		; propertyname := <get-property-name> property
-    		; propertyname' := <try(get-original-propname-name)>   // todo: hirarchie flatten
-   			; anno := <ExtraInverseAnno> (class, propertyname')
-    where not	(<InverseProperty> (class, propertyname'))
+  	where not (<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where  <get-property-type; ?GenericSort(_,_)> property
+    with propertyname := <get-property-name> property
+    	; propertyname' := <try(get-original-propname-name)>  
+   		; anno := <ExtraInverseAnno> (class, propertyname')
+    where not(<InverseProperty> (class, propertyname'))
    
 rules //rename(subclasses stuf)
 	
-	rename-prop-by-dr: Property(name, k, str, annos){anno*} -> Property(newname, k, str, annos){anno*}
-		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
-			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+  rename-prop-by-dr: Property(name, k, str, annos){anno*} -> Property(newname, k, str, annos){anno*}
+	with class := <fetch-elem(?FromEntity(x)); !x> anno* 
+		; newname := <get-renamed-prop <+ !name> (class, name) 
 
-	rename-prop-by-dr: DerivedProperty(name, k, str, annos, derive){anno*} -> DerivedProperty(newname, k, str, annos, derive){anno*}
-		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
-			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+  rename-prop-by-dr: DerivedProperty(name, k, str, annos, derive){anno*} -> DerivedProperty(newname, k, str, annos, derive){anno*}
+	with class := <fetch-elem(?FromEntity(x)); !x> anno* 
+		; newname := <get-renamed-prop <+ !name> (class, name) 
 		  				  
-	rename-prop-by-dr: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
-		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
-			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+  rename-prop-by-dr: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
+	with class := <fetch-elem(?FromEntity(x)); !x> anno* 
+		; newname := <get-renamed-prop <+ !name> (class, name) 
 				  
-	rename-prop-by-dr: DerivedPropertyNoAnno(name, k, str, derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
-		where 	class := <fetch-elem(?FromEntity(x)); !x> anno* 
-			    ; newname := <get-renamed-prop <+ !name> (class, name) //TODO : class hierarchie fix for flatten
+  rename-prop-by-dr: DerivedPropertyNoAnno(name, k, str, derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
+	with class := <fetch-elem(?FromEntity(x)); !x> anno* 
+		; newname := <get-renamed-prop <+ !name> (class, name) 
  				  
  				  
-	rename-prop-with-classname: Property(name, k, str,annos){anno*} -> Property(newname, k, str,annos){anno*}
-		where 	<fetch-elem(?FromEntity(x))> anno*
-				; newname := $[[x]_[name]] 
-				; rules(
-				  	get-renamed-prop :+ (x, name) -> newname
-				  	get-original-propname-name :+ newname -> name
-				  ) 
+  rename-prop-with-classname: Property(name, k, str,annos){anno*} -> Property(newname, k, str,annos){anno*}
+	with <fetch-elem(?FromEntity(x))> anno*
+		; newname := $[[x]_[name]] 
+		; rules(
+			get-renamed-prop :+ (x, name) -> newname
+		 	get-original-propname-name :+ newname -> name
+		) 
 
-	rename-prop-with-classname: DerivedProperty(name, k, str,annos, derive){anno*} -> DerivedProperty(newname, k, str,annos, derive){anno*}
-		where 	<fetch-elem(?FromEntity(x))> anno*
-				; newname := $[[x]_[name]] 
-				; rules(
-				  	get-renamed-prop :+ (x, name) -> newname
-				  	get-original-propname-name :+ newname -> name
-				  ) 
+  rename-prop-with-classname: DerivedProperty(name, k, str,annos, derive){anno*} -> DerivedProperty(newname, k, str,annos, derive){anno*}
+	with <fetch-elem(?FromEntity(x))> anno*
+		; newname := $[[x]_[name]] 
+		; rules(
+			get-renamed-prop :+ (x, name) -> newname
+			get-original-propname-name :+ newname -> name
+		) 
 				  				  
-	rename-prop-with-classname: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
-		where 	<fetch-elem(?FromEntity(x))> anno*
-				; newname := $[[x]_[name]] 
-				; rules(
-				  	get-renamed-prop :+ (x, name) -> newname
-				  	get-original-propname-name :+ newname -> name
-				  ) 
+  rename-prop-with-classname: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
+	with <fetch-elem(?FromEntity(x))> anno*
+		; newname := $[[x]_[name]] 
+		; rules(
+			get-renamed-prop :+ (x, name) -> newname
+			get-original-propname-name :+ newname -> name
+		) 
 
 				  
-	rename-prop-with-classname: DerivedPropertyNoAnno(name, k, str,derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
-		where 	<fetch-elem(?FromEntity(x))> anno*
-				; newname := $[[x]_[name]] 
-				; rules(
-				  	get-renamed-prop :+ (x, name) -> newname
-				  	get-original-propname-name :+ newname -> name
-				  ) 
+  rename-prop-with-classname: DerivedPropertyNoAnno(name, k, str,derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
+	with <fetch-elem(?FromEntity(x))> anno*
+		; newname := $[[x]_[name]] 
+		; rules(
+			get-renamed-prop :+ (x, name) -> newname
+			get-original-propname-name :+ newname -> name
+		) 
 				  
 rules //generation 
 	
   generate-extra-properties-for-collections: entityname -> entityname
-	where	props := <all-properties-with-entity-anno> entityname
-			; propswithoutinvers := <filter(generic-type-has-no-inverse-anno(|entityname))>
-			; map(declare-extra-prop(|entityname))
+	with props := <all-properties-with-entity-anno> entityname
+		; propswithoutinvers := <filter(generic-type-has-no-inverse-anno(|entityname))>
+		; map(declare-extra-prop(|entityname))
 
   generic-type-has-no-inverse-anno(|class): property ->  property
-  	where not 	(<get-property-annos; fetch(?InverseAnno(_, _))> property)
-    where 	<get-property-type; ?GenericSort(_,_)> property
-    		; propname := <get-property-name> property
-    where not	(<InverseProperty> (class, propname))
+  	where not (<get-property-annos; fetch(?InverseAnno(_, _))> property)
+    where <get-property-type; ?GenericSort(_,_)> property
+    	; propname := <get-property-name> property
+    where not (<InverseProperty> (class, propname))
     
   declare-extra-prop(|class): property -> property
-  	where 	entity := <get-property-type; get-inner-type-name> property
-  			; propertyname := <get-property-name> property
-  			; newProperty := <generate-inverse-property(|class)> property
-  			; x_newPropertyName := <get-property-name> newProperty 
-  			; parent := <find-highest-parent>class // TODO: fix the flat hirarchie stuff 
-  			; rules(
-  				ExtraInverseProperty:+ entity -> newProperty
-  				ExtraInverseAnno: (parent, propertyname) -> mobl-anno |[inverse : x_newPropertyName ]|
-  			)
+  	with entity := <get-property-type; get-inner-type-name> property
+  		; propertyname := <get-property-name> property
+  		; newProperty := <generate-inverse-property(|class)> property
+  		; x_newPropertyName := <get-property-name> newProperty 
+  		; parent := <find-highest-parent>class 
+  		; rules(
+  			ExtraInverseProperty:+ entity -> newProperty
+  			ExtraInverseAnno: (parent, propertyname) -> mobl-anno |[inverse : x_newPropertyName ]|
+  		)
   
   generate-extra-type-property: entityname -> entityname
-  	where 	<entity-has-no-super> entityname
-  			; <SubClass> entityname
-  			; property := PropertyNoAnno("typeField", Simple(), SimpleSort("String"))
-   			; rules( ExtraProperty:+ entityname -> property)
+  	where  <entity-has-no-super> entityname
+  		; <SubClass> entityname
+  	with property := PropertyNoAnno("typeField", Simple(), SimpleSort("String"))
+   		; rules( ExtraProperty:+ entityname -> property)
   		
   generate-top-level-SyncProperty: entityname -> entityname
-   	where 	property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
-   			; entityname':= <find-highest-parent> entityname
-   			; rules( ExtraProperty:+ entityname' -> property) // TODO again some hirarchie stuff should look out
+   	with property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
+   		; entityname':= <find-highest-parent> entityname
+   		; rules( ExtraProperty:+ entityname' -> property) 
    
   generate-top-level-lastSynced-Property: entityname -> entityname
-   	where 	property := PropertyNoAnno("lastSynced", Simple(), SimpleSort("Int"))
-   			; entityname':= <find-highest-parent> entityname
-   			; rules( ExtraProperty:+ entityname' -> property) // TODO again some hirarchie stuff should look out		  
+   	with property := PropertyNoAnno("lastSynced", Simple(), SimpleSort("Int"))
+   		; entityname':= <find-highest-parent> entityname
+   		; rules( ExtraProperty:+ entityname' -> property) 		  
    
   generate-inverse-property(|class): property ->  Property(name, Ref() , GenericSort("List", [SimpleSort(class)]), [InverseAnno(class, propertyname)])
-    where 	proptype := <get-property-type; ?GenericSort("List", _)> property
-    		; propertyname := <get-property-name> property
-    		; name := $[generatedPropertyForInverse_[class]_[propertyname]]    
+    where proptype := <get-property-type; ?GenericSort("List", _)> property
+    with propertyname := <get-property-name> property
+    	; name := $[generatedPropertyForInverse_[class]_[propertyname]]    
    
   generate-inverse-property(|class): property -> PropertyNoAnno(name, Ref() , SimpleSort(class))
-    where 	proptype := <get-property-type; ?GenericSort("Set", _)> property
-    		; propertyname := <get-property-name> property
-    		; name := $[generatedPropertyForInverse_[class]_[propertyname]]  		   
+    where proptype := <get-property-type; ?GenericSort("Set", _)> property
+    with propertyname := <get-property-name> property
+    	; name := $[generatedPropertyForInverse_[class]_[propertyname]]  	
+    	  	   
 rules //transform 
 
   entity-to-mobl-entity: EntityNoSuper(x_name, props) -> moblEntity
-  	where	cleanedProps  := <map(try(remove-derive-from-property))> props
-  			; ebd_props* := <filter(property-to-mobl-property(|x_name))>
- 			; moblEntity := mobl-def 
- 			  |[
- 			  	entity x_name {
+  	with cleanedProps  := <map(try(remove-derive-from-property))> props
+  		; ebd_props* := <filter(property-to-mobl-property(|x_name))>
+ 		; moblEntity := mobl-def 
+ 			|[
+ 				entity x_name {
  			  		ebd_props*
  			  	}	
- 			  ]|
+ 			]|
  			  
   property-to-mobl-property(|class): p@Property(x_name, sort, type, annos) -> result
-  	where 	t_newType := <type-to-mobl-type> type
-  			; if (a_newannos := <annos-to-mobl-annos(|class)> p) 
-  				then  result := mobl-entBodyElem |[x_name : t_newType (a_newannos) ]| 
-  				else  result := mobl-entBodyElem |[x_name : t_newType ]| 
-  			end
+  	with t_newType := <type-to-mobl-type> type
+  		; if (a_newannos := <annos-to-mobl-annos(|class)> p) 
+  			then  result := mobl-entBodyElem |[x_name : t_newType (a_newannos) ]| 
+  			else  result := mobl-entBodyElem |[x_name : t_newType ]| 
+  		end
   			
   property-to-mobl-property(|class): p@PropertyNoAnno(x_name, sort, type) -> result
-  	where 	t_newType := <type-to-mobl-type> type
-  		  	; if (a_newannos := <annos-to-mobl-annos(|class)> p) 
-  				then  result :=  mobl-entBodyElem |[x_name : t_newType (a_newannos) ]|
-  				else  result :=  mobl-entBodyElem |[x_name : t_newType ]| 
-  			end
+  	with t_newType := <type-to-mobl-type> type
+  		; if (a_newannos := <annos-to-mobl-annos(|class)> p) 
+  			then  result :=  mobl-entBodyElem |[x_name : t_newType (a_newannos) ]|
+  			else  result :=  mobl-entBodyElem |[x_name : t_newType ]| 
+  		end
   
   annos-to-mobl-annos(|class): property -> result
-  	where 	anno* := [<check-searchable-anno <+ !None()> property|[]]
-  			; anno'' := [< check-inverse-anno <+ check-inverse-anno(|class) <+ !None()> property|anno*]
-  			; result := <filter(not(?None()))>
-  			; length; int-gt(|0) 
+  	with anno* := [<check-searchable-anno <+ !None()> property|[]]
+  		; anno'' := [< check-inverse-anno <+ check-inverse-anno(|class) <+ !None()> property|anno*]
+  		; result := <filter(not(?None()))>
+  		; length; int-gt(|0) 
     
 rules // type transformations  	
+  
   type-to-mobl-type: SimpleSort(type) -> mobl-t|[String]| 
    	where 	<fetch(?type)> ToMoblStringTypes
   
@@ -235,7 +235,7 @@ rules // type transformations
   	where 	<fetch(?type)> MoblDateTimeTypes 
 
   type-to-mobl-type: SimpleSort(x_type) -> mobl-t|[x_newType]|
-   	where 	x_newType := <IsEntity; find-highest-parent> x_type // TODO: this only works for flatten subentities
+   	where 	x_newType := <IsEntity; find-highest-parent> x_type
    	where not (<is-builtin-entity-webservices> x_type)
   
   type-to-mobl-type: GenericSort(_, type) -> mobl-t|[Collection<t_paramtype>]| 

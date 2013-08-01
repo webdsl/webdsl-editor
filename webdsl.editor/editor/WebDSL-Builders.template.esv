@@ -44,12 +44,11 @@ builders
   builder   : "Generate random entities"         = generate-entities (openeditor) (realtime) (meta)
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
-  builder 	: "Generate entity files"			  = generate-entity-files (source)
-  builder 	: "Generate entity pages"			  = generate-entity-pages (source)
-  builder   : "Generate JSON Functions"			  = generate-json-functions-for-entities (source)
-  builder   : "Show model tree"			  		  = make-model-tree (openeditor) (source)
-  builder   : "Generate Mobl model"				  = generate-mobl-model (source)
-  builder	: "Generate Webservices"			  = generate-webservices (source)
+  builder 	: "Generate entity files"             = generate-entity-files (source)
+  builder 	: "Generate entity pages"             = generate-entity-pages (source)
+  builder   : "Generate JSON Functions"           = generate-json-functions-for-entities (source)
+  builder   : "Generate Mobl model"               = generate-mobl-model (source)
+  builder	: "Generate synchronization framework"= generate-webservices (source)
 //  pretty-print : pp-webdsl-to-string
 
 //  refactoring : "Rename Entity" = rename-entity /*(source)*/ (cursor)

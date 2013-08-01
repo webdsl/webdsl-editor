@@ -28,71 +28,69 @@ overlays
 rules 
 	 
   generate-webservices: (selected, position, ast, path, project-path) -> None()
-  	where 	<try(simplify-application-constructor); ?Application(_, _) > ast
-  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
-        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-        	   
-  	where	topEntity* := <get-all-top-entity-tuples>
-  			; <generate-mobl-model(|project-path)> topEntity*   
-  			; <generate-json-functions-for-entities> project-path
-  			; <generate-related-entities-functions> project-path
-  			; <generate-access-control-entities-functions> project-path 
-  			; dirname := DirServices()
-  			; <create-dir-in-workspace> dirname 
-  			; make-mobl-mapper-for-all-entities
-  			; TL := <generate-top-level-webservice>
-  			; testservice :=  <generate-test-webservice> 
-  			; generate-timestamp-webservice   
-  			; generate-mobl-services
-  			; generate-sync-services
-  			; if(generate-authentication-webservice-module)then 
-  			  	imports := def*
-					|[
-					  	imports webservices/related-entities/main 
-					  	imports webservices/access-control/main 
-					  	imports webservices/mappers/main
-					  	imports webservices/json/main
-					  	imports webservices/authentication
-					]|
-  			  else 
-		  		imports := def*
-					|[
-					  	imports webservices/related-entities/main 
-					  	imports webservices/access-control/main 
-					  	imports webservices/mappers/main
-					  	imports webservices/json/main
-					]|
+  	where <try(simplify-application-constructor); ?Application(_, _) > ast
+  	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  		; <generate-mobl-model> project-path  
+  		; <generate-json-functions-for-entities> project-path
+  		; <generate-related-entities-functions> project-path
+  		; <generate-access-control-entities-functions> project-path 
+  		; dirname := DirServices()
+  		; <create-dir-in-workspace> dirname 
+  		; make-mobl-mapper-for-all-entities
+  		; TL := <generate-top-level-webservice>	
+  		; testservice :=  <generate-test-webservice> 
+  		; generate-timestamp-webservice   
+  		; generate-mobl-services
+  		; generate-sync-services
+  		; if(generate-authentication-webservice-module)then 
+  			imports := def*
+				|[
+					imports webservices/related-entities/main 
+					imports webservices/access-control/main 
+					imports webservices/mappers/main
+					imports webservices/json/main
+					imports webservices/authentication
+				]|
+  		 else 
+		  	imports := def*
+				|[
+					imports webservices/related-entities/main 
+					imports webservices/access-control/main 
+					imports webservices/mappers/main
+					imports webservices/json/main
+				]|
 		  	end   
-  			; <generate-edit-mappers> project-path  
-  			; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
-  			; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
-  			  		   <generate-available-services-function>, <generate-interface-service>,
-  			  		   <get-general-service-functions>]
-  			; ac := <generate-access-control-for-services> 		   
-			; defs' := <concat> [modules,imports, defs, ac]
-			; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
-			; <write-ast-to-file(|$[[dirname]/interface.app])> result
+  		; <generate-edit-mappers> project-path  
+  		; modules := <bagof-Service; string-sort; map(\servicename ->Imports( $[[dirname]/[servicename]] )\)> None()
+  		; defs := [NativeClassDispatchServletHelper(), <GetDispatchServletHelper>,
+                    <generate-available-services-function>, <generate-interface-service>,
+                    <get-general-service-functions>]
+		; ac := <generate-access-control-for-services> 		   
+		; defs' := <concat> [modules,imports, defs, ac]
+		; result := <make-valid-page-from-defs(|$[[dirname]/interface])> defs'
+		; <write-ast-to-file(|$[[dirname]/interface.app])> result
 			  	
   generate-webservices: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
 	where not (<?ApplicationDefs(_, _, _) <+ ?Application(_, _) > ast)
-	where fatal-err-msg(|"This builder is only supported on the application file")
+	with fatal-err-msg(|"This builder is only supported on the application file")
 	
 rules// generation
 	
   generate-available-services-function: x -> function
-	where 	services := <bagof-Service>
-			; e_services* := <map(\x -> String(x)\)> services
-      		; function := def 
-      		  |[
-      		  	function getAvailableServices() : Set<String> {
-      		  	 return {e_services*};
+	with services := <bagof-Service>
+		; e_services* := <map(\x -> String(x)\)> services
+      	; function := def 
+      		|[
+      		 	function getAvailableServices() : Set<String> {
+      		  		return {e_services*};
       		  	}
-      		  ]|
+      		]|
       		
   generate-interface-service: x -> service
-  	where service := def 
-	          |[
-	          	service webservice ( service : String ) {
+  	with service := def 
+	    	|[
+	        	service webservice ( service : String ) {
 	  				if ( service in getAvailableServices() ) {
 	    				getDispatchServletHelper().forwardRequest("/webservice_generated_" + service + "/");
 	  				} else {
@@ -107,42 +105,42 @@ rules// generation
 
   generate-service(|name): stat_body -> service
   	where not(<bagof-Service; fetch-elem(?name)> name )
-  	where 	rules (Service:+= name)
-  			; stat_init := InitService()
-  			; stat_exit := <ExitService>
-  			; x_servicename :=  $[[ServicePrefix][name]]
-   	 		; service  := def 
-	          |[
+  	with rules (Service:+= name)
+  		; stat_init := InitService()
+  		; stat_exit := <ExitService>
+  		; x_servicename :=  $[[ServicePrefix][name]]
+   	 	; service  := def 
+	    	|[
 	          	service x_servicename () {
 					stat_init
 					stat_body
 					stat_exit	
 				}
-			  ]|          	   
+			]|          	   
    	 			
   generate-test-webservice: x -> service
-  	where 	service := <generate-service(|"test")> stat|[var result := "This is a test service";]|  			
-  			; service-to-file(|"test") 
+  	with service := <generate-service(|"test")> stat|[var result := "This is a test service";]|  			
+  		; service-to-file(|"test") 
   
   generate-timestamp-webservice: x -> service
-  	where 	service := <generate-service(|"getTimeStamp")> stat|[var result := now().getTime();]|  			
-  			; service-to-file(|"getTimeStamp") 			  
+  	with service := <generate-service(|"getTimeStamp")> stat|[var result := now().getTime();]|  			
+  		; service-to-file(|"getTimeStamp") 			  
   	 
   generate-top-level-webservice: x -> service
- 	where 	x_varname := <new> "ent"
- 			; topEntities := <all-keys-TopEntity>
-            ; stat_loops* := <map(generate-top-level-webservice-forloops)> topEntities
-            ; body := webdsl 
-              |[
-              	var result := JSONArray();
+ 	with x_varname := <new> "ent"
+ 		; topEntities := <all-keys-TopEntity>
+        ; stat_loops* := <map(generate-top-level-webservice-forloops)> topEntities
+        ; body := webdsl 
+        	|[
+            	var result := JSONArray();
               	stat_loops*
-              ]|  		
-            ; service := <generate-service(|"getTopLevelEntities")> body
-        	; service-to-file(|"getTopLevelEntities") 
+            ]|  		
+        ; service := <generate-service(|"getTopLevelEntities")> body
+        ; service-to-file(|"getTopLevelEntities") 
    
   generate-top-level-webservice-forloops: x_entity -> statement 
-  	where 	x_entityString := $["[x_entity]"]
-  			; statement := webdsl 
+  	with x_entityString := $["[x_entity]"]
+  		; statement := webdsl 
 	  		|[	
 	  			var array := JSONArray();
 	  			var jsonobj := JSONObject();
@@ -157,81 +155,81 @@ rules// generation
 	  		]|    
   		 	     
   service-to-file(|name): service -> service
-  	where 	modname := $[[DirServices()]/[name]]
-  			; ast := <make-valid-page-from-defs(|modname)>[service]
-  			; write-ast-to-file(|$[[modname].app])
-  	// where ast 	
+  	with modname := $[[DirServices()]/[name]]
+  		; ast := <make-valid-page-from-defs(|modname)>[service]
+  		; write-ast-to-file(|$[[modname].app])
+ 
   	
 rules //general functions
 	
   get-general-service-functions: x -> defs
-  	where defs := webdsl 
-  	|[
-  		function addDirtyFalse(json : JSONObject) : JSONObject {
-			json.put("dirty", "false");
-			return json;
-		}
-		
-		function makeJSONErrorObject(message : String, type : String) : JSONObject {
-			var json := JSONObject();
-			json.put("message", message);
-			json.put("type", type);
-			return json;
-		}
-		
-		function makeJSONEntityErrorObject(errors : JSONArray, ent : String, id : String) : JSONObject {
-			var json := JSONObject();
-			json.put("errors", errors);
-			json.put("ent", ent);
-			json.put("id", id);
-			return json;
-		}
-		
-		function addValidationExceptionsToLocalErrors(errors : List<NativeValidationException>, localErrors : JSONArray) {
-			for(ex : NativeValidationException in errors){
-		    	localErrors.put(makeJSONErrorObject(ex.getErrorMessage(), "error"));
-			}
-		}
-		
-		function addValidateExceptionsToErrors(exceptions : ValidationExceptionMultiple, errors : JSONArray) {
-			for(ex : ValidationException in exceptions.exceptions) {
-				errors.put(makeJSONErrorObject(ex.message, "error"));
-			}
-		}
-		
-		function containsErrorInJSONArray(array : JSONArray) : Bool {
-			for ( count : Int from 0 to array.length() ) {
-				if(array.getJSONObject(count).getString("type") == "error") {
-					return true;
+  	with defs := webdsl 
+  			|[
+  				function addDirtyFalse(json : JSONObject) : JSONObject {
+					json.put("dirty", "false");
+					return json;
 				}
-			}
-			return false; 
-		 }
-  	]|	 	
+		
+				function makeJSONErrorObject(message : String, type : String) : JSONObject {
+					var json := JSONObject();
+					json.put("message", message);
+					json.put("type", type);
+					return json;
+				}
+		
+				function makeJSONEntityErrorObject(errors : JSONArray, ent : String, id : String) : JSONObject {
+					var json := JSONObject();
+					json.put("errors", errors);
+					json.put("ent", ent);
+					json.put("id", id);
+					return json;
+				}
+		
+				function addValidationExceptionsToLocalErrors(errors : List<NativeValidationException>, localErrors : JSONArray) {
+					for(ex : NativeValidationException in errors){
+		    			localErrors.put(makeJSONErrorObject(ex.getErrorMessage(), "error"));
+					}
+				}
+		
+				function addValidateExceptionsToErrors(exceptions : ValidationExceptionMultiple, errors : JSONArray) {
+					for(ex : ValidationException in exceptions.exceptions) {
+						errors.put(makeJSONErrorObject(ex.message, "error"));
+					}
+				}
+		
+				function containsErrorInJSONArray(array : JSONArray) : Bool {
+					for ( count : Int from 0 to array.length() ) {
+						if(array.getJSONObject(count).getString("type") == "error") {
+							return true;
+						}
+					}
+					return false; 
+		 		}
+			]|	 	
   	
 rules//acces control 
 	
-	generate-access-control-for-services: x -> [section]
-		where 	PrincipalDecl
-				; services := <bagof-Service>
-				; acdef* := <map(generate-access-control-for-service)> services
-	      		; section := webdsl 
-	      		  |[
-	      		  	access control rules{
-	      		  		rule page webservice(*){
-	      		  			true
-	      		  		}
-	      		  		acdef*
+  generate-access-control-for-services: x -> [section]
+	where PrincipalDecl
+	with services := <bagof-Service>
+		; acdef* := <map(generate-access-control-for-service)> services
+	    ; section := webdsl 
+	    	|[
+	      		access control rules{
+	      			rule page webservice(*){
+	      		  		true
 	      		  	}
-
-	      		  ]|   
+	      		  	acdef*
+	      		}
+			]|   
 	
-	generate-access-control-for-services: x -> []
+  generate-access-control-for-services: x -> []
 		where not (PrincipalDecl)	
 	
-	generate-access-control-for-service: serviceName -> acdef
-		where	x_pagename := $[[ServicePrefix][serviceName]]
-				; acdef := acdef 
+  generate-access-control-for-service: serviceName -> acdef
+		where <is-string> serviceName
+		with x_pagename := $[[ServicePrefix][serviceName]]
+			; acdef := acdef 
 				|[
 					rule page x_pagename(){
 						true

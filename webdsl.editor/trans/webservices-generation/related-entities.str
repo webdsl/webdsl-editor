@@ -15,15 +15,15 @@ imports
 rules //builder
 	
   generate-related-entities-functions : project-path -> project-path
-  	where	dirname := "webservices/related-entities"
-  			; <create-dir-in-workspace> dirname 
-  			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
-  			; properties := <map(get-all-properties)> filteredEntities
-  			; main-defs := <generate-main-defs-for-related-entities> filteredEntities 
-  			; result:= <map(props-to-related-entities-functions(|dirname))> properties
-  			; <main-file-to-file(generate-main-model-file(|dirname, main-defs )|dirname)> filteredEntities  
-  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+  	with dirname := "webservices/related-entities"
+  		; <create-dir-in-workspace> dirname 
+  		; entities := <all-keys-EntDecl> None()	 
+  		; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
+ 		; properties := <map(get-all-properties)> filteredEntities
+  		; main-defs := <generate-main-defs-for-related-entities> filteredEntities 
+  		; result:= <map(props-to-related-entities-functions(|dirname))> properties
+  		; <main-file-to-file(generate-main-model-file(|dirname, main-defs )|dirname)> filteredEntities  
+  		; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
 rules// lookup 
 	
@@ -32,143 +32,143 @@ rules// lookup
 rules//file generation 
 	
   props-to-related-entities-functions(|dirname): t@(name,props) -> t
-  	with	<file-exists> $[[<project-path>]/[dirname]]
-  			; filename := $[[<project-path>]/[dirname]/[name].app]
-	  		; <make-valid-page-with-extends-entity-for-related-functions(|$[[dirname]/[name]])
-	  		   ; write-ast-to-file(|filename)> t  
+  	with <file-exists> $[[<project-path>]/[dirname]]
+  		; filename := $[[<project-path>]/[dirname]/[name].app]
+	  	; <make-valid-page-with-extends-entity-for-related-functions(|$[[dirname]/[name]])
+	  	; write-ast-to-file(|filename)> t  
 	
-  make-valid-page-with-extends-entity-for-related-functions(|dirname) : (x_entityName,props) ->
-		ModuleDefs(dirname, def2, [])
-	where	ebd0* := [<build-related-entities-function>props]
-	 	 	; def2 := def* 
-	 		  	|[
-	 		  		extend entity x_entityName {
-	 		  			ebd0*
-	 		  		}
-	 		  	]|
+  make-valid-page-with-extends-entity-for-related-functions(|dirname) : (x_entityName,props) -> ModuleDefs(dirname, def2, [])
+	with ebd0* := [<build-related-entities-function>props]
+	 	 ; def2 := def* 
+	 		|[
+	 			extend entity x_entityName {
+	 		  		ebd0*
+	 		  	}
+	 		]|
 
 rules//transformation
 	
   build-related-entities-function: props -> function
-	 where 	filterdProperties := <filter(not(get-property-type;is-simple-sort))> props  
-	 		; stat_puts* := <filter(property-to-add)> filterdProperties
-			; function := def 
-			  |[ 
-			  	function getRelatedEntities() : Set<Entity> {
+	 with filterdProperties := <filter(not(get-property-type;is-simple-sort))> props  
+	 	; stat_puts* := <filter(property-to-add)> filterdProperties
+		; function := def 
+			|[ 
+			 	function getRelatedEntities() : Set<Entity> {
 			  		var set := Set<Entity>();
 			  		stat_puts*
 			  		return set;	  
 			  	}
-			  ]|
+			]|
 			  
   property-to-add: property -> statement
-	where	(?Property(x_name, _, SimpleSort(_), _) 
-	 			<+ ?PropertyNoAnno(x_name, _, SimpleSort(_)))
-   			; statement := webdsl 
-   			  	|[ 
-   			  		if(this.x_name != null) {
-   			  			set.add(this.x_name);
-   			  		}
-   			  	]| 
+	where (?Property(x_name, _, SimpleSort(_), _) 
+	 		<+ ?PropertyNoAnno(x_name, _, SimpleSort(_)))
+   	with statement := webdsl 
+   			|[ 
+   				if(this.x_name != null) {
+   			  		set.add(this.x_name);
+   			  	}
+   			]| 
    			  	
   property-to-add: property -> statement
-	where	(?Property(x_name, _, GenericSort(_, _), _) 
-	 			<+ ?PropertyNoAnno(x_name, _, GenericSort(_, _)))
-			; statement := webdsl	
-			  	|[ 
-   			  		if(this.x_name != null) {
-   			  			set.addAll(this.x_name);
-   			  		}
-   			  	]|
+	where (?Property(x_name, _, GenericSort(_, _), _) 
+	 		<+ ?PropertyNoAnno(x_name, _, GenericSort(_, _)))
+	with statement := webdsl	
+			|[ 
+   			 	if(this.x_name != null) {
+   			  		set.addAll(this.x_name);
+   			  	}
+   			]|
    			  	
 rules // main file
+	
   generate-main-defs-for-related-entities: entities -> defs
-	where	def0 := <set-where-not-seen-function>
-			; def1 := <is-top-level-entity-function> 
-			; def2 := <generate-get-related-entities-function> entities
-			; def3* := <map(generate-get-entities-for-topEntity)> entities
-	  		; defs := def* 
-			 |[
-			 	def0
+	with def0 := <set-where-not-seen-function>
+		; def1 := <is-top-level-entity-function> 
+		; def2 := <generate-get-related-entities-function> entities
+		; def3* := <map(generate-get-entities-for-topEntity)> entities
+	  	; defs := def* 
+			|[
+				def0
 			  	def1
 			  	def2
 			  	def3*	
-			  ]|
+			]|
 	  	
-	generate-get-related-entities-function: entities -> function
-		where 	stat_calls* := <map(generate-entity-to-related-entities-call)> entities
-				; function := def
-				|[	
-					function getRelatedEntities(ent : Entity) : Set<Entity> {
-						var type := ent.getTypeString();
-						stat_calls*
-						return Set<Entity>();
-					}		
-				]|  
+  generate-get-related-entities-function: entities -> function
+	with stat_calls* := <map(generate-entity-to-related-entities-call)> entities
+		; function := def
+			|[	
+				function getRelatedEntities(ent : Entity) : Set<Entity> {
+					var type := ent.getTypeString();
+					stat_calls*
+					return Set<Entity>();
+				}		
+			]|  
 				
-	generate-entity-to-related-entities-call: x_entity -> statement
-		where 	e_name :=	String(x_entity)
-				; statement	:=  webdsl 
-			  	|[
-					if (type == e_name ){
-						return (ent as x_entity).getRelatedEntities();
-					}
-				]|
-				
-	generate-get-entities-for-topEntity: x_entity -> function
-		where 	e_name :=	String(x_entity)
-				; x_functioname := $[getAll[x_entity]ForTopEntity]  
-				; function := def
-				|[
-					function x_functioname (tl : Entity) : Set<x_entity> {
-						if(tl.getTypeString() == e_name) {
-							return {tl as x_entity};
-						}
-						var todo := Set<Entity>();
-						var seen := Set<UUID>();
-						var found := Set<x_entity>();
-						todo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(tl)));
-						while( todo.length > 0 ) {
-	  	 					var newTodo := Set<Entity>();
-							for(ent: Entity in todo where ent != null) {
-								if(!isTopLevelEntity(ent)) {
-									if (ent.getTypeString() == e_name) {
-										found.add(ent as x_entity); 
-									}
-									newTodo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(ent)));
-								}
-							}
-							todo := newTodo ;
-						}
-						return found;
-					}  	
-				]| 
-
-	is-top-level-entity-function: x -> function
-		where 	e_tlentities* := <all-keys-TopEntity; map(\x -> String(x)\)>
-				; function := def* 
-					|[
-						function isTopLevelEntity(ent : Entity) : Bool {
-							return isTopLevelEntity(ent.getTypeString());
-						}	
-						
-						function isTopLevelEntity(str : String) : Bool {
-							var toplevelEntities := {e_tlentities*};
-							return str in toplevelEntities ;
-						}
-					]|
-
-	set-where-not-seen-function = !def 
-		|[	function getSetWhereNotSeen(set : Set<Entity>, seen : Set<UUID>, add : Set<Entity> ) : Set<Entity>{
-				var newset := Set<Entity>();
-				for(ent : Entity in add ) {
-					var inSeen := ent.id in seen;
-					if(!inSeen) {
-						newset.add(ent);
-						seen.add(ent.id);	
-					}
+  generate-entity-to-related-entities-call: x_entity -> statement
+	with e_name :=	String(x_entity)
+		; statement	:=  webdsl 
+			|[
+				if (type == e_name ){
+					return (ent as x_entity).getRelatedEntities();
 				}
-				return newset;
+			]|
+				
+  generate-get-entities-for-topEntity: x_entity -> function
+	with e_name :=	String(x_entity)
+		; x_functioname := $[getAll[x_entity]ForTopEntity]  
+		; function := def
+			|[
+				function x_functioname (tl : Entity) : Set<x_entity> {
+					if(tl.getTypeString() == e_name) {
+						return {tl as x_entity};
+					}
+					var todo := Set<Entity>();
+					var seen := Set<UUID>();
+					var found := Set<x_entity>();
+					todo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(tl)));
+					while( todo.length > 0 ) {
+	  	 				var newTodo := Set<Entity>();
+						for(ent: Entity in todo where ent != null) {
+							if(!isTopLevelEntity(ent)) {
+								if (ent.getTypeString() == e_name) {
+									found.add(ent as x_entity); 
+								}
+								newTodo.addAll(getSetWhereNotSeen(todo, seen, getRelatedEntities(ent)));
+							}
+						}
+						todo := newTodo ;
+					}
+					return found;
+				}  	
+			]| 
+
+  is-top-level-entity-function: x -> function
+	with e_tlentities* := <all-keys-TopEntity; map(\x -> String(x)\)>
+		; function := def* 
+			|[
+				function isTopLevelEntity(ent : Entity) : Bool {
+					return isTopLevelEntity(ent.getTypeString());
+				}	
+				
+				function isTopLevelEntity(str : String) : Bool {
+					var toplevelEntities := {e_tlentities*};
+					return str in toplevelEntities ;
+				}
+			]|
+
+  set-where-not-seen-function = !def 
+	|[	
+		function getSetWhereNotSeen(set : Set<Entity>, seen : Set<UUID>, add : Set<Entity> ) : Set<Entity>{
+			var newset := Set<Entity>();
+			for(ent : Entity in add ) {
+				var inSeen := ent.id in seen;
+				if(!inSeen) {
+					newset.add(ent);
+					seen.add(ent.id);	
+				}
 			}
-		]|
-		 						 			  	
+			return newset;
+		}
+	]|		 						 			  	

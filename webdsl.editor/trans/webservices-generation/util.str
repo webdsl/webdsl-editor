@@ -8,17 +8,18 @@ imports
 	libwebdsl-front
 
 rules
+	
   get-subclasses-of-entity: entity -> children
-  	where directChildren := <bagof-SubClass> entity
-  		  ; subchildren := <map(get-subclasses-of-entity); flatten-list> directChildren
-  		  ; children := <concat> [directChildren, subchildren]
+  	with directChildren := <bagof-SubClass> entity
+  		; subchildren := <map(get-subclasses-of-entity); flatten-list> directChildren
+  		; children := <concat> [directChildren, subchildren]
   		    
   get-superclasses-of-entity: entity -> parents
   	where not ("Entity" := <Extends> entity)   
-  	where directparent := <Extends> entity
-  		  ; superparents := <get-superclasses-of-entity> directparent
-  		  ; parents := [ directparent | superparents]	
- 			
+  	with directparent := <Extends> entity
+  		; superparents := <get-superclasses-of-entity> directparent
+  		; parents := [ directparent | superparents]	
+ 		
   get-superclasses-of-entity: entity -> ["Entity"]
   	where "Entity" := <Extends> entity    
   	
@@ -26,35 +27,34 @@ rules
   	where not( <Extends> entity)    
   	
   generate-dr-for-highest-parent: e@EntityNoSuper(name, props) -> e
-   	where rules(
+   	with rules(
    		get-highest-parent : name -> name
    	)
   
   generate-dr-for-highest-parent: e@Entity(name, super, props) -> e
-   	where parent := <find-highest-parent> name
+   	with parent := <find-highest-parent> name
    		; rules(
    			get-highest-parent : name -> parent
    		)
   
   find-highest-parent: name -> parent
-  	where 	parent := <Extends; find-highest-parent> name 	
+  	where parent := <Extends; find-highest-parent> name 	
   
   find-highest-parent: name -> name
-  	where 	"Entity" := <Extends> name  	
+  	where "Entity" := <Extends> name  	
   	
-
   all-properties-with-entity-anno-inculding-entityproperties: entityname -> properties
-  	where 	properties := <all-entity-properties-tuples; map(\(x,y) -> <add-anno(|FromEntity(x))> y\)>
+  	with properties := <all-entity-properties-tuples; map(\(x,y) -> <add-anno(|FromEntity(x))> y\)>
 
   all-properties-with-entity-anno: entityname -> properties
-  	where 	properties := <all-properties-with-entity-anno-inculding-entityproperties; filter(not(has-anno(?FromEntity("Entity"))))> entityname
+  	with properties := <all-properties-with-entity-anno-inculding-entityproperties; filter(not(has-anno(?FromEntity("Entity"))))> entityname
   	
   entity-extends-or-is-extended: entityname -> entityname
-  	where  <SubClass>  entityname
+  	where  <SubClass> entityname
   	
   entity-extends-or-is-extended: entityname -> entityname
-  	where  	parent := <Extends>  entityname
-  			; not(?<"Entity"> parent)
+  	where parent := <Extends>  entityname
+  	where not(?<"Entity"> parent)
   	
   // declare-top-entities: ast -> topEntity*
   // 	where topEntity* := <collect-all(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
@@ -64,19 +64,17 @@ rules
   	where <TopEntity> entityName
   
   get-all-top-entity-tuples: x-> topents
- 	where topents := <all-keys-TopEntity; map(\y -> (y, <TopEntity> y)\)>
+ 	with topents := <all-keys-TopEntity; map(\y -> (y, <TopEntity> y)\)>
   
   is-top-entity-mobl-by-dr: entityName -> entityName
-  	where 	get-subclasses-of-entity
-  			; filter(is-top-entity-by-dr)
-  			; not(?[])
+  	where get-subclasses-of-entity
+  		; filter(is-top-entity-by-dr)
+  	where not(?[])
 	
  is-builtin-entity-webservices: entity -> entity
-   	where	(? EntityNoSuper(name, _) 
-     			<+ ?Entity(name, _, _))
-     			<+ is-string; ?name
-     		; <is-builtin-entity> name	
-     		<+ (builtin-entities := [
-     		  	"AuthenticationKey"
-     		  ]
+   	where (? EntityNoSuper(name, _) 
+     		<+ ?Entity(name, _, _))
+     	<+ is-string; ?name
+     	; <is-builtin-entity> name	
+     	<+ (builtin-entities := ["AuthenticationKey"]
      		; <fetch(?name)> builtin-entities)  

@@ -13,17 +13,16 @@ imports
 
 rules
 	
-	generate-mobl-authenication-module: x -> x
-	  	where	dirname := "webservices/mobl"
-	  			; <create-dir-in-workspace> dirname  
-	  			; result := <generate-mobl-authenication-module-defs>
-	  			; <make-valid-page-from-mobl-defs(|dirname, "authentication")> result
-	  			; module-to-moblfile(|dirname, "authentication")
-	  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+  generate-mobl-authenication-module: x -> x
+	with dirname := "webservices/mobl"
+	  	; <create-dir-in-workspace> dirname  
+	  	; result := <generate-mobl-authenication-module-defs>
+	  	; <make-valid-page-from-mobl-defs(|dirname, "authentication")> result
+	  	; module-to-moblfile(|dirname, "authentication")
+	  	; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
 	
-
-  	generate-mobl-authenication-module-defs: x -> defs
-		where defs := mobl-def* 
+  generate-mobl-authenication-module-defs: x -> defs
+	with defs := mobl-def* 
 			|[
 				import webservices::mobl::sync
 				function hasDeviceKey() : Bool {
@@ -37,8 +36,7 @@ rules
 					}
 				}
 
-				function authenticate() : Bool {
-					
+				function authenticate() : Bool {		
 					var username = LocalStorage.getString("un");
 					var devicename = LocalStorage.getString("dn");
 					var devicekey = LocalStorage.getString("dk");
@@ -85,7 +83,4 @@ rules
 					LocalStorage.removeItem("dn");
 					reload();
 				}
-
 			]|
-	
-	

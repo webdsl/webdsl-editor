@@ -3,14 +3,17 @@ module webservices-generation/overlays
 imports
 	  	lib/editor-common.generated
 	  	include/-
+	  	
 overlays// super properties
-	AllEntityProperties1 =    [VersionProperty1(), IdProperty1(), NameProperty1()]    
 	
-	IdProperty1 =    Property("id", Simple(), SimpleSort("UUID"), []){IsGeneratedProperty()}  
-	VersionProperty1 =    Property("version", Simple(), SimpleSort("Int"), []){IsGeneratedProperty()}  
-	NameProperty1 =    DerivedProperty("name", Simple(), SimpleSort("String"), [], []){IsGeneratedProperty()}
+  AllEntityProperties1 = [VersionProperty1(), IdProperty1(), NameProperty1()]    
+	
+  IdProperty1 = Property("id", Simple(), SimpleSort("UUID"), []){IsGeneratedProperty()}  
+  VersionProperty1 = Property("version", Simple(), SimpleSort("Int"), []){IsGeneratedProperty()}  
+  NameProperty1 = DerivedProperty("name", Simple(), SimpleSort("String"), [], []){IsGeneratedProperty()}
 
-overlays// mobl stuff		
+overlays// mobl stuff	
+		
 	ToMoblStringTypes = ["String", "Email", "UUID", "Text", "WikiText", "URL"]
 	FromMoblStringTypes = ["String", "Email", "Text", "WikiText", "URL"]
 	ToMoblNumTypes = ["Float", "Int", "Long"]
@@ -18,53 +21,57 @@ overlays// mobl stuff
 	MoblDateTimeTypes = ["DateTime", "Date", "Time"]
 	
 overlays//forward/redirect code
+	
 	NativeClassDispatchServletHelper = def
-	|[
-		native class DispatchServletHelper as DispatchServletHelper : DispatchServlet {
-			getResponse ( ) : HttpServletResponse
-  			forwardRequest ( String )
-  			static get ( ) : DispatchServlet
-		}
-	]|
+		|[
+			native class DispatchServletHelper as DispatchServletHelper : DispatchServlet {
+				getResponse ( ) : HttpServletResponse
+  				forwardRequest ( String )
+  				static get ( ) : DispatchServlet
+			}
+		]|
+	
 rules	
+	
 	GetDispatchServletHelper = !def
-	|[
-		function getDispatchServletHelper ( ) : DispatchServletHelper {
-  			var servlet := DispatchServletHelper.get() ;
-  			if ( servlet is a DispatchServletHelper ) {
-    			return ( servlet as DispatchServletHelper );
-  			} else {
-    			return null;
-  			}
-		}
-	]|	
+		|[
+			function getDispatchServletHelper ( ) : DispatchServletHelper {
+  				var servlet := DispatchServletHelper.get() ;
+  				if ( servlet is a DispatchServletHelper ) {
+    				return ( servlet as DispatchServletHelper );
+  				} else {
+    				return null;
+  				}
+			}
+		]|	
 
-overlays//  prefix
+overlays //prefix
 	
 	ServicePrefix = "webservice_generated_"
 
 overlays // service init and exit
 	
 	InitService = webdsl 
-	|[ 
-		var json := JSONObject() ;
-  		var errors := JSONArray() ;
-  	]|
+		|[ 
+			var json := JSONObject() ;
+  			var errors := JSONArray() ;
+  		]|
 rules	
+ 	
  	ExitService = !webdsl 
-	|[ 
-		json.put("errors", errors);
-  		json.put("result", result);
-  		return json;
-  	]| 	
+		|[ 
+			json.put("errors", errors);
+  			json.put("result", result);
+  			return json;
+  		]| 	
  		
-rules // for json
+rules //for json
 	
 	MakeJSONFromRefFunction = !def
-	|[
-		function makeJSONObjectFromEntityRef ( ent : Entity ) : JSONObject {
-  			var json := JSONObject() ;
-  			json.put("id", ent.id);
- 			return json;
-		}
-	]|	
+		|[
+			function makeJSONObjectFromEntityRef ( ent : Entity ) : JSONObject {
+  				var json := JSONObject() ;
+  				json.put("id", ent.id);
+ 				return json;
+			}
+		]|	

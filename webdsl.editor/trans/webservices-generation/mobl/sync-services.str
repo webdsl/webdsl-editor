@@ -4,8 +4,6 @@ imports
   		lib/mobl/editor-common.generated 
   		
   		webservices-generation/mobl/model-to-mobl
-  		webservices-generation/mobl/unsynced-functions
-     	webservices-generation/model-tree
      	webservices-generation/util
 		webservices-generation/mobl/authentication
   	  	
@@ -16,107 +14,104 @@ imports
 rules 
 	
   generate-mobl-services: x -> x
-	where  dirname := "webservices/mobl"
-  			; <create-dir-in-workspace> dirname
-  			// ; generate-mobl-unsynced-functions  
-  			; generate-mobl-top-level-service
-  			; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> None()	// TODO : flatten - removes subentities
-  			; <map(generate-mobl-sync-service)> entities
-  			; generate-mobl-timestamp-service 
-  			; generate-mobl-edit-service 
-  			; generate-mobl-new-service    
-  			; gettopentitiesfunction:= <generate-mobl-get-top-entities-function> 
-  			; syncfunctions := <map(generate-mobl-sync-functions)> entities  
-  			; totalsyncfunction := <generate-mobl-total-sync-function> entities
-  			; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
-  			; newsyncfunction := <generate-mobl-new-sync-function>  entities  
-  			; clearEditFunction := <generate-mobl-clear-edit-function>  entities 
-  			; clearNewFunction := <generate-mobl-clear-new-function>  entities
-  			; restoreFunction := <generate-mobl-restore-object-function> entities
-  			; service := <bundle-services> None()
-  			; imports :=  mobl-def* 
-  			  |[
+	with dirname := "webservices/mobl"
+  		; <create-dir-in-workspace> dirname
+  		; generate-mobl-top-level-service
+  		; entities :=  <all-keys-EntDecl; filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> None()	
+  		; <map(generate-mobl-sync-service)> entities
+ 		; generate-mobl-timestamp-service 
+  		; generate-mobl-edit-service 
+  		; generate-mobl-new-service    
+  		; gettopentitiesfunction:= <generate-mobl-get-top-entities-function> 
+  		; syncfunctions := <map(generate-mobl-sync-functions)> entities  
+  		; totalsyncfunction := <generate-mobl-total-sync-function> entities
+  		; editsyncfunction := <generate-mobl-edit-sync-function>  entities  
+  		; newsyncfunction := <generate-mobl-new-sync-function>  entities  
+  		; clearEditFunction := <generate-mobl-clear-edit-function>  entities 
+  		; clearNewFunction := <generate-mobl-clear-new-function>  entities
+  		; restoreFunction := <generate-mobl-restore-object-function> entities
+  		; service := <bundle-services> None()
+  		; imports :=  mobl-def* 
+  			|[
   			  	import webservices::mobl::mapper
   			  	import webservices::mobl::model
   			  	import webservices::mobl::simpleView
-  			  ]|  
-  			; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, newsyncfunction, clearEditFunction, clearNewFunction, restoreFunction, 
-  			  						gettopentitiesfunction, <generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>],
-  			  						<generate-mobl-authenication-service-entry-points <+ ![]>]
-  			; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
-  			; module-to-moblfile(|dirname, "sync")
-  			; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
+  		  	]|  
+  		; result := <concat> [imports, service, syncfunctions, [totalsyncfunction, editsyncfunction, newsyncfunction, clearEditFunction, clearNewFunction, restoreFunction, 
+                               gettopentitiesfunction, <generate-mobl-get-listof-Ids-function>, <generate-mobl-sync-integration-functions>],
+                               <generate-mobl-authenication-service-entry-points <+ ![]>]
+  		; <make-valid-page-from-mobl-defs(|dirname, "sync")> result
+  		; module-to-moblfile(|dirname, "sync")
+  		; <refresh-workspace-file> $[[<project-path>]/[dirname]]   
 	 
 
   bundle-services: x -> result
- 	where 	sve_resources* := <bagof-ServiceMobl>None()
-			; result := mobl-def* 
-			  |[
-			  	  service Sync {
-			  	  	sve_resources*
-			  	  }
-			  ]|
+ 	with sve_resources* := <bagof-ServiceMobl>None()
+		; result := mobl-def* 
+			|[
+				service Sync {
+			  		sve_resources*
+			  	}
+			]|
 			  	
   generate-mobl-top-level-service: x -> x
-  	where  service := mobl-serviceElem 
-          	  |[
-          	  	resource getTopLevelEntities(): void{
+  	with service := mobl-serviceElem 
+			|[
+          		resource getTopLevelEntities(): void {
           	  		uri = "webservice/getTopLevelEntities"
      				method = "PUT"
       				data = {}
       				mapper = TopLevelEntities_Mapper
           	  	}
-          	  ]|	
-          	; rules (ServiceMobl:+= service)
+        	]|	
+		; rules (ServiceMobl:+= service)
   
   generate-mobl-sync-service: entity -> entity
-  	where  	e_uri := $["webservice/sync[entity]"]
-          	; x_servicename := $[sync[entity]]
-          	; x_mapper := $[[entity]Mapper]		
-           	; service := mobl-serviceElem 
-          	  |[
-          	  	resource  x_servicename (arg : [JSON]): void{
+  	with e_uri := $["webservice/sync[entity]"]
+      	; x_servicename := $[sync[entity]]
+        ; x_mapper := $[[entity]Mapper]		
+        ; service := mobl-serviceElem 
+        	|[
+          		resource  x_servicename (arg : [JSON]): void { 
           	  		uri = e_uri
      				method = "PUT"
       				data = JSON.stringify(arg)
       				mapper = x_mapper
           	  	}
-          	  ]|
-           ; rules (ServiceMobl:+= service)
- 
-
+        	]|
+       	; rules (ServiceMobl:+= service)
  
 rules //timestamp service 
 	
   generate-mobl-timestamp-service: x -> x
-  	where  	service := mobl-serviceElem 
-          	  |[
-          	  	resource  getTimeStamp (): Num{
-          	  		uri = "webservice/getTimeStamp"
+  	with service := mobl-serviceElem 
+			|[
+          		resource  getTimeStamp (): Num {
+          	  	 	uri = "webservice/getTimeStamp"
      				method = "PUT"
       				mapper = timeStampMapper
           	  	}
-          	  ]|
-           ; rules (ServiceMobl:+= service)	
+          	 ]|
+		; rules (ServiceMobl:+= service)	
   
 rules // editService
 	
   generate-mobl-edit-service: x -> x
-  	where  	service := mobl-serviceElem 
-          	  |[
+  	with service := mobl-serviceElem 
+       		|[
           	  	resource  sendEdits (arg : [JSON]): JSON {
           	  		uri = "webservice/syncDirtyObjects"
      				method = "PUT"
      				data = JSON.stringify(arg)
       				mapper = errorMapper
           	  	}
-          	  ]|
-           ; rules (ServiceMobl:+= service)	
+          	]|
+  		; rules (ServiceMobl:+= service)	
   
   generate-mobl-edit-sync-function: entities -> function  
-    where	stat_objectstatement* := <map(generate-sync-mobl-statements-add-json-to-array-helper(generate-sync-edit-mobl-exp))> entities			
- 			; function := mobl-def 
- 			  |[
+    with stat_objectstatement* := <map(generate-sync-mobl-statements-add-json-to-array-helper(generate-sync-edit-mobl-exp))> entities			
+ 		; function := mobl-def 
+ 			|[
  			  	 function syncEdits() : JSON {
  			  	 	setSyncFlag(true);
    				 	var array : [JSON] = [];
@@ -125,21 +120,21 @@ rules // editService
     				setSyncFlag(false);
     				return errors;
  				}
- 			  ]|
+ 			]|
     
   generate-sync-edit-mobl-general-exp: x_entity -> mobl-e|[x_entity.all().filter("dirty", "=", true).filter("new", "=", false)]|  
  			   
   generate-sync-edit-mobl-exp: x_entity -> exp
-    where 	<is-top-entity-mobl-by-dr> x_entity
-    		; <entity-extends-or-is-extended> x_entity
-    		; e_dirty := <generate-sync-edit-mobl-general-exp> x_entity  
-    		; exp := mobl-e |[e_dirty.filter("version", "!=", 0)]|
+    where <is-top-entity-mobl-by-dr> x_entity
+    	; <entity-extends-or-is-extended> x_entity
+    with e_dirty := <generate-sync-edit-mobl-general-exp> x_entity  
+    	; exp := mobl-e |[e_dirty.filter("version", "!=", 0)]|
     
   generate-sync-edit-mobl-exp: x_entity -> exp
-    where 	<is-top-entity-mobl-by-dr> x_entity
-    		; not(<entity-extends-or-is-extended> x_entity)
-    		; e_dirty := <generate-sync-edit-mobl-general-exp> x_entity  
-    		; exp := mobl-e |[ e_dirty.filter("sync", "=", true).filter("version", "!=", 0)]|	
+    where <is-top-entity-mobl-by-dr> x_entity
+    where not(<entity-extends-or-is-extended> x_entity)
+    with e_dirty := <generate-sync-edit-mobl-general-exp> x_entity  
+    	; exp := mobl-e |[ e_dirty.filter("sync", "=", true).filter("version", "!=", 0)]|	
 			
   
   generate-sync-edit-mobl-exp: x_entity -> <generate-sync-edit-mobl-general-exp> x_entity  
@@ -147,33 +142,33 @@ rules // editService
 
 	
   generate-sync-mobl-statements-add-json-to-array-helper(value-generator): x_entity -> statements
-	where	x_entityname := $["[x_entity]"]
-			; e_val := <value-generator> x_entity
-    		; statements := mobl-stat*
-   				|[	
-   					var value = e_val.selectJSON(["*"]);
-   					var json = Dynamic(name=x_entityname, value=value);
-					array.push(json);
-   				]|
+	with x_entityname := $["[x_entity]"]
+		; e_val := <value-generator> x_entity
+    	; statements := mobl-stat*
+   			|[	
+   				var value = e_val.selectJSON(["*"]);
+   				var json = Dynamic(name=x_entityname, value=value);
+				array.push(json);
+   			]|
 	
 rules // new syncservice 
 	
   generate-mobl-new-service: x -> x
-  	where  	service := mobl-serviceElem 
-          	  |[
+  	with service := mobl-serviceElem 
+			|[
           	  	resource  sendNew (arg : [JSON]): JSON {
           	  		uri = "webservice/syncNewObjects"
      				method = "PUT"
      				data = JSON.stringify(arg)
       				mapper = errorMapper
           	  	}
-          	  ]|
-           ; rules (ServiceMobl:+= service)
+          	]|
+		; rules (ServiceMobl:+= service)
    
   generate-mobl-new-sync-function: entities -> function  
-    where	stat_objectstatement* := <map(generate-sync-mobl-statements-add-json-to-array-helper(generate-sync-new-mobl-exp))> entities			
- 			; function := mobl-def 
- 			  |[
+    with stat_objectstatement* := <map(generate-sync-mobl-statements-add-json-to-array-helper(generate-sync-new-mobl-exp))> entities			
+ 		; function := mobl-def 
+ 			|[
  			  	 function syncNew() : JSON {
  			  	 	setSyncFlag(true);
    				 	var array : [JSON] = [];
@@ -182,14 +177,14 @@ rules // new syncservice
     				setSyncFlag(false);
     				return errors;
  				}
- 			  ]| 	
+ 			]| 	
  			  
   generate-sync-new-mobl-general-exp: x_entity -> mobl-e|[x_entity.all().filter("new", "=", true)]|  
  			   
   generate-sync-new-mobl-exp: x_entity -> exp
-    where 	<is-top-entity-mobl-by-dr> x_entity
-    		; e_new := <generate-sync-new-mobl-general-exp> x_entity  
-    		; exp := mobl-e |[e_new.filter("sync", "=", true)]|
+    where <is-top-entity-mobl-by-dr> x_entity
+    with e_new := <generate-sync-new-mobl-general-exp> x_entity  
+    	; exp := mobl-e |[e_new.filter("sync", "=", true)]|
     
   generate-sync-new-mobl-exp: x_entity -> <generate-sync-new-mobl-general-exp> x_entity  
     where not(<is-top-entity-mobl-by-dr> x_entity)	
@@ -197,54 +192,54 @@ rules // new syncservice
 rules // generation of sync-functions
 	 
  generate-mobl-sync-functions: entity -> function
- 	where	stat_objectstatement := <get-all-mobl-objects-of-entity-statement>			
- 			; x_functionname := $[syncAll[entity]]
- 			; e_logstring := $["time needed for syncing [entity]: "]
- 			; function := mobl-def 
- 			  |[
- 			  	 function x_functionname() {
-   				 	var begin = now();
+ 	with stat_objectstatement := <get-all-mobl-objects-of-entity-statement>			
+ 		; x_functionname := $[syncAll[entity]]
+ 		; e_logstring := $["time needed for syncing [entity]: "]
+ 		; function := mobl-def 
+ 			|[
+ 				function x_functionname() {
+   					var begin = now();
     				stat_objectstatement
     				log(e_logstring + ( ( now() - begin ) / 1000 ).toString());
  				}
- 			  ]|
+ 			]|
  
   get-all-mobl-objects-of-entity-statement: x_entity -> statement
- 	where	x_servicename := $[sync[x_entity]]
-          	; statement := mobl-stat |[ Sync.x_servicename(getTopEntitiesObjects());]|
+ 	with x_servicename := $[sync[x_entity]]
+       	; statement := mobl-stat |[ Sync.x_servicename(getTopEntitiesObjects());]|
  			  
- generate-mobl-get-top-entities-function: x -> statement
- 	where	stat_objectstatement := <TopEntity; map(Fst; generate-get-top-entities-statements)> 
-          	; statement := mobl-def
-          	  |[ 
+  generate-mobl-get-top-entities-function: x -> statement
+ 	with stat_objectstatement := <map(generate-get-top-entities-statements)> <all-keys-TopEntity> None() 
+       	; statement := mobl-def
+        	|[ 
           	  	function getTopEntitiesObjects() : [JSON] {
           			var array : [JSON] = [];
     				stat_objectstatement
     				return array;
     			}
-          	  ]|
+          	]|
   
   generate-get-top-entities-statements: x_entity -> statements
-    where	x_parent := <find-highest-parent> x_entity
-    		; <SubClass> x_parent
-    		; x_entityname := $["[x_entity]"]
-    		; statements := mobl-stat*
-   				|[
-					var value = x_parent.all().filter("sync", "=", true).filter("typeField", "=", x_entityname).selectJSON(["id", "lastSynced"]);	
-					var json = Dynamic(name=x_entityname, value=value);
-					array.push(json);
-   				]|	
+    where x_parent := <find-highest-parent> x_entity
+    	; <SubClass> x_parent
+    with x_entityname := $["[x_entity]"]
+    	; statements := mobl-stat*
+   			|[
+				var value = x_parent.all().filter("sync", "=", true).filter("typeField", "=", x_entityname).selectJSON(["id", "lastSynced"]);	
+				var json = Dynamic(name=x_entityname, value=value);
+				array.push(json);
+   			]|	
  
-   generate-get-top-entities-statements: x_entity -> statements
-    where	x_parent := <find-highest-parent> x_entity
-    		; not(<SubClass> x_parent)
-    		; x_entityname := $["[x_entity]"]
-    		; statements := mobl-stat*
-   				|[
-					var value = x_parent.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]);	
-					var json = Dynamic(name=x_entityname, value=value);
-					array.push(json);
-   				]|			       	  				  
+  generate-get-top-entities-statements: x_entity -> statements
+    where x_parent := <find-highest-parent> x_entity
+    where not (<SubClass> x_parent)
+    with x_entityname := $["[x_entity]"]
+    	; statements := mobl-stat*
+   			|[
+				var value = x_parent.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]);	
+				var json = Dynamic(name=x_entityname, value=value);
+				array.push(json);
+   			]|			       	  				  
  
  // get-all-mobl-objects-of-entity-statement: x_entity -> statement
  // 	where	x_topEntity := <TopEntity; Fst>
@@ -252,10 +247,10 @@ rules // generation of sync-functions
  // 			; x_servicename := $[sync[x_entity]]
 	// 		; statement := mobl-stat |[ Sync.x_servicename(x_topEntity.all().filter("sync", "=", true).selectJSON(["id", "lastSynced"]));]|
 	
- generate-mobl-total-sync-function:	entities -> function
- 	where 	stat_calls* := <generate-list-sync-calls> entities
-   			; function := mobl-def 
-   			  |[
+  generate-mobl-total-sync-function:	entities -> function
+ 	with stat_calls* := <generate-list-sync-calls> entities
+   		; function := mobl-def 
+   			|[
    			  	function syncAll() {
    			  		setSyncFlag(true);
    			  		var begin = now();
@@ -263,56 +258,56 @@ rules // generation of sync-functions
    			  		log("totaltime:" + ((now() - begin) / 1000).toString());
    			  		setSyncFlag(false);
    			  	}
-   			  ]|
+   			]|
    			   
   generate-list-sync-calls: entities -> list
- 	where 	//orderedentities := <make-node-of-entity(|[]); bf-collect(is-string); map(find-highest-parent) ;uniq> x_topEntity // TODO it is not clear of order mathers at the moment so keep this but flatten it 
- 			// the rule above is to hard to make any point when having multiple entry point making a try. since it was already doubtfull if it would help any thing we just let it go.
- 			stat_firstsyncs* := <map(make-sync-call)> entities
- 			; stat_setlastSynced* := <map(Fst; generate-set-LastSynced-loops)> <TopEntity>
- 			; list := mobl-stat* 
- 			  |[
+ 	with stat_firstsyncs* := <map(make-sync-call)> entities
+ 		; stat_setlastSynced* := <map( generate-set-LastSynced-loops)> <all-keys-TopEntity> None()
+ 		; list := mobl-stat* 
+ 			|[
  			  	setStatusSync("sync Objects");
  			  	var time = Sync.getTimeStamp();
  			  	stat_firstsyncs*
  			  	stat_setlastSynced*
  			  	setStatusSync("done");
- 			  ]|
+ 			]|
  			  
   make-sync-call: entityname -> call
- 	where x_servicename := $[syncAll[entityname]]
- 		  ; x_statusmessage :=	$["sync [entityname] Objects"]
- 		  ; call := mobl-stat* |[
- 		    	x_servicename(); 					
+ 	with x_servicename := $[syncAll[entityname]]
+ 		; x_statusmessage :=	$["sync [entityname] Objects"]
+ 		; call := mobl-stat* 
+ 		  	|[
+ 		 		x_servicename(); 					
  		    	setStatusSync(x_statusmessage);
  			]|
 
   generate-set-LastSynced-loops: x_entity -> statement
-  	where	x_parent := <find-highest-parent> x_entity
-  			; <SubClass> x_parent
-    		; x_entityname := $["[x_entity]"]
-  			; statement :=  mobl-stat* 
-  			  |[
-  			  	foreach(tl in x_parent.all().filter("sync", "=", true).filter("typeField", "=", x_entityname) ) {
+  	where x_parent := <find-highest-parent> x_entity
+  		; <SubClass> x_parent
+    with x_entityname := $["[x_entity]"]
+  		; statement :=  mobl-stat* 
+  		 	|[
+  				foreach(tl in x_parent.all().filter("sync", "=", true).filter("typeField", "=", x_entityname) ) {
  			  		tl.lastSynced = time;
  			  	}
-  			  ]|
+  			]|
  
-   generate-set-LastSynced-loops: x_entity -> statement
-  	where	x_parent := <find-highest-parent> x_entity
-  			; not(<SubClass> x_parent)
-    		; x_entityname := $["[x_entity]"]
-  			; statement :=  mobl-stat* 
-  			  |[
-  			  	foreach(tl in x_parent.all().filter("sync", "=", true)) {
+  generate-set-LastSynced-loops: x_entity -> statement
+  	where x_parent := <find-highest-parent> x_entity
+  	where not (<SubClass> x_parent)
+    	; x_entityname := $["[x_entity]"]
+  		; statement :=  mobl-stat* 
+  			|[
+  				foreach(tl in x_parent.all().filter("sync", "=", true)) {
  			  		tl.lastSynced = time;
  			  	}
-  			  ]|
+  			]|
   			  
 rules// clear function 
+	
   generate-mobl-clear-edit-function: entities -> function
-  	where 	stat_clear* := <map(generate-clear-edit-statement)>
-  			; function := mobl-def 
+  	with stat_clear* := <map(generate-clear-edit-statement)>
+  		; function := mobl-def 
   			|[
 				function clearDirty (excludes :  [String]) {
 					stat_clear*	
@@ -320,38 +315,39 @@ rules// clear function
   			]|
   
   generate-clear-edit-statement: x_entity -> statement
- 	where	statement := mobl-stat* 
- 			  |[
- 			  		var value = x_entity . all ( ). filter ( "dirty" , "=" , true );
-				  	foreach(ent in value){
-				  		if(!excludes.contains(ent.id)){
-				  			ent.dirty = false;
-				  		}
+ 	with statement := mobl-stat* 
+			|[
+ 				var value = x_entity . all ( ). filter ( "dirty" , "=" , true );
+				foreach(ent in value){
+				  	if(!excludes.contains(ent.id)){
+				  		ent.dirty = false;
 				  	}
- 			  ]|
+				}
+ 			]|
  			  
   generate-mobl-clear-new-function: entities -> function
-  	where 	stat_clear* := <map(generate-clear-new-statement)>
-  			; function := mobl-def 
+  	with stat_clear* := <map(generate-clear-new-statement)>
+  		; function := mobl-def 
   			|[
 				function clearNew () {
 					stat_clear*	
 				}  		
   			]|
  
- generate-clear-new-statement: x_entity -> statement
- 	where	statement := mobl-stat* 
- 			  |[
- 			  		var value = x_entity . all ( ). filter ( "new" , "=" , true );
-				  	foreach(ent in value) {
-				  		remove(ent);
-				  	}
- 			  ]|			  
+  generate-clear-new-statement: x_entity -> statement
+ 	with statement := mobl-stat* 
+			|[
+ 				var value = x_entity . all ( ). filter ( "new" , "=" , true );
+				foreach(ent in value) {
+				  	remove(ent);
+				}
+ 			]|
+ 				  
 rules// get list of id's from errors
 	  			  
    generate-mobl-get-listof-Ids-function: x -> function
-  	where 	function := mobl-def 
-  			|[
+  	with function := mobl-def 
+			|[
 				function getListofIds (errorents :  JSON) : [String] {
 					var ids : [String] = [];
 					foreach (errorent in errorents) {
@@ -366,9 +362,8 @@ rules// get list of id's from errors
 rules//some sync integration 
 	
   generate-mobl-sync-integration-functions : x -> defs
-  	where  defs := mobl-def* 
-  			|[
-  				
+  	with defs := mobl-def* 
+			|[	
   				function newSync( errorCTRL : Control3<JSON, ?,Function1<JSON , void>> = showErrors, detailCTRL : Control2<String, String> = showObject) : void {
 					setStatusSync("sync new Objects");
 					var errors = syncNew();
@@ -428,66 +423,63 @@ rules//some sync integration
 				  function setStatusSync(status : String) {
 				    Status = status;
 				  }
-  			]|		
+			]|		
 
   generate-mobl-restore-object-function: entities -> function
-  	where 	stat_ifs := <generate-mobl-restore-single-object-from-JSON> entities
-  			; function := mobl-def	
+  	with stat_ifs := <generate-mobl-restore-single-object-from-JSON> entities
+  		; function := mobl-def	
   			|[
   				function restoreObject ( type : String , ent : JSON ) {
 				  	stat_ifs
 				}
   			]|
+  			
   generate-mobl-restore-single-object-from-JSON: [x_entity] -> statement
-  	where  	x_entityString := String(x_entity)
-  			; statement :=mobl-stat* 
+  	with x_entityString := String(x_entity)
+  		; statement :=mobl-stat* 
   			|[
   				if ( type == x_entityString ) {
 				      x_entity . fromSelectJSON ( ent );
-				} 
-					
+				} 		
   			]|	
  
- generate-mobl-restore-single-object-from-JSON: [x_entity|xs] -> statement
-  	where  	x_entityString := String(x_entity)
-  			; stat_else := <generate-mobl-restore-single-object-from-JSON> xs
-  			; statement :=mobl-stat* 
+  generate-mobl-restore-single-object-from-JSON: [x_entity|xs] -> statement
+  	with x_entityString := String(x_entity)
+  		; stat_else := <generate-mobl-restore-single-object-from-JSON> xs
+  		; statement :=mobl-stat* 
   			|[
   				if ( type == x_entityString ) {
 				      x_entity . fromSelectJSON ( ent );
 				} else{
 					stat_else
-				} 
-					
+				} 	
   			]|	
   			
-  			
-rules //authentication		
-  	generate-mobl-authenication-service-entry-points: x -> services
-		where 
-			principal := <PrincipalDecl>
-			; services :=  mobl-def* 
-			  |[
-			  	  service Authentication {
-			  	  	resource logout ( ) : Bool {
-				      uri="webservice/logout"
-				      method="PUT"
-				      mapper=boolMapper
-				    }
+rules //authentication
+			
+  generate-mobl-authenication-service-entry-points: x -> services
+	where principal := <PrincipalDecl>
+	with services :=  mobl-def* 
+			|[
+				service Authentication {
+					resource logout ( ) : Bool {
+						uri="webservice/logout"
+						method="PUT"
+				    	mapper=boolMapper
+					}
 				   
-				    resource getDeviceKey ( username : String, password : String , devicename : String) : String {
-				      uri="webservice/getDeviceKey"
-				      method="PUT"
-				      data =  JSON.stringify(Dynamic ( username = username , devicename = devicename, pw=password ))
-				      mapper=deviceKeyMapper
-				    }
-				    
-				    resource authenticate ( username : String, devicekey : String , devicename : String) : Bool {
-				      uri="webservice/authenticate"
-				      method="PUT"
-				      data =  JSON.stringify(Dynamic ( username = username , devicename = devicename, devicekey=devicekey ))
-				      mapper=boolMapper
-				    }
-			  	  }
-			  ]|
-   
+			    	resource getDeviceKey ( username : String, password : String , devicename : String) : String {
+			      		uri="webservice/getDeviceKey"
+			    		method="PUT"
+			      		data =  JSON.stringify(Dynamic ( username = username , devicename = devicename, pw=password ))
+			      		mapper=deviceKeyMapper
+			    	}
+			    
+			   	 	resource authenticate ( username : String, devicekey : String , devicename : String) : Bool {
+			      		uri="webservice/authenticate"
+			      		method="PUT"
+			      		data =  JSON.stringify(Dynamic ( username = username , devicename = devicename, devicekey=devicekey ))
+			      		mapper=boolMapper
+			    	}
+			 	}
+			]|

@@ -12,60 +12,59 @@ imports
 rules //builder
 	
   generate-entity-files: (selected, position, ast@Application(_, _), path, project-path) -> None()
-  	with	<webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
-        	; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
-  	where	dirname := "entities_generated"
-  			; <create-dir-in-workspace> dirname 
-  			; entities := <all-keys-EntDecl> None()	 
-  			; filteredEntities := <filter(not(is-builtin-entity))> entities
-  			; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
-  			; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
-  			; <map(entity-to-file(|dirname))> cleanedEntities
-  			; <main-file-to-file(generate-main-model-file(|dirname, [])|dirname)> filteredEntities  
-  			; <refresh-workspace-file> $[[project-path]/[dirname]]  
+  	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  		; dirname := "entities_generated"
+  		; <create-dir-in-workspace> dirname 
+  		; entities := <all-keys-EntDecl> None()	 
+  		; filteredEntities := <filter(not(is-builtin-entity))> entities
+  		; completeEntities := <map(EntDecl; complete-entity-with-extends-properties)> filteredEntities  
+  		; cleanedEntities := <map(try(remove-general-super-from-entity))> completeEntities
+  		; <map(entity-to-file(|dirname))> cleanedEntities
+  		; <main-file-to-file(generate-main-model-file(|dirname, [])|dirname)> filteredEntities  
+  		; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
-generate-entity-files: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+  generate-entity-files: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
 	where not (<?Application(_, _)> ast)
 	where fatal-err-msg(|"This builder is only supported on the application file")
 
 rules // file stuff  
 			      
   make-valid-page-from-entity(|moduleName) : e@Entity(_, _, _) -> page
-  	where 	page := ModuleDefs(moduleName, [e], [])
+  	where page := ModuleDefs(moduleName, [e], [])
   
   make-valid-page-from-entity(|moduleName) : e@EntityNoSuper(_, _) -> page
-  	where 	page := ModuleDefs(moduleName, [e], [])
+  	where page := ModuleDefs(moduleName, [e], [])
   	
   entity-to-file(|dirname): e -> e
-  	with 	(? Entity(name, _, _) 
-     			<+ ?EntityNoSuper(name,_))
-  			; <file-exists> $[[<project-path>]/[dirname]]
-  			; filename := $[[<project-path>]/[dirname]/[name].app]
-	  		; <make-valid-page-from-entity(|$[[dirname]/[name]])
-	  		   ; write-ast-to-file(|filename)> e  
+  	with (? Entity(name, _, _) 
+     		<+ ?EntityNoSuper(name,_))
+  		; <file-exists> $[[<project-path>]/[dirname]]
+  		; filename := $[[<project-path>]/[dirname]/[name].app]
+	  	; <make-valid-page-from-entity(|$[[dirname]/[name]])
+	  	; write-ast-to-file(|filename)> e  
 	  		    
  generate-main-model-file(|moduleName, extradefs): entitynames -> mainAST
-   where 	sortednames := <string-sort> entitynames
-   			; modules := <map(\entityName ->Imports( $[[moduleName]/[entityName]] )\)> sortednames
-   			; mainAST := ModuleDefs($[[moduleName]/main], <concat>[modules, extradefs], [])
+	with sortednames := <string-sort> entitynames
+		; modules := <map(\entityName ->Imports( $[[moduleName]/[entityName]] )\)> sortednames
+		; mainAST := ModuleDefs($[[moduleName]/main], <concat>[modules, extradefs], [])
   
  main-file-to-file(main-genaration|dirname): entitynames -> entitynames
-  where		<file-exists> $[[<project-path>]/[dirname]]
-  			; filename := $[[<project-path>]/[dirname]/main.app]
-	  		; <main-genaration
-	  		  ; write-ast-to-file(|filename)> entitynames
+  where	 <file-exists> $[[<project-path>]/[dirname]]
+  with filename := $[[<project-path>]/[dirname]/main.app]
+	  ; <main-genaration; write-ast-to-file(|filename)> entitynames
 	  		       			  
 rules //entity manipulation
 
-  remove-general-super-from-entity : Entity(name, "Entity",  props) -> EntityNoSuper(name, props)
+  remove-general-super-from-entity: Entity(name, "Entity",  props) -> EntityNoSuper(name, props)
 
-  complete-entity-with-extends-properties : Entity(name, super, props) -> Entity(name, super, new-props)
-  	where  new-props := <get-all-properties-and-functions-from-entityname> name
+  complete-entity-with-extends-properties: Entity(name, super, props) -> Entity(name, super, new-props)
+  	where new-props := <get-all-properties-and-functions-from-entityname> name
   	
   get-all-properties-and-functions-from-entityname : name -> props
-  	where  props' := <bagof-Properties> name
-  		   ; functions' := <bagof-Functions> name
-  		   ; props := <concat> [props',functions'] 
+  	where props' := <bagof-Properties> name
+		; functions' := <bagof-Functions> name
+		; props := <concat> [props',functions'] 
 
 	// override asfix-anno-location : x->x 
 	// override  implode-asfix : x->x

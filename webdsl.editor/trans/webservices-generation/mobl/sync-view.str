@@ -7,59 +7,59 @@ imports
         
   	  	util  
 	  	lib/editor-common.generated
+	  	libwebdsl-generator
 rules 
 	
   make-mobl-sync-view: x -> [viewelem | controls]
-  where 	topEntities := <TopEntity>
-  			; controls := <map(make-mobl-sync-control)> topEntities
-  			; e_tabs* := <map(Fst; mobl-entity-to-tuple)> topEntities
- 			; viewelem := mobl-def 
- 			  |[
- 			  	screen syncSimpleView() {
+  with topEntities := <get-all-top-entity-tuples>
+  		; controls := <map(make-mobl-sync-control)> topEntities
+  		; e_tabs* := <map(Fst; mobl-entity-to-tuple)> topEntities
+ 		; viewelem := mobl-def 
+ 			|[
+ 				screen syncSimpleView() {
  			  		header( "Sync Entities" ) {
       					backButton( "back" )
     				}
  			  		tabSet(
  			  			[e_tabs*]
  			  		)
-
   				}
   			]|
   			
   mobl-entity-to-tuple: entityName -> tuple
-  	where 	x_controlname := $[syncSimpleView_[entityName]]
-			; e_entityname := $["[entityName]"]
-  			;tuple := mobl-e|[(e_entityname, "", x_controlname)]|		
+  	with x_controlname := $[syncSimpleView_[entityName]]
+		; e_entityname := $["[entityName]"]
+  		;tuple := mobl-e|[(e_entityname, "", x_controlname)]|		
   		
   			
   make-mobl-sync-control: (entityname, propname) -> control
-   	where 	x_name := <get-renamed-prop <+ Snd> (entityname, propname)
-            ; e_collection := <helper-make-mobl-sync-control-in-exp> (entityname, propname)
-            ; se_vardecl := VarDeclInferredContrElem("phrase", String(""))   //hack for grammer problems make difference between vardecls				  
- 			; x_controlname := $[syncSimpleView_[entityname]]
- 			; control := mobl-def 
- 			  |[
- 			  	control x_controlname() {
+   	with x_name := <get-renamed-prop <+ Snd> (entityname, propname)
+    	; e_collection := <helper-make-mobl-sync-control-in-exp> (entityname, propname)
+        ; se_vardecl := VarDeclInferredContrElem("phrase", String(""))   //hack for grammer problems make difference between vardecls				  
+ 		; x_controlname := $[syncSimpleView_[entityname]]
+ 		; control := mobl-def 
+ 			|[
+ 				control x_controlname() {
     				se_vardecl
     				searchBox ( phrase )
     				list ( ent in e_collection ) {
       					item { checkBox ( ent . sync , label = ent . x_name ) }
     				}
   				}
-  				]|
+  			]|
   				
   helper-make-mobl-sync-control-in-exp: (entityname, propname) -> exp
-  	where 	<entity-extends-or-is-extended> entityname
-  			; x_classname := <find-highest-parent> entityname
-  			; x_name := <get-renamed-prop <+ Snd> (entityname, propname)
-   			; e_entityname := $["[entityname]"]
-   			; e_nameprop := $["[x_name]"]   
-  			; exp := mobl-e |[x_classname.searchPrefix( phrase ).filter("typeField", "=", e_entityname ).order( e_nameprop , true )]|
+  	where <entity-extends-or-is-extended> entityname
+  	with x_classname := <find-highest-parent> entityname
+  		; x_name := <get-renamed-prop <+ Snd> (entityname, propname)
+   		; e_entityname := $["[entityname]"]
+   		; e_nameprop := $["[x_name]"]   
+  		; exp := mobl-e |[x_classname.searchPrefix( phrase ).filter("typeField", "=", e_entityname ).order( e_nameprop , true )]|
   
   helper-make-mobl-sync-control-in-exp: (entityname, propname) -> exp
-  	where 	not(<entity-extends-or-is-extended> entityname)
-  			; x_classname := <find-highest-parent> entityname
-  			; x_name := <get-renamed-prop <+ Snd> (entityname, propname)
-   			; e_nameprop := $["[x_name]"]   
-  			; exp := mobl-e |[x_classname.searchPrefix( phrase ).order( e_nameprop , true )]|
+  	where not(<entity-extends-or-is-extended> entityname)
+  	with x_classname := <find-highest-parent> entityname
+  		; x_name := <get-renamed-prop <+ Snd> (entityname, propname)
+   		; e_nameprop := $["[x_name]"]   
+  		; exp := mobl-e |[x_classname.searchPrefix( phrase ).order( e_nameprop , true )]|
  	
