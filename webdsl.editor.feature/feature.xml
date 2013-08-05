@@ -15,7 +15,7 @@
 
    <url>
       <update label="webdsl.org" url="http://webdsl.org/update/"/>
-      <discovery label="Spoofax/IMP" url="http://www.lclnet.nl/update"/>
+      <discovery label="Spoofax/IMP" url="http://download.spoofax.org/update/stable"/>
    </url>
 
    <includes
