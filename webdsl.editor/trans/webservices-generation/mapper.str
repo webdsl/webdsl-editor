@@ -103,8 +103,8 @@ rules //conversion to json
   json-to-properties-conversion-null-check: prop -> statement
     with x_propname := <get-property-name> prop
     	; x_renamedName := <rename-prop-by-dr; get-property-name> prop // flatten uses rename
-    	; stat_mapping := <json-to-properties-conversion> prop
-    	; x_stringPropname := String(x_renamedName)  
+    where stat_mapping := <json-to-properties-conversion> prop
+    with x_stringPropname := String(x_renamedName)  
     	; x_warningMessage := String($[Entity is missing property [x_propname]]) 
     	; statement := webdsl 
     		|[	

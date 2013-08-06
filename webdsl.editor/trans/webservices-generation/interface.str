@@ -5,7 +5,7 @@ imports
 	libstratego-lib
 	libstratego-sglr
 	libwebdsl-generator  
-  	libwebdsl-front
+  	libwebdsl-front 
   	
   	entity-extraction/generate-entity-files
 	webservices-generation/json
@@ -146,7 +146,7 @@ rules// generation
 	  			var jsonobj := JSONObject();
 	  			for(topent : x_entity in  x_entity.all()){
 	  				if(topent.mayReadSynchronize()) {
-	  					array.put(topent.toSimpleJSON());array.put(topent.toSimpleJSON());
+	  					array.put(topent.toSimpleJSON());
 	  				}
 	            }
 	            jsonobj.put("name", x_entityString );

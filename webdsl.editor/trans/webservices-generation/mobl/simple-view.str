@@ -40,10 +40,10 @@ rules
 	  		]| 
 
   mobl-property-to-view: Property(_, name, type, _) -> view 
-  	with view := <type-to-view> (name, type) 
+  	where view := <type-to-view> (name, type) 
   	
   mobl-property-to-view: PropertyNoAnnos(_, name, type) -> view
-  	with view := <type-to-view> (name, type) 
+  	where view := <type-to-view> (name, type) 
   	
 rules// transform types to viewcalls
 	

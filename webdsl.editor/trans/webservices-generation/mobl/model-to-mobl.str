@@ -53,12 +53,14 @@ rules //lookup
   
   make-entity-with-properties: entityname -> EntityNoSuper(entityname, props*)
   	with props_entity* := <concat> [[VersionProperty1()], <get-properties-of-entity-mobl-model> entityname]
-  		; props_childeren := <get-subclasses-of-entity; map(get-properties-of-entity-mobl-model); flatten-list> entityname	
+  		; props_childeren := <get-subclasses-of-entity; map(get-properties-of-entity-mobl-model); flatten-list> entityname	 
   		; props_childeren* := <map(rename-prop-with-classname)> props_childeren
   		; props* := <uniq> [props_entity*|props_childeren*]	
   
   get-properties-of-entity-mobl-model: entityname -> props
-  	with props := <concat> [<all-properties-with-entity-anno> entityname, <bagof-ExtraInverseProperty> entityname, <bagof-ExtraProperty> entityname]
+  	with props := <concat> [<all-properties-with-entity-anno> entityname, 
+  			<bagof-ExtraInverseProperty; map(add-anno(|FromEntity(entityname)))> entityname, 
+  			<bagof-ExtraProperty; map(add-anno(|FromEntity(entityname)))> entityname]
   	//Also only got properties from own entity
   	
   check-searchable-anno: property -> mobl-anno |[searchable]| 
@@ -74,16 +76,16 @@ rules //lookup
   	where not(<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where <get-property-type; ?GenericSort(_,_)> property
     with propertyname := <get-property-name> property
-    	; propertyname' := <try(get-original-propname-name)>   
-    	; class' := <(get-anno(?FromEntity(x)); !x) <+ !class> property    
-    	; (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
-    	; x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop) 
+    	; propertyname' := <try(get-original-propname-name)>  
+    	; class' := <(get-anno(?FromEntity(x)); !x) <+ !class> property 
+    where (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
+    with  x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop) 
   			
  check-inverse-anno(|class): property ->  anno
   	where not (<get-property-annos; fetch(?InverseAnno(_, _))> property)
     where  <get-property-type; ?GenericSort(_,_)> property
     with propertyname := <get-property-name> property
-    	; propertyname' := <try(get-original-propname-name)>  
+    	; propertyname' := <try(get-original-propname-name)> 
    		; anno := <ExtraInverseAnno> (class, propertyname')
     where not(<InverseProperty> (class, propertyname'))
    
@@ -202,15 +204,15 @@ rules //transform
  			]|
  			  
   property-to-mobl-property(|class): p@Property(x_name, sort, type, annos) -> result
-  	with t_newType := <type-to-mobl-type> type
-  		; if (a_newannos := <annos-to-mobl-annos(|class)> p) 
+  	where t_newType := <type-to-mobl-type> type
+    with if (a_newannos := <annos-to-mobl-annos(|class)> p) 
   			then  result := mobl-entBodyElem |[x_name : t_newType (a_newannos) ]| 
   			else  result := mobl-entBodyElem |[x_name : t_newType ]| 
   		end
   			
   property-to-mobl-property(|class): p@PropertyNoAnno(x_name, sort, type) -> result
-  	with t_newType := <type-to-mobl-type> type
-  		; if (a_newannos := <annos-to-mobl-annos(|class)> p) 
+  	where t_newType := <type-to-mobl-type> type
+  	with if (a_newannos := <annos-to-mobl-annos(|class)> p) 
   			then  result :=  mobl-entBodyElem |[x_name : t_newType (a_newannos) ]|
   			else  result :=  mobl-entBodyElem |[x_name : t_newType ]| 
   		end
@@ -219,7 +221,7 @@ rules //transform
   	with anno* := [<check-searchable-anno <+ !None()> property|[]]
   		; anno'' := [< check-inverse-anno <+ check-inverse-anno(|class) <+ !None()> property|anno*]
   		; result := <filter(not(?None()))>
-  		; length; int-gt(|0) 
+  	where <length; int-gt(|0)> result
     
 rules // type transformations  	
   

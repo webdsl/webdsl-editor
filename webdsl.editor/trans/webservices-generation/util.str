@@ -54,7 +54,7 @@ rules
   	
   entity-extends-or-is-extended: entityname -> entityname
   	where parent := <Extends>  entityname
-  	where not(?<"Entity"> parent)
+  	where not(<?"Entity"> parent)
   	
   // declare-top-entities: ast -> topEntity*
   // 	where topEntity* := <collect-all(\DeriveWebServices(ent, prop)->(ent, prop)\)> ast
