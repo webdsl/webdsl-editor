@@ -45,7 +45,8 @@ rules //lookup
   all-properties-including-entity-properties: entityName -> (entityName, props*)
   	with  extraprops :=  <map(add-anno(|FromEntity(entityName)))> <(get-extra-type-property; MkSingleton ) <+ ![]> entityName //extra prop added
   		; props := <concat> [<all-properties-with-entity-anno> entityName, <filter(not(NameProperty1())); map(add-anno(|FromEntity(entityName)))> AllEntityProperties1(), extraprops]
-  		; props* := <map(rename-prop-by-dr)> props //check for overwriting of nameProperty
+  		; props' := <filter(not(is-restricted-property))> props
+  		; props* := <map(rename-prop-by-dr)> props' //check for overwriting of nameProperty
  
   get-extra-type-property: entityname -> property
   	where superclass := <Extends> entityname

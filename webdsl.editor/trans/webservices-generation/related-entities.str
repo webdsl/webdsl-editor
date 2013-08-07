@@ -27,7 +27,7 @@ rules //builder
 
 rules// lookup 
 	
-  get-all-properties: entityName -> (entityName, <all-properties-with-entity-anno> entityName)
+  get-all-properties: entityName -> (entityName, <all-properties-with-entity-anno; filter(not(is-restricted-property))> entityName)
   				  
 rules//file generation 
 	

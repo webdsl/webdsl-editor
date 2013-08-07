@@ -9,6 +9,14 @@ imports
 
 rules
 	
+  is-restricted-property(|entityname): prop -> prop
+  	where <RestrictedProperty> (entityname, prop)
+  
+  is-restricted-property: prop -> prop
+  	where propertyname := <get-property-name> prop  
+    	; <get-anno(?FromEntity(class))> prop
+    	; <RestrictedProperty> (class, propertyname)   
+  		
   get-subclasses-of-entity: entity -> children
   	with directChildren := <bagof-SubClass> entity
   		; subchildren := <map(get-subclasses-of-entity); flatten-list> directChildren

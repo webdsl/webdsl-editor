@@ -16,7 +16,7 @@ rules
   		; <create-dir-in-workspace> dirname 
   		; entities := <all-keys-EntDecl> None()	 
   		; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
-  		; entitywithproperties := <map(where(make-entity-with-properties);\x -> (x, <all-properties-with-entity-anno> x)\)> filteredEntities // here set DR for renamed properties
+  		; entitywithproperties := <map(where(make-entity-with-properties);\x -> (x, <all-properties-with-entity-anno; filter(not(is-restricted-property))> x)\)> filteredEntities // here set DR for renamed properties
    		; mappers := <map(generate-edit-mapper(|dirname))> entitywithproperties  
    		; <main-file-to-file(generate-main-model-file(|dirname, []) |dirname)> filteredEntities  
   		; <refresh-workspace-file> $[[project-path]/[dirname]]  

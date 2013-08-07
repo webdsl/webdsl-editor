@@ -57,38 +57,48 @@ rules //lookup
   		; props_childeren* := <map(rename-prop-with-classname)> props_childeren
   		; props* := <uniq> [props_entity*|props_childeren*]	
   
-  get-properties-of-entity-mobl-model: entityname -> props
-  	with props := <concat> [<all-properties-with-entity-anno> entityname, 
+  get-properties-of-entity-mobl-model: entityname -> props'
+  	with props := <concat> [<all-properties-with-entity-anno; filter(has-anno(|FromEntity(entityname)))> entityname, 
   			<bagof-ExtraInverseProperty; map(add-anno(|FromEntity(entityname)))> entityname, 
   			<bagof-ExtraProperty; map(add-anno(|FromEntity(entityname)))> entityname]
+  		; props' := <filter(where(get-property-name; not(is-restricted-property(|entityname))))> props	
   	//Also only got properties from own entity
+  	
   	
   check-searchable-anno: property -> mobl-anno |[searchable]| 
    	where <is-searchable-prop> property  
   		; <get-property-type; ?SimpleSort(type)> property
   		; <fetch-elem(?type)> ToMoblStringTypes()  
   			  
-  check-inverse-anno: Property(_, _, _, annos) ->  mobl-anno |[inverse : x_name ]|
-    where <fetch-elem(?InverseAnno(class, name))> annos
+  check-inverse-anno: property ->  mobl-anno |[inverse : x_name ]|
+    where (class, name) := <has-valid-inverse-anno> property 
     with  x_name := <get-renamed-prop <+ !name> (class, name) 
     
   check-inverse-anno(|class): property -> mobl-anno |[inverse : x_otherprop ]| 
-  	where not(<get-property-annos; fetch(?InverseAnno(_, _))> property)
+  	where not(<has-valid-inverse-anno> property)
     where <get-property-type; ?GenericSort(_,_)> property
-    with propertyname := <get-property-name> property
-    	; propertyname' := <try(get-original-propname-name)>  
-    	; class' := <(get-anno(?FromEntity(x)); !x) <+ !class> property 
-    where (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
+   		; (otherEnity, x_otherprop) :=  <has-valid-counter-inverse-anno> property
     with  x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop) 
   			
- check-inverse-anno(|class): property ->  anno
-  	where not (<get-property-annos; fetch(?InverseAnno(_, _))> property)
-    where  <get-property-type; ?GenericSort(_,_)> property
+  check-inverse-anno(|class): property ->  anno
+  	where not(<has-valid-inverse-anno> property)
+    where <get-property-type; ?GenericSort(_,_)> property
     with propertyname := <get-property-name> property
     	; propertyname' := <try(get-original-propname-name)> 
    		; anno := <ExtraInverseAnno> (class, propertyname')
-    where not(<InverseProperty> (class, propertyname'))
-   
+    where not(<has-valid-counter-inverse-anno> property)
+  
+  has-valid-inverse-anno: property -> (class, name)
+  	where <get-property-annos; fetch(?InverseAnno(class, name))> property
+  	where not (<RestrictedProperty>(class,name))
+  
+  has-valid-counter-inverse-anno: property -> (otherEnity, x_otherprop)
+	with propertyname := <get-property-name> property
+		; propertyname' := <try(get-original-propname-name)>  
+    	; class' := <(get-anno(?FromEntity(x)); !x) > property 
+  	where (otherEnity, x_otherprop) := <InverseProperty> (class', propertyname')
+    where not (<RestrictedProperty> (otherEnity, x_otherprop) )
+    
 rules //rename(subclasses stuf)
 	
   rename-prop-by-dr: Property(name, k, str, annos){anno*} -> Property(newname, k, str, annos){anno*}
@@ -149,11 +159,18 @@ rules //generation
 		; map(declare-extra-prop(|entityname))
 
   generic-type-has-no-inverse-anno(|class): property ->  property
-  	where not (<get-property-annos; fetch(?InverseAnno(_, _))> property)
+  	where not (<has-valid-inverse-anno> property)
     where <get-property-type; ?GenericSort(_,_)> property
     	; propname := <get-property-name> property
     where not (<InverseProperty> (class, propname))
-    
+  
+  generic-type-has-no-inverse-anno(|class): property ->  property
+  	where not (<has-valid-inverse-anno> property)
+    where <get-property-type; ?GenericSort(_,_)> property
+    	; propname := <get-property-name> property
+		; (class', propname') := <InverseProperty> (class, propname)
+		; <RestrictedProperty> (class',propname')  
+   
   declare-extra-prop(|class): property -> property
   	with entity := <get-property-type; get-inner-type-name> property
   		; propertyname := <get-property-name> property
