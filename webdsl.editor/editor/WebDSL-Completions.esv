@@ -139,11 +139,11 @@ completions
   completion template  EntityBodyDeclaration : <name> " -> " <Entity>
   completion template  EntityBodyDeclaration : "function " <name> "(x : Type, y : Type) : ReturnType {\n\t\n}" (blank) 
   completion template  EntityBodyDeclaration : "function " <name> "() {\n\t\n}" (blank)
-  completion template  EntityBodyDeclaration : "synchronization configuration mapping {\n\t\n}" (blank)
+  completion template  EntityBodyDeclaration : "synchronization configuration {\n\t\n}" (blank)
   
   completion template  SyncOption : "toplevel name property :" <PropertyName> (blank)
   
-  completion template  SyncOption : "Restricted properties :" <PropertyName> (blank)
+  completion template  SyncOption : "restricted properties :" <PropertyName> (blank)
   
   completion template  SyncOption : "access read:" <Exp> (blank)
   
