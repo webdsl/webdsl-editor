@@ -20,7 +20,7 @@ rules
   	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks  
         ; <generate-mobl-model> project-path
-  	with body := [<documentation-header>,<documentation-model>]
+  	with body := [<documentation-header>,<documentation-model>, <documentation-service>]
   		; <create-dir-in-workspace> "webservices" 
   		; <concat-strings; text-to-file(|"webservices/API.md")> body
   		
@@ -126,58 +126,184 @@ rules//helpers
   remove-property-with-name: p@PropertyNoAnno(name, sort, type) -> p
   	where <string-starts-with(|"generatedPropertyForInverse_")> name
   
+  
+rules 
+  documentation-service: x -> documentation
+	with documentation := <documentation-service-header> None()
+  
 rules//overlays
 	
  documentation-header = !
 	${API Webservices Synchronization Framework
- 	  ==============================================
- 	  This document describes the webservices interface that is part of the generated synchronization framework. The goal of this document is explanation of the webservices for usage of 3th party apllications.
+ 	 ==============================================
+ 	 This document describes the webservices interface that is part of the generated synchronization framework. The goal of this document is explanation of the webservices for usage of 3th party applications.
  	  
- 	  The following information is described in this document:
+ 	 The following information is described in this document:
  	  
- 	  + General Webservice Information
- 	  + Model Description
- 	  + WebService Description
+ 	 + General Webservice Information
+ 	 + Model Description
+ 	 + WebService Description
  	  
- 	  General Webservice Information
- 	  ---------------------------------
+ 	 General Webservice Information
+ 	 ---------------------------------
  	  
- 	  The generated services are simple, which means they do not contain many parameters to specify all kind of options on the requested data. The services are meant for synchronization. Nevertheless, they can also be used for requesting of data.
+ 	 The generated services are simple, which means they do not contain many parameters to specify all kind of options on the requested data. The services are meant for synchronization. Nevertheless, they can also be used for requesting of data.
 
- 	  ### Interface ###
+ 	 ### Interface ###
 
- 	  All the webservices are available through the following link:
+ 	 All the webservices are available through the following link:
 	 
- 	  http(s)://<base.url>/webservice/<webservicename>
+ 	 	http(s)://<base.url>/webservice/<webservicename>
 
  	  
- 	  *The services are based on JSON and only support post requests*
+ 	 *The services are based on JSON and only support post requests*
 
- 	  The default format for all services is:
+ 	 The default format for all services is:
 
- 	  | field name | type     | explanation               |
- 	  |------------|:--------:|---------------------------|
- 	  | errors     | [String] | List of error messages    |
- 	  | result     | Any      | the result of the service |
+ 	 | field name | type     | explanation               |
+ 	 |------------|:--------:|---------------------------|
+ 	 | errors     | [String] | List of error messages    |
+ 	 | result     | Any      | the result of the service |
 
  	  
- 	  ### Control Flow ###
+ 	 ### Control Flow ###
 
- 	  The first time using the synchronization the following steps are expected:
+ 	 The first time using the synchronization the following steps are expected:
 
- 	  + possible authentication
- 	  + request the toplevel entities for partition selection.
- 	  + request timestamp
- 	  + request for all entities the objects of the selected partitions 
+ 	 + possible authentication
+ 	 + request the toplevel entities for partition selection.
+ 	 + request timestamp
+ 	 + request for all entities the objects of the selected partitions 
  	  
- 	  Further synchronization contains the following steps:
+ 	 Further synchronization contains the following steps:
 
- 	  + send the new objects to the server
- 	  + send the updates of modified objects to the server
- 	  + request timestamp
- 	  + request for all entities the objects of the selected partitions	
+ 	 + send the new objects to the server
+ 	 + send the updates of modified objects to the server
+ 	 + request timestamp
+ 	 + request for all entities the objects of the selected partitions	
  	    	
  }
+ 
+
+  documentation-service-header = !
+	${WebService Description
+	-------------------------
+	This section describes the functionality of each of the available services and the expected in and output.
+	
+	### getTimeStamp ###
+	--------------------
+	
+	This service requests a timestamp from the server which should be used as time reference in the synchronization process.
+	
+	#### input ####
+	
+	*none*
+	
+	#### output ####
+	
+	| field name | type   | explanation                      |
+	|------------|:------:|----------------------------------|
+	| result     | Number | timestamp represented in number  |
+	
+	
+	### getTopLevelEntities ###
+	----------------------------
+	
+	This service requests a simple representation from each of the object that is of a topLevel type.
+	
+	#### input ####
+	
+	*none*
+	
+	#### output ####
+	
+	| field name | type       | explanation                      |
+	|------------|:----------:|----------------------------------|
+	| result     | JSONObject | timestamp represented in number  |
+	
+	result:
+	| field name | type         | explanation                                     |
+	|------------|:------------:|-------------------------------------------------|
+	| name       | String       | string representation of object type            |
+	| value      | [JSONObject] | list of object of the type stored in name field |
+	
+	
+	### syncNewObjects ###
+	----------------------------
+	
+	This service allows to send new local objects to the server to persist it in the central application.
+	
+	#### input ####
+	
+		[JSONObject]
+	
+	| field name | type         | explanation                                          |
+	|------------|:------------:|------------------------------------------------------|
+	| name       | String       | string representation of object type                 |
+	| value      | [JSONObject] | list of new objects of the type stored in name field |
+		
+	
+	#### output ####
+	
+	| field name | type         | explanation               |
+	|------------|:------------:|---------------------------|
+	| errors     | [JSONObject] | errors related to objects |
+	
+	errors:
+	
+	| field name | type         | explanation                                     |
+	|------------|:------------:|-------------------------------------------------|
+	| errors     | [JSONObject] | list of error messages related to the object    |
+	| ent        | String       | type of the object it represents                |
+	| id         | String       | id of the object it represents                  |
+	
+	errors.errors:
+		
+	| field name | type   | explanation                          |
+	|------------|:------:|--------------------------------------|
+	| type       | String | type of error. e.g, warning or error |
+	| message    | String | the message of the error             |
+	
+	
+	### syncDirtyObjects ###
+	----------------------------
+	
+	This service allows to send local changes on objects to the server to persist it in the central application.
+	
+	#### input ####
+	
+		[JSONObject]
+	
+	| field name | type         | explanation                                          |
+	|------------|:------------:|------------------------------------------------------|
+	| name       | String       | string representation of object type                 |
+	| value      | [JSONObject] | list of new objects of the type stored in name field |
+		
+	
+	#### output ####
+	
+	| field name | type         | explanation               |
+	|------------|:------------:|---------------------------|
+	| errors     | [JSONObject] | errors related to objects |
+	
+	errors:
+	
+	| field name | type         | explanation                                                                   |
+	|------------|:------------:|-------------------------------------------------------------------------------|
+	| errors     | [JSONObject] | list of error messages related to the object                                  |
+	| ent        | String       | type of the object it represents                                              |
+	| id         | String       | id of the object it represents                                                |
+	| restore    | JSONObject   | servers representation of the object to restore local object to correct state |
+	
+	errors.errors:
+	
+	| field name | type   | explanation                          |
+	|------------|:------:|--------------------------------------|
+	| type       | String | type of error. e.g, warning or error |
+	| message    | String | the message of the error             |
+
+ 	}
+
  
  
     
