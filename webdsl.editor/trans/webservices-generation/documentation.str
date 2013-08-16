@@ -19,11 +19,53 @@ rules
 rules//overlays
 	
  documentation-header = !
-	$[API Webservices Synchronization Framework
- 	  ==============================================
- 	  This document describes the webservices interface that is part of the generated synchronization framework. The goal of this document is explanation of the webservices for usage of 3th party apllications.
+	${Model Description
+ 	 -----------------------
+ 	 This chapter describes the entities that are used within the model
  	  
- 	  Th 
- 	  	
- ]
+ 	  + General Webservice Information
+ 	  + Model Description
+ 	  + WebService explanation
+ 	  
+ 	  General Webservice Information
+ 	  ---------------------------------
+ 	  
+ 	  The generated services are simple, which means they do not contain many parameters to specify all kind of options on the requested data. The services are meant for synchronization. Nevertheless, they can also be used for requesting of data.
+
+ 	  ### Interface ###
+
+ 	  All the webservices are available through the following link:
+	 
+ 	  http(s)://<base.url>/webservice/<webservicename>
+
+ 	  
+ 	  *The services are based on JSON and only support post requests*
+
+ 	  The default format for all services is:
+
+ 	  | field name | type     | explanation               |
+ 	  |------------|:--------:|---------------------------|
+ 	  | errors     | [String] | List of error messages    |
+ 	  | result     | Any      | the result of the service |
+
+ 	  
+ 	  ### Control Flow ###
+
+ 	  The first time using the synchronization the following steps are expected:
+
+ 	  + possible authentication
+ 	  + request the toplevel entities for partition selection.
+ 	  + request timestamp
+ 	  + request for all entities the objects of the selected partitions 
+ 	  
+ 	  Further synchronization contains the following steps:
+
+ 	  + send the new objects to the server
+ 	  + send the updates of modified objects to the server
+ 	  + request timestamp
+ 	  + request for all entities the objects of the selected partitions	
+ 	    	
+ }
+ 
+ 
     
