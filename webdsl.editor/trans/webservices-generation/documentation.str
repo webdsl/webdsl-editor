@@ -1,0 +1,29 @@
+module webservices-generation/documentation
+
+imports
+
+	util 
+  	lib/editor-common.generated 
+  	libwebdsl-generator
+  	libwebdsl-front
+  	
+  	
+rules
+	
+  generate-documentation: x -> x
+  	with body := [<documentation-header>]
+  		; <create-dir-in-workspace> "webservices" 
+  		; <concat-strings; text-to-file(|"webservices/API.md")> body
+  		
+  		
+rules//overlays
+	
+ documentation-header = !
+	$[API Webservices Synchronization Framework
+ 	  ==============================================
+ 	  This document describes the webservices interface that is part of the generated synchronization framework. The goal of this document is explanation of the webservices for usage of 3th party apllications.
+ 	  
+ 	  Th 
+ 	  	
+ ]
+    

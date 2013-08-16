@@ -19,6 +19,7 @@ imports
 	webservices-generation/access-control
 	webservices-generation/util	
 	webservices-generation/authentication
+	webservices-generation/documentation
 		 
   	util 
   	lib/editor-common.generated 
