@@ -6,7 +6,12 @@ imports
   	lib/editor-common.generated 
   	libwebdsl-generator
   	libwebdsl-front
+  	
   	webservices-generation/util
+  	webservices-generation/mobl/model-to-mobl
+  	webservices-generation/overlays
+  	
+  	entity-extraction/generate-entity-pages
   	
   	
 rules
@@ -26,20 +31,80 @@ rules
   			$[Model Description
  	 		 -----------------------
  	 		 This chapter describes the entities that are used as model for the synchronization framework. This can be used to interpert the data of the expected input and output.
+ 			 
+ 			 *note:  fields with type of other objects contain ref objects of the format:*
+ 			 
+ 			 | Field | Type   |
+ 			 |-------|:------:|
+ 			 | id    | String |
+ 			 
+ 			 *note2: typeField property contains the actual type as string*
+ 			  
  			 ]
- 		; entities := <all-keys-EntDecl> None()	 
- 		; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
-  		; body := <map(documentation-model-entity)> filteredEntities	     
+		; entities := <all-keys-EntDecl> None()	 
+  		; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
+  		; <map(EntDecl; generate-dr-for-highest-parent)> filteredEntities 
+  		; completeEntities := <map(try(generate-extra-type-property)); filter(where(entity-has-no-super)); map(make-entity-with-properties)> filteredEntities
+  		; body := <map(documentation-model-entity)> completeEntities	     
  		; documentation := <concat-strings> [header|body]
   	
   
-  documentation-model-entity: entityname -> documentation
+  documentation-model-entity: EntityNoSuper(entityname, props) -> documentation
   	with titlelength := <add> (<string-length> entityname, 6)
-  		; documentation :=
+ 		; starttable := ("Field","Type")
+ 		; cleanedProps := <map(try(remove-derive-from-property); try(remove-annos-from-property))> [IdProperty1|props]  
+ 		; resttable := <filter(not(remove-property-with-name); prop-to-table-tuple(|entityname))> cleanedProps
+ 		; stringLengthFirst := <foldr(!0, max, Fst; string-length)> [starttable|resttable]
+ 		; stringLengthSecond := <foldr(!0, max, Snd; string-length)> [starttable|resttable] 
+ 		; table := <list-tuple-to-table(|stringLengthFirst, stringLengthSecond)> [starttable|resttable]
+ 		; documentation :=
   		  	$[###[entityname]###
   		  	[<copy-chars(|titlelength)>"-"]	
-  		  	]	
+  		  	
+  		  	[table]
+  		  	
+  		  	]	  
+ 		    
+ 		  
+  list-tuple-to-table(|length1, length2): [header|rows] -> table
+  	with 
+  		table := 
+  			$[| [<Fst> header][<filup-row(|" ")>(<Fst>header, length1)] | [<Snd> header][<filup-row(|" ")>(<Snd>header, length2)] |
+			|-[<filup-row(|"-")>("", length1)]-|:[<filup-row(|"-")>("", length2)]:|
+			[<map(tuple-to-row(|length1,length2))> rows]  			
+  			]
+  			
+  tuple-to-row(|length1, length2): (first, second) -> row
+  	with row := 
+  		$[| [first][<filup-row(|" ")>(first, length1)] | [second][<filup-row(|" ")>(second, length2)] |
+  		]
  
+  filup-row(|char): (current, max) -> fill
+  	with length := <subt>(max, <string-length> current)
+  		; fill := <copy-chars(|length)> char
+  	
+  		  
+  prop-to-table-tuple(|entityname): PropertyNoAnno(name, sort, type) -> (name, typestring)
+	where typestring := <type-to-json-type> type
+
+  type-to-json-type: SimpleSort(type) -> "String"
+   	where <fetch(?type)> ToMoblStringTypes
+  
+  type-to-json-type: SimpleSort(type) -> "Number"
+   	where <fetch(?type)> ToMoblNumTypes
+
+  type-to-json-type: SimpleSort("Bool") -> "Boolean"
+ 
+  type-to-json-type: SimpleSort(type) -> "Number"
+  	where <fetch(?type)> MoblDateTimeTypes 
+
+  type-to-json-type: SimpleSort(x_type) -> x_type
+   	where x_newType := <IsEntity; find-highest-parent> x_type
+   	where not (<is-builtin-entity-webservices> x_type)
+  
+  type-to-json-type: GenericSort(_, type) -> $<[<t_paramtype>]>
+   	where <Hd; is-entity-type> type
+   		; t_paramtype := <Hd; type-to-json-type> type 
 
 rules//helpers
 	
@@ -48,19 +113,31 @@ rules//helpers
   		; newstring := $[[string][<copy-chars(|<dec>number)> string]]
   		
   	
-  copy-chars(|number): x -> x	
+  copy-chars(|number): x -> ""	
    where not (<gt>(number,0))
    
+   
+  remove-annos-from-property: p@Property(x_name, sort, type, annos) -> PropertyNoAnno(x_name, sort, type)
+  
+  remove-property-with-name: p@PropertyNoAnno("sync", sort, type) -> p
+  
+  remove-property-with-name: p@PropertyNoAnno("lastSynced", sort, type) -> p
+  
+  remove-property-with-name: p@PropertyNoAnno(name, sort, type) -> p
+  	where <string-starts-with(|"generatedPropertyForInverse_")> name
+  
 rules//overlays
 	
  documentation-header = !
-	${Model Description
- 	 -----------------------
- 	 This chapter describes the entities that are used within the model
+	${API Webservices Synchronization Framework
+ 	  ==============================================
+ 	  This document describes the webservices interface that is part of the generated synchronization framework. The goal of this document is explanation of the webservices for usage of 3th party apllications.
+ 	  
+ 	  The following information is described in this document:
  	  
  	  + General Webservice Information
  	  + Model Description
- 	  + WebService explanation
+ 	  + WebService Description
  	  
  	  General Webservice Information
  	  ---------------------------------
