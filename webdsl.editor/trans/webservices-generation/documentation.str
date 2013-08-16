@@ -30,7 +30,7 @@ rules
   	with header := 
   			$[Model Description
  	 		 -----------------------
- 	 		 This chapter describes the entities that are used as model for the synchronization framework. This can be used to interpert the data of the expected input and output.
+ 	 		 This chapter describes the entities that are used as model for the synchronization framework. This can be used to interpret the data of the expected input and output.
  			 
  			 *note:  fields with type of other objects contain ref objects of the format:*
  			 
@@ -131,8 +131,41 @@ rules
   documentation-service: x -> documentation
 	with headerdocumentation := <documentation-service-header> None()
 		; if(<PrincipalDecl>None())then authenticationdocumentation := <documentation-service-authentication>None() else authenticationdocumentation := "" end
-		; documentation := <concat-strings>[headerdocumentation, authenticationdocumentation]
+		; entities := <all-keys-EntDecl> None()	  
+  		; filteredEntities := <filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> entities   
+		; entitydocumentation := <map(documentation-service-sync-entity); concat-strings> filteredEntities
+		; documentation := <concat-strings> [headerdocumentation, entitydocumentation, authenticationdocumentation]
+		
   
+  documentation-service-sync-entity: entityname -> documentation
+	with titlelength := <add>(12,<string-length> entityname)
+		; documentation :=
+			${### sync{entityname} ###
+			{<copy-chars(|titlelength)>"-"}
+			This service enable to request all changed object of type {entityname} of the givens partitions with their last synchronization timestamp.
+			
+			#### input ####
+				[JSONObject]
+				
+			| field name | type         | explanation                                  |
+			|------------|:------------:|----------------------------------------------|
+			| name       | String       | type of objects in value                     |
+			| value      | [JSONObject] | list of objects representing data partitions |
+			
+			value:
+			
+			| field name | type   | explanation                                             |
+			|------------|:------:|---------------------------------------------------------|
+			| id         | String | id of object representing a selected data partition    |
+			| lastSynced | Number | timestamp of previous synchronization of this partition |
+			
+			#### output ####
+			
+			| field name | type         | explanation                                                                   |
+			|------------|:------------:|-------------------------------------------------------------------------------|
+			| result     | [JSONObject] | list of all changed objects of type {entityname} from the selected partitions |	
+ 		 
+			}
 rules//overlays
 	
  documentation-header = !
@@ -344,9 +377,9 @@ rules//overlays
 	
 	#### output ####
 	
-	| field name | type    | explanation                                |
-	|------------|:-------:|--------------------------------------------|
-	| result     | Boolean | states if the authentication is succesfull |	
+	| field name | type    | explanation                               |
+	|------------|:-------:|-------------------------------------------|
+	| result     | Boolean | states if the authentication is succesful |	
 	
 	### logout ###
 	--------------------
@@ -365,9 +398,9 @@ rules//overlays
 	
 	#### output ####
 	
-	| field name | type    | explanation                                |
-	|------------|:-------:|--------------------------------------------|
-	| result     | Boolean | states if the authentication is succesfull |	
+	| field name | type    | explanation                               |
+	|------------|:-------:|-------------------------------------------|
+	| result     | Boolean | states if the authentication is succesful |	
 	
  		
 	}    
