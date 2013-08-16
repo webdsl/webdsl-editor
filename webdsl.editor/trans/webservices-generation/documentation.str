@@ -16,10 +16,7 @@ imports
   	
 rules
 	
-  generate-documentation: (selected, position, ast, path, project-path) -> None()
-  	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
-        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks  
-        ; <generate-mobl-model> project-path
+  generate-documentation: x->x
   	with body := [<documentation-header>,<documentation-model>, <documentation-service>]
   		; <create-dir-in-workspace> "webservices" 
   		; <concat-strings; text-to-file(|"webservices/API.md")> body

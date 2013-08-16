@@ -44,6 +44,7 @@ rules
   		; generate-timestamp-webservice   
   		; generate-mobl-services
   		; generate-sync-services
+  		; generate-documentation  
   		; if(generate-authentication-webservice-module)then 
   			imports := def*
 				|[
