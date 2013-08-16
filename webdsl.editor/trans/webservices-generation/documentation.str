@@ -129,7 +129,9 @@ rules//helpers
   
 rules 
   documentation-service: x -> documentation
-	with documentation := <documentation-service-header> None()
+	with headerdocumentation := <documentation-service-header> None()
+		; if(<PrincipalDecl>None())then authenticationdocumentation := <documentation-service-authentication>None() else authenticationdocumentation := "" end
+		; documentation := <concat-strings>[headerdocumentation, authenticationdocumentation]
   
 rules//overlays
 	
@@ -305,5 +307,67 @@ rules//overlays
  	}
 
  
- 
-    
+  documentation-service-authentication = ! 
+ 	${
+ 	### getDeviceKey ###
+	--------------------
+	
+	This service enables to register device and includes authentication for first time.
+	
+	#### input ####
+	
+	| field name | type   | explanation                            |
+	|------------|:------:|----------------------------------------|
+	| username   | String | username representing the current user |
+	| pw         | String | password of this user                  |
+	| devicename | String | name of the authenticating device      |
+	
+	#### output ####
+	
+	| field name | type   | explanation                                    |
+	|------------|:------:|------------------------------------------------|
+	| result     | String | generated devicekey for further authentication |
+	
+	
+	### authenticate ###
+	--------------------
+	
+	This service enables to authenticate a device with devicekey.
+	
+	#### input ####
+	
+	| field name | type   | explanation                            |
+	|------------|:------:|----------------------------------------|
+	| username   | String | username representing the current user |
+	| devicekey  | String | key to authenticate device             |
+	| devicename | String | name of the authenticating device      |
+	
+	#### output ####
+	
+	| field name | type    | explanation                                |
+	|------------|:-------:|--------------------------------------------|
+	| result     | Boolean | states if the authentication is succesfull |	
+	
+	### logout ###
+	--------------------
+	
+	Ensures that the devices is not authenticated anymore.
+	
+	*note: It is recommended to clear local data after calling this function*
+	
+	#### input ####
+	
+	| field name | type   | explanation                            |
+	|------------|:------:|----------------------------------------|
+	| username   | String | username representing the current user |
+	| devicekey  | String | key to authenticate device             |
+	| devicename | String | name of the authenticating device      |
+	
+	#### output ####
+	
+	| field name | type    | explanation                                |
+	|------------|:-------:|--------------------------------------------|
+	| result     | Boolean | states if the authentication is succesfull |	
+	
+ 		
+	}    
