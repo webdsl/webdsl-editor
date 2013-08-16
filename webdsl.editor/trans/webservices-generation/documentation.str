@@ -6,16 +6,51 @@ imports
   	lib/editor-common.generated 
   	libwebdsl-generator
   	libwebdsl-front
+  	webservices-generation/util
   	
   	
 rules
 	
-  generate-documentation: x -> x
-  	with body := [<documentation-header>]
+  generate-documentation: (selected, position, ast, path, project-path) -> None()
+  	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks  
+        ; <generate-mobl-model> project-path
+  	with body := [<documentation-header>,<documentation-model>]
   		; <create-dir-in-workspace> "webservices" 
   		; <concat-strings; text-to-file(|"webservices/API.md")> body
   		
+
+rules
+  documentation-model: x -> documentation 
+  	with header := 
+  			$[Model Description
+ 	 		 -----------------------
+ 	 		 This chapter describes the entities that are used as model for the synchronization framework. This can be used to interpert the data of the expected input and output.
+ 			 ]
+ 		; entities := <all-keys-EntDecl> None()	 
+ 		; filteredEntities := <filter(not(is-builtin-entity-webservices))> entities
+  		; body := <map(documentation-model-entity)> filteredEntities	     
+ 		; documentation := <concat-strings> [header|body]
+  	
+  
+  documentation-model-entity: entityname -> documentation
+  	with titlelength := <add> (<string-length> entityname, 6)
+  		; documentation :=
+  		  	$[###[entityname]###
+  		  	[<copy-chars(|titlelength)>"-"]	
+  		  	]	
+ 
+
+rules//helpers
+	
+  copy-chars(|number): string -> newstring 
+  	where <gt>(number,0)
+  		; newstring := $[[string][<copy-chars(|<dec>number)> string]]
   		
+  	
+  copy-chars(|number): x -> x	
+   where not (<gt>(number,0))
+   
 rules//overlays
 	
  documentation-header = !
