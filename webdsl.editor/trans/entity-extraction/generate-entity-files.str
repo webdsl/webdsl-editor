@@ -11,7 +11,8 @@ imports
   	
 rules //builder
 	
-  generate-entity-files: (selected, position, ast@Application(_, _), path, project-path) -> None()
+  generate-entity-files: (selected, position, ast, path, project-path) -> None()
+  	where <try(simplify-application-constructor); ?Application(_, _) > ast
   	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
         ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
   		; dirname := "entities_generated"
@@ -25,7 +26,7 @@ rules //builder
   		; <refresh-workspace-file> $[[project-path]/[dirname]]  
 
   generate-entity-files: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
-	where not (<?Application(_, _)> ast)
+	where (<?ApplicationDefs(_, _, _) <+ ?Application(_, _) > ast)
 	where fatal-err-msg(|"This builder is only supported on the application file")
 
 rules // file stuff  
