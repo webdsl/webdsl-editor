@@ -138,7 +138,7 @@ rules //transformation
 	 		<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
 	 where not (<?"typeField"> x_name)
 	 with x_orgname := <try(get-original-propname-name)>  x_name 
-	 where exp := <exp-to-value-statement> (x_orgname, type)  
+	 where exp := <exp-to-value-statement> (FieldAccess(Var("this"), x_orgname), type)  
 	 with stat_put := <generate-json-put> (x_name, exp)
 	 	; statements := webdsl 
 	 		|[
