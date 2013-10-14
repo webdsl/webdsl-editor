@@ -47,6 +47,7 @@ builders
   builder 	: "Generate entity files"             = generate-entity-files (source)
   builder 	: "Generate entity pages"             = generate-entity-pages (source)
   builder   : "Generate JSON Functions"           = generate-json-functions-for-entities (source)
+  builder   : "Generate objectsize page"		  = generate-object-size-page (openeditor)
   builder   : "Generate Mobl model"               = generate-mobl-model (source)
   builder	: "Generate synchronization framework"= generate-webservices (source)
 //  pretty-print : pp-webdsl-to-string

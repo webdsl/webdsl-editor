@@ -1,0 +1,181 @@
+module webservices-generation/objectsizes
+
+imports
+	fact-extraction/datalog
+	libstratego-lib
+	libstratego-sglr
+	libwebdsl-generator
+  	libwebdsl-front
+  	
+	webservices-generation/util
+			
+  	util
+  	lib/editor-common.generated
+
+rules //builder
+	
+  generate-object-size-page: (selected, position, ast, path, project-path) -> ("objectsizes.app", result)
+  	where <try(simplify-application-constructor); ?Application(_, _) > ast
+  	with <webdsl-editor-init> (path, project-path, ast) //cleanup DR, set appname DR
+        ; <full-app-load(|<dirname> path)> ast //not using editor-analyze like other analysis tasks
+  		; result := <generate-object-size-page-main; pp-webdsl-string> project-path
+
+  generate-object-size-page: (selected, position, ast, path, project-path) -> "This builder is only supported on the application file" 	
+	where not (<?ApplicationDefs(_, _, _) <+ ?Application(_, _) > ast)
+	with fatal-err-msg(|"This builder is only supported on the application file")
+
+rules //main
+  			 
+  generate-object-size-page-main : x -> ast 
+  	with entities := <all-keys-EntDecl> None()	 
+  		; filteredEntities := <filter(not(is-builtin-entity-webservices); where(entity-has-no-super))> entities  
+  		; elem_def* := <map(make-objectsize-decl)> filteredEntities 
+  		; stat_init* := <map(make-objectsize-init)> filteredEntities 
+  		; stat_add* := <map(make-objectsize-add-total)> filteredEntities 
+  		; elem_tempcall* := <map(make-objectsize-template-call)> filteredEntities  
+  		; ast := module 
+  		  |[
+  		  	 module objectsizes
+  		  	 
+  		  		page sizeobjects() {
+					elem_def*
+					var total : List<Int>
+					init{
+						stat_init*
+						stat_add*
+						log("total done");
+					}
+					elem_tempcall*
+					sizeobjectstemplate(total,"total")
+				}
+				
+				template sizeobjectstemplatezero(header : String) {	
+					init{ log("calc done " + header); }
+					
+					header{ output(header) } 
+					group("meta") {
+						par{ "no objects of this type" }
+					}
+				}
+		
+				template sizeobjectstemplate(list : List<Int>, header : String) {
+					var atmax : Int 
+					var atmin : Int
+					var atsum : Int
+					var atavg : Float
+					var atdis : List<Int>
+					init{ 
+						atmax := max(list);
+						atmin :=min(list);
+						atsum := sum(list);
+						atavg := atsum.floatValue() / list.length.floatValue();
+						atdis :=  distribution(list, 5120);
+						log("calc done " + header); 
+					}
+					
+					header{ output(header) } 
+					group("meta") {
+						par{ "objects: " output(list.length) }
+						par{ "max: " output(atmax) " b "  output(atmax.floatValue()/1024.floatValue()) " kb" }
+						par{ "min: " output(atmin) " b" }
+						par{ "average: " output(atavg) " b "  output(atavg/1024.floatValue()) " kb" } 
+					}
+					group("total") {
+						par{ "sum: "  output(atsum) " b "  output(atsum.floatValue()/1024.floatValue()) " kb " output(atsum.floatValue()/1048576.floatValue()) " mb" }
+						
+					}
+					group("distribution") {
+						table{
+							row{
+								for(count : Int from 0 to atdis.length) {
+									column{ output(count*5) }
+								}
+							}
+							row{
+								for(n : Int in atdis) {
+									column{ output(n) }
+								}
+							}
+						}
+					}
+				}
+		 
+				function sizeof(object : JSONObject): Int {
+					return object.toString().length();
+				}
+				
+				function max(list : List<Int>): Int {
+					var max := list[0];
+					for(n : Int in list) { 
+						if(n > max) {
+							max := n;
+						}
+					}
+					return max;
+				}
+				
+				function min(list : List<Int>): Int {
+					var min := list[0];
+					for(n : Int in list) { 
+						if(n < min) {
+							min := n;
+						}
+					}
+					return min;
+				}
+				
+				function sum(list : List<Int>): Int {
+					var total := 0;
+					for(n: Int in list) { 
+						total := total + n;
+					}
+					return total;
+				}
+				
+				function distribution(list : List<Int>, steps : Int): List<Int> {
+					var max := max(list);
+					var size := (max / steps) + 1;
+					var dislist := makeEmptyList(size);
+					for(n : Int in list){
+						var loc := n / steps;
+						dislist[loc] := dislist[loc] + 1;
+					}
+					return dislist;
+				}
+				
+				function makeEmptyList(size : Int): List<Int> {
+					var list := List<Int>();
+					for(count : Int from 0 to size) {
+						list.add(0);
+					}
+					return list;
+				}
+  		  ]|
+rules //dynamic-sub
+	
+	make-objectsize-decl: name -> webdsl|[var x_name : List<Int>]|
+		where x_name := <lower-case> name
+	
+	make-objectsize-init: x_name -> statements
+		where x_logmessage := $["[x_name] done"]
+		    ; x_namelow := <lower-case> x_name
+			; statements := webdsl
+				|[
+					x_namelow := [ sizeof(object.toJSON()) | object : x_name in x_name.all() ];
+					log(x_logmessage);
+				]|
+	
+	make-objectsize-add-total: name -> stat|[total.addAll(x_name);]|
+		where x_name := <lower-case> name
+	
+	make-objectsize-template-call: x_name -> elem
+		where x_stringname := $["[x_name]"]
+			; x_namelow := <lower-case> x_name
+			; elem := elem
+			  |[
+			  	if(x_namelow.length == 0) {
+			  		sizeobjectstemplatezero(x_stringname)
+			  	} else {
+			  		sizeobjectstemplate(x_namelow,x_stringname)
+			  	}
+			  ]|
