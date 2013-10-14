@@ -79,7 +79,7 @@
    Null                               -- KW["null"],
    TemplateCallNoBody                 -- H [_1 KW["("] H[_2] KW[")"]],
    TemplateCallNoBody.2:iter-star-sep -- H [_1 KW[","]],
-   TemplateCallBody                   -- V[ V is=2[H[_1]  _2]],
+   TemplateCallBody                   -- V[ V is=2[H[_1]] KW["{"] _2  KW["}"] ],
    TemplateCallBody.2:iter-star       -- _1,
    TemplateCall                       -- V[ V is=2[ H [ _1 KW["("] H[_2] KW[")"] KW["["] H[_3] KW["]"]] _4]],
    TemplateCall.2:iter-star-sep       -- H [_1 KW[","]],
