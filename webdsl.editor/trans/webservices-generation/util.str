@@ -76,9 +76,12 @@ rules
   
   is-top-entity-mobl-by-dr: entityName -> entityName
   	where get-subclasses-of-entity
-  		; filter(is-top-entity-by-dr)
-  	where not(?[])
+  		; list := <filter(is-top-entity-by-dr)>
+  	where not(<?[]> list)
 	
+  is-top-entity-mobl-by-dr: entityName -> entityName
+  	where is-top-entity-by-dr
+  	
  is-builtin-entity-webservices: entity -> entity
    	where (? EntityNoSuper(name, _) 
      		<+ ?Entity(name, _, _))
