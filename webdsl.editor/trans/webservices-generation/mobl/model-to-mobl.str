@@ -71,14 +71,15 @@ rules //lookup
   		; <fetch-elem(?type)> ToMoblStringTypes()  
   			  
   check-inverse-anno: property ->  mobl-anno |[inverse : x_name ]|
-    where (class, name) := <has-valid-inverse-anno> property 
+    where(class, name) := <has-valid-inverse-anno> property 
     with  x_name := <get-renamed-prop <+ !name> (class, name) 
     
-  check-inverse-anno(|class): property -> mobl-anno |[inverse : x_otherprop ]| 
+    
+  check-inverse-anno(|class): property -> mobl-anno |[inverse : x_otherpropnew ]| 
   	where not(<has-valid-inverse-anno> property)
     where <get-property-type; ?GenericSort(_,_)> property
    		; (otherEnity, x_otherprop) :=  <has-valid-counter-inverse-anno> property
-    with  x_otherprop' :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop) 
+    with  x_otherpropnew :=  <get-renamed-prop <+ !x_otherprop> (otherEnity, x_otherprop) 
   			
   check-inverse-anno(|class): property ->  anno
   	where not(<has-valid-inverse-anno> property)
@@ -119,6 +120,7 @@ rules //rename(subclasses stuf)
  				  
  				  
   rename-prop-with-classname: Property(name, k, str,annos){anno*} -> Property(newname, k, str,annos){anno*}
+	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
 	with <fetch-elem(?FromEntity(x))> anno*
 		; newname := $[[x]_[name]] 
 		; rules(
@@ -127,6 +129,7 @@ rules //rename(subclasses stuf)
 		) 
 
   rename-prop-with-classname: DerivedProperty(name, k, str,annos, derive){anno*} -> DerivedProperty(newname, k, str,annos, derive){anno*}
+	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
 	with <fetch-elem(?FromEntity(x))> anno*
 		; newname := $[[x]_[name]] 
 		; rules(
@@ -135,6 +138,7 @@ rules //rename(subclasses stuf)
 		) 
 				  				  
   rename-prop-with-classname: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
+	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
 	with <fetch-elem(?FromEntity(x))> anno*
 		; newname := $[[x]_[name]] 
 		; rules(
@@ -144,20 +148,34 @@ rules //rename(subclasses stuf)
 
 				  
   rename-prop-with-classname: DerivedPropertyNoAnno(name, k, str,derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
+	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
 	with <fetch-elem(?FromEntity(x))> anno*
 		; newname := $[[x]_[name]] 
 		; rules(
 			get-renamed-prop :+ (x, name) -> newname
 			get-original-propname-name :+ newname -> name
+		)
+
+  rename-prop-with-classname: prop{anno*} -> prop{anno*}
+	where name := <get-property-name> prop
+		; (<string-starts-with(|"generatedPropertyForInverse_")> name)
+	with <fetch-elem(?FromEntity(x))> anno*
+		; rules(
+			get-renamed-prop :+ (x, name) -> name
+			get-original-propname-name :+ name -> name
 		) 
 				  
 rules //generation 
 	
   generate-extra-properties-for-collections: entityname -> entityname
 	with props := <all-properties-with-entity-anno> entityname
-		; propswithoutinvers := <filter(generic-type-has-no-inverse-anno(|entityname))>
+		; propswithoutinvers := <filter(has-anno(|FromEntity(entityname));generic-type-has-no-inverse-anno(|entityname); not(is-restricted-property(|entityname))) >
 		; map(declare-extra-prop(|entityname))
 
+ 
+  is-restricted-property(|class): property -> property
+  	where <RestrictedProperty> (class, <get-property-name> property) 
+ 
   generic-type-has-no-inverse-anno(|class): property ->  property
   	where not (<has-valid-inverse-anno> property)
     where <get-property-type; ?GenericSort(_,_)> property
