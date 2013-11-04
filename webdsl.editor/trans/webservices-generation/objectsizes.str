@@ -37,7 +37,8 @@ rules //main
   		  |[
   		  	 module objectsizes
   		  	 
-  		  		page sizeobjects() {
+  		  		page sizeobjects(step : Int) {
+  		  			var counter := 0
 					elem_def*
 					var total : List<Int>
 					init{
@@ -157,12 +158,25 @@ rules //dynamic-sub
 		where x_name := <lower-case> name
 	
 	make-objectsize-init: x_name -> statements
-		where x_logmessage := $["[x_name] done"]
+		where x_logmessage := $["[x_name] start"]
+			; x_logmessage2 := $["[x_name]: " + counter + " : " + (counter * 100 / (maxsize + 1)) ]
 		    ; x_namelow := <lower-case> x_name
 			; statements := webdsl
 				|[
-					x_namelow := [ sizeof(object.toJSON()) | object : x_name in x_name.all() ];
 					log(x_logmessage);
+					x_namelow := List<Int>();
+					counter := 0;
+					var maxsize := select count(*) from x_name;
+					log(maxsize);
+				    while(maxsize > counter) {
+						for(object : x_name in from x_name limit counter, step) {
+							x_namelow.add(sizeof(object.toJSON()));
+						}
+						counter := counter + step;
+	      				log(x_logmessage2);  
+	      				commitAndStartNewTransaction(); 
+					}
+					log("done");
 				]|
 	
 	make-objectsize-add-total: name -> stat|[total.addAll(x_name);]|

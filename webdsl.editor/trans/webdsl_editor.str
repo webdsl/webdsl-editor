@@ -17,6 +17,7 @@ imports
   webservices-generation/json
   webservices-generation/mobl/model-to-mobl 
   webservices-generation/interface
+  webservices-generation/objectsizes
 
   benchmark/extract-benchmark
   benchmark/generate-entities
