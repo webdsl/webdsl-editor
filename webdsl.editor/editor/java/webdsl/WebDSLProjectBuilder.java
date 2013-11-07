@@ -45,7 +45,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         //    System.out.println("auto build disabled in WebDSLProjectBuilder");
         //    return new IProject[0];
         //}
-        
+
         if( monitor != null ){
             monitor.beginTask( "Building WebDSL project", 1 );
         }
@@ -53,20 +53,23 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         try{
             final IProject project = getProject();
 
-            final String buildid = getBuildIdCompleted(project);
+            // trying refresh here instead of in Ant build file, http://yellowgrass.org/issue/WebDSL/762
+            refresh(project, monitor);
 
+            final String buildid = getBuildIdCompleted(project);
+            
             //check that last build completed, sometimes this builder is started when compiler is still running
             if(buildid != null && !isWebDSLProjectBuilderStarted(project)){
               markWebDSLProjectBuilderStarted(project);
               //addRefreshJob(project,defaultDelay);
               //setPublishListener(project, monitor, buildid);
-              
+
               initWtpServerConfig(WebDSLEditorWizard.getPluginDir(),project,project.getName(),monitor);
-              
-              tryStartServer(project, monitor, 
-                  new ChainedJob(){ 
+
+              tryStartServer(project, monitor,
+                  new ChainedJob(){
                       public void run(){
-                          pollDeployedAppAndOpenBrowser(project, buildid, 0); 
+                          pollDeployedAppAndOpenBrowser(project, buildid, 0);
                       }
                   }, 0);
               //pollDeployedAppAndOpenBrowser(project, buildid, 1000);
@@ -145,11 +148,11 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             }
         }
     }
-    
+
     protected void initWtpServerConfig(String plugindir, IProject project, String projectname, IProgressMonitor monitor) throws CoreException{
-        
+
     }
-    
+
 
     /*
      * tried several ways of calling ant, but none of them is working as needed, ant is now called from .project builder directly instead
@@ -225,8 +228,8 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             previouslyAddedPublishListener = null;
           }
     }*/
-    
-    
+
+
     public void pollDeployedAppAndOpenBrowser(final IProject project, final String buildid, int delay){
       if(buildid != null){
         Job job = new Job("poll deployed app and open browser") {
@@ -250,7 +253,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
          job.schedule(delay);
       }
    }
-    
+
 
     public static int defaultDelay = 1000;
 /*
@@ -302,7 +305,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     public String getAppUrl(IProject project){
         return getUrlRoot(project);
     }
-    
+
     public String getUrlRoot(IProject project){
     	String port = getProperty(project, "httpport");
         if(isRootApp(project)){
@@ -323,7 +326,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         String searchfor = "build-id:"+buildid;
         System.out.println("searching for: "+searchfor);
         boolean found = false;
-        int tries = 8;
+        int tries = 3;
         while(tries > 0 && !found){
           tries = tries - 1;
           try {
@@ -359,7 +362,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         }
         return found;
     }
-    
+
     public static boolean forcePublish = false;
 
     //restart once for a new project
@@ -372,7 +375,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             servers.open(monitor);
         }
     }
-    
+
     public void tryStartServer(IProject project, IProgressMonitor monitor, ChainedJob cj, int delay) throws CoreException{
         openServersProject(monitor);
 
@@ -386,10 +389,10 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                 publish(server, monitor);
             }
         }
-        
+
         addCheckServerStartedJob(server,project,cj,delay);
     }
-    
+
     //disabled for now http://yellowgrass.org/issue/WebDSL/228
     public static boolean restartWhenNewAppIsBuildFirstTime = false;
 
@@ -405,7 +408,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         };
         job.schedule(delay);
     }
-    
+
     public static void checkServerStarted(IServer server, IProject project, ChainedJob cj){
            System.out.println("Polling server status.");
             if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
@@ -424,7 +427,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                 alreadyStarted.add(project.getName());
             }
     }
-    
+
     public static void addStartServerJob(final IServer server, final ChainedJob cj, int delay){
         Job job = new Job("start server") {
             @SuppressWarnings("deprecation")
@@ -437,7 +440,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                   }
                 } catch (CoreException e) {
                     e.printStackTrace();
-                }  
+                }
                 //after starting execute ChainedJob
                 if(cj!=null){cj.run();}
                 return Status.OK_STATUS;
@@ -445,7 +448,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         };
         job.schedule(delay);
     }
-    
+
     public static void addStopServerJob(final IServer server, final ChainedJob cj, int delay){
         Job job = new Job("stop server") {
             @SuppressWarnings("deprecation")
@@ -458,7 +461,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         };
         job.schedule(delay);
     }
-   
+
     public static void addRestartServerJob(final IServer server, final ChainedJob cj, final int delay){
         Job job = new Job("Restarting server.") {
             @SuppressWarnings("deprecation")
@@ -478,7 +481,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         };
         job.schedule(delay);
     }
-    
+
     public static void addPublishJob(final IServer server,final IProject project, int delay){
         Job job = new Job("publish server") {
             public IStatus run(IProgressMonitor monitor){
@@ -489,12 +492,12 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         };
         job.schedule(delay);
     }
-    
+
     public static void publish(IServer server, IProgressMonitor monitor){
        System.out.println("Publishing server.");
        server.publish(IServer.PUBLISH_STATE_INCREMENTAL,monitor);
     }
-    
+
     public static void addRefreshJob(final IProject project, int delay){
         Job job = new Job("refresh project") {
             public IStatus run(IProgressMonitor monitor){
@@ -504,7 +507,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         };
         job.schedule(delay);
     }
-    
+
     public static void refresh(IProject project, IProgressMonitor monitor){
         try {
             project.refreshLocal(IProject.DEPTH_INFINITE, monitor);

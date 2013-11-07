@@ -30,27 +30,27 @@ import org.eclipse.swt.widgets.Text;
 import java.sql.Connection;
 
 public class WebDSLEditorWizardPage extends WizardPage {
-    
+
     protected Text inputProjectName;
     protected String inputProjectNameValue = "";
     public String getInputProjectName() { return inputProjectNameValue; }
     protected Text inputAppName;
     protected String inputAppNameValue = "";
     public String getInputAppName() { return inputAppNameValue; }
-    
+
     protected boolean isInputProjectNameChanged;
     protected boolean dbTypeSelected = false;
-    
+
     public enum SelectedDatabase {
         MYSQL, H2, H2MEM
     }
-    protected SelectedDatabase selectedDatabase = SelectedDatabase.H2; 
+    protected SelectedDatabase selectedDatabase = SelectedDatabase.H2;
     public SelectedDatabase getSelectedDatabase() { return selectedDatabase; }
-    
+
     public enum SelectedServer {
         WTPTOMCAT, EXTERNALTOMCAT, CONSOLETOMCAT, WTPJ2EEPREVIEW, WTPJ2EEPREVIEWJREBEL
     }
-    protected SelectedServer selectedServer = SelectedServer.WTPTOMCAT; 
+    protected SelectedServer selectedServer = SelectedServer.WTPTOMCAT;
     public SelectedServer getSelectedServer() { return selectedServer; }
 
     protected Label labelDBHost;
@@ -68,15 +68,19 @@ public class WebDSLEditorWizardPage extends WizardPage {
     protected Label labelDBFile;
     protected Text inputDBFile;
     public String getInputDBFile() { return inputDBFile.getText().trim(); }
-    
+
     protected Label labelTestConnection;
-    
+
     protected String inputDBMode;
     public String getInputDBMode() { return inputDBMode.trim(); }
 
+    Button bCreateDrop = null;
+    Button bUpdate = null;
+    Button bFalse = null;
+
     protected Text inputTomcatPath;
     public String getInputTomcatPath() { return inputTomcatPath.getText().trim(); }
-    
+
     protected Text inputSmtpHost;
     public String getInputSmtpHost() { return inputSmtpHost.getText().trim(); }
     protected Text inputSmtpPort;
@@ -85,20 +89,20 @@ public class WebDSLEditorWizardPage extends WizardPage {
     public String getInputSmtpUser() { return inputSmtpUser.getText().trim(); }
     protected Text inputSmtpPass;
     public String getInputSmtpPass() { return inputSmtpPass.getText().trim(); }
-    
+
     protected Button isRootApp;
     public boolean isRootApp() { return isRootApp.getSelection(); }
     protected Label rootAppLabel;
-    
+
     protected boolean selectedDbMode = false;
-    
+
     protected Group dbselectGroup;
     protected Group serverselectGroup;
     protected Group h2Group;
     protected Group mysqlGroup;
     protected Group dbmodeGroup;
     protected Group emailGroup;
-    
+
     protected boolean ignoreEvents;
 
     /**
@@ -109,7 +113,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
         setTitle("WebDSL Project");
         setDescription("This wizard creates a new WebDSL project.");
     }
-    
+
     public void projectAndApplicationNameEntry(Composite container){
         new Label(container, SWT.NULL).setText("&Project name:");
         inputProjectName = new Text(container, SWT.BORDER | SWT.SINGLE);
@@ -117,15 +121,13 @@ public class WebDSLEditorWizardPage extends WizardPage {
         inputProjectName.addModifyListener(new ModifyListener() {
             public void modifyText(ModifyEvent e) {
                 inputProjectNameValue = inputProjectName.getText().trim();
-                if (!ignoreEvents) {
-                    distributeProjectName();
-                    onChange();
-                }
+                distributeProjectName();
+                onChange();
             }
         });
-        
+
         inputProjectName.setFocus();
-                
+
         new Label(container, SWT.NULL).setText("&Application name:");
         inputAppName = new Text(container, SWT.BORDER | SWT.SINGLE);
         inputAppName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -135,8 +137,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
+        inputAppName.setEnabled(false);
     }
-    
+
     public void addLayout(Composite container){
         GridLayout layout = new GridLayout();
         container.setLayout(layout);
@@ -156,9 +159,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
         sc.setContent(container);
 
         addLayout(container);
-          
-        projectAndApplicationNameEntry(container);        
-        
+
+        projectAndApplicationNameEntry(container);
+
         /*
         new Label(container, SWT.NULL).setText("&Tomcat root path (optional):");
         inputTomcatPath = new Text(container, SWT.BORDER | SWT.SINGLE);
@@ -171,8 +174,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });
         inputTomcatPath.setText("/opt/tomcat");*/
-        
-        
+
+
         dbselectGroup = new Group(container, SWT.NULL);
         GridData dbselectGridData = new GridData();
         dbselectGridData.horizontalAlignment = GridData.FILL;
@@ -183,7 +186,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
         dbselectGroup.setLayout(dbselectGroupLayout);
         dbselectGroupLayout.numColumns = 1;
         dbselectGroupLayout.verticalSpacing = 9;
-        
+
         Button bMysql = new Button(dbselectGroup, SWT.RADIO);
         bMysql.setText("MySQL database: recommended for regular users; requires mysql installation and (empty) database created");
 
@@ -194,19 +197,19 @@ public class WebDSLEditorWizardPage extends WizardPage {
         bH2mem.setText("H2 Database Engine (in-memory): database stored in memory");
 
         mysqlGroup = new Group(container, SWT.NULL);
-        
+
         GridData gridData = new GridData();
         gridData.horizontalAlignment = GridData.FILL;
         gridData.horizontalSpan = 2;
         mysqlGroup.setLayoutData(gridData);
 
         mysqlGroup.setText("MySQL configuration");
-        
+
         GridLayout mysqlGroupLayout = new GridLayout();
         mysqlGroup.setLayout(mysqlGroupLayout);
         mysqlGroupLayout.numColumns = 2;
         mysqlGroupLayout.verticalSpacing = 9;
-        
+
         (labelDBHost = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL hostname:");
         inputDBHost = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
         inputDBHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -215,7 +218,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
-        
+
         (labelDBUser = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL user:");
         inputDBUser = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
         inputDBUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -224,7 +227,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
-        
+
         (labelDBPass = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL password:");
         inputDBPass = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
         inputDBPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -233,7 +236,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
-        
+
         (labelDBName = new Label(mysqlGroup, SWT.NULL)).setText("&MySQL database name:");
         inputDBName = new Text(mysqlGroup, SWT.BORDER | SWT.SINGLE);
         inputDBName.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -242,7 +245,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
-        
+
         Button testconnection;
         (testconnection = new Button(mysqlGroup, SWT.NULL)).setText("&Test connection settings");
         labelTestConnection = new Label(mysqlGroup, SWT.NULL);
@@ -253,21 +256,21 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
             public void widgetDefaultSelected(SelectionEvent e) {  }
         });
-        
+
         h2Group = new Group(container, SWT.NULL);
-        
+
         GridData h2GridData = new GridData();
         h2GridData.horizontalAlignment = GridData.FILL;
         h2GridData.horizontalSpan = 2;
         h2Group.setLayoutData(h2GridData);
 
         h2Group.setText("H2 Database Engine (file) configuration");
-        
+
         GridLayout h2GroupLayout = new GridLayout();
         h2Group.setLayout(h2GroupLayout);
         h2GroupLayout.numColumns = 2;
         h2GroupLayout.verticalSpacing = 9;
-        
+
         (labelDBFile = new Label(h2Group, SWT.NULL)).setText("&Database file:");
         inputDBFile = new Text(h2Group, SWT.BORDER | SWT.SINGLE);
         inputDBFile.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -277,7 +280,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });
         inputDBFile.setText("temp.db");
-        
+
         dbmodeGroup = new Group(container, SWT.NULL);
         GridData dbmodeGridData = new GridData();
         dbmodeGridData.horizontalAlignment = GridData.FILL;
@@ -288,46 +291,37 @@ public class WebDSLEditorWizardPage extends WizardPage {
         dbmodeGroup.setLayout(dbmodeGroupLayout);
         dbmodeGroupLayout.numColumns = 1;
         dbmodeGroupLayout.verticalSpacing = 9;
-        
-        Button bCreateDrop1 = new Button(dbmodeGroup, SWT.RADIO);
-        bCreateDrop1.setText("overwrite database when deployed: recommended for first-time users; slow, cleans database and re-creates global vars and re-runs application init blocks each time");
-        bCreateDrop1.addSelectionListener(new SelectionListener() {
+
+        bCreateDrop = new Button(dbmodeGroup, SWT.RADIO);
+        bCreateDrop.setText("overwrite database when deployed: recommended for first-time users; slow, cleans database and re-creates global vars and re-runs application init blocks each time");
+        bCreateDrop.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
-                inputDBMode = "create-drop";
-                selectedDbMode = true;
-                if (!ignoreEvents) {
-                    onChange();
-                }
+                pickDbCreateDrop();
             }
             public void widgetDefaultSelected(SelectionEvent e) {
             }
         });
-        
-        Button bUpdate1 = new Button(dbmodeGroup, SWT.RADIO);
-        bUpdate1.setText("update database when deployed: recommended for regular users; fast, does not clean database, updates to global vars and application init blocks require a manual database reset");
-        bUpdate1.addSelectionListener(new SelectionListener() {
+
+        bUpdate = new Button(dbmodeGroup, SWT.RADIO);
+        bUpdate.setText("update database when deployed: recommended for regular users; fast, does not clean database, updates to global vars and application init blocks require a manual database reset");
+        bUpdate.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
-                inputDBMode = "update";
-                selectedDbMode = true;
-                onChange();
+                pickDbUpdate();
             }
             public void widgetDefaultSelected(SelectionEvent e) {
             }
         });
-        
-        Button bFalse1 = new Button(dbmodeGroup, SWT.RADIO);
-        bFalse1.setText("do not change the database when deployed: requires manually updating the database");
-        bFalse1.addSelectionListener(new SelectionListener() {
+
+        bFalse = new Button(dbmodeGroup, SWT.RADIO);
+        bFalse.setText("do not change the database when deployed: requires manually updating the database");
+        bFalse.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
-                inputDBMode = "false";
-                selectedDbMode = true;
-                onChange();
+                pickDbFalse();
             }
             public void widgetDefaultSelected(SelectionEvent e) {
             }
-        });		
-        
-        
+        });
+
         serverselectGroup = new Group(container, SWT.NULL);
         GridData serverselectGridData = new GridData();
         serverselectGridData.horizontalAlignment = GridData.FILL;
@@ -338,7 +332,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
         serverselectGroup.setLayout(serverselectGroupLayout);
         serverselectGroupLayout.numColumns = 1;
         serverselectGroupLayout.verticalSpacing = 9;
-        
+
+        /*
+        // disabled, this server type doesn't work in newer Eclipse versions
         Button bWTPTestServer = new Button(serverselectGroup, SWT.RADIO);
         bWTPTestServer.setText("WTP J2EE Preview");
         bWTPTestServer.addSelectionListener(new SelectionListener() {
@@ -350,6 +346,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });
 
+        // disabled, a test for deploying with JRebel
         Button bWTPTestServerJRebel = new Button(serverselectGroup, SWT.RADIO);
         bWTPTestServerJRebel.setText("WTP J2EE Preview with JRebel (requires a license and manual installation of JRebel plugin http://update.zeroturnaround.com/update-site)");
         bWTPTestServerJRebel.addSelectionListener(new SelectionListener() {
@@ -360,13 +357,13 @@ public class WebDSLEditorWizardPage extends WizardPage {
             public void widgetDefaultSelected(SelectionEvent e) {
             }
         });
-        
+        */
+
         Button bWTP = new Button(serverselectGroup, SWT.RADIO);
         bWTP.setText("WTP Tomcat");
         bWTP.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
-                selectedServer = SelectedServer.WTPTOMCAT;
-                inputTomcatPath.setEnabled(false);
+                pickWTPTomcat();
             }
             public void widgetDefaultSelected(SelectionEvent e) {
             }
@@ -376,13 +373,12 @@ public class WebDSLEditorWizardPage extends WizardPage {
         bExternal.setText("External Tomcat");
         bExternal.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
-                selectedServer = SelectedServer.EXTERNALTOMCAT;
-                inputTomcatPath.setEnabled(true);
+                pickExternalTomcat();
             }
             public void widgetDefaultSelected(SelectionEvent e) {
             }
         });
-        
+
         new Label(serverselectGroup, SWT.NULL).setText("Tomcat path:");
         inputTomcatPath = new Text(serverselectGroup, SWT.BORDER | SWT.SINGLE);
         inputTomcatPath.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -392,7 +388,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });
         inputTomcatPath.setText("/opt/tomcat");
-        
+
         /*
         Button bConsole = new Button(serverselectGroup, SWT.RADIO);
         bConsole.setText("Tomcat in console");
@@ -404,7 +400,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });
         */
-        
+
         emailGroup = new Group(container, SWT.NULL);
         GridData emailGridData = new GridData();
         emailGridData.horizontalAlignment = GridData.FILL;
@@ -415,7 +411,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
         emailGroup.setLayout(emailGroupLayout);
         emailGroupLayout.numColumns = 2;
         emailGroupLayout.verticalSpacing = 9;
-        
+
         new Label(emailGroup, SWT.NULL).setText("SMTP Host:");
         inputSmtpHost = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
         inputSmtpHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -425,7 +421,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });
         inputSmtpHost.setText("smtp.gmail.com");
-        
+
         new Label(emailGroup, SWT.NULL).setText("SMTP Port:");
         inputSmtpPort = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
         inputSmtpPort.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -435,7 +431,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         });
         inputSmtpPort.setText("465");
-        
+
         new Label(emailGroup, SWT.NULL).setText("SMTP User:");
         inputSmtpUser = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
         inputSmtpUser.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -444,7 +440,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
-        
+
         new Label(emailGroup, SWT.NULL).setText("SMTP Password:");
         inputSmtpPass = new Text(emailGroup, SWT.BORDER | SWT.SINGLE);
         inputSmtpPass.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -452,8 +448,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
             public void modifyText(ModifyEvent e) {
                 onChange();
             }
-        });		
-        
+        });
+
         //database selection radio button events
         bMysql.addSelectionListener(new SelectionListener() {
             public void widgetSelected(SelectionEvent e) {
@@ -476,7 +472,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             public void widgetDefaultSelected(SelectionEvent e) {
             }
         });
-        
+
         h2Group.setEnabled(false);
         inputDBFile.setEnabled(false);
         mysqlGroup.setEnabled(false);
@@ -486,70 +482,125 @@ public class WebDSLEditorWizardPage extends WizardPage {
         inputDBUser.setEnabled(false);
 
         inputTomcatPath.setEnabled(false);
-        
+
         isRootApp = new Button(container, SWT.CHECK);
         isRootApp.setText("&Root Application");
         rootAppLabel = new Label(container, SWT.NULL);
         rootAppLabel.setText("A root application does not include the application name in the URL.");
-        
-        setControl(container);
-        setPageComplete(false);
 
+        setControl(container);
+        setPageComplete(true);
+
+        // set default selections
+        bH2.setSelection(true);
+        pickH2();
+    	bUpdate.setSelection(true);
+    	pickDbUpdate();
+    	bWTP.setSelection(true);
+    	pickWTPTomcat();
+
+        inputProjectName.setFocus();
     }
-    
+
+    private void pickDbCreateDrop(){
+    	inputDBMode = "create-drop";
+        selectedDbMode = true;
+        onChange();
+    }
+
+    private void pickDbUpdate(){
+    	inputDBMode = "update";
+        selectedDbMode = true;
+        onChange();
+    }
+
+    private void pickDbFalse(){
+    	inputDBMode = "false";
+        selectedDbMode = true;
+        onChange();
+    }
+
+    private void pickWTPTomcat(){
+    	selectedServer = SelectedServer.WTPTOMCAT;
+        inputTomcatPath.setEnabled(false);
+        onChange();
+    }
+
+    private void pickExternalTomcat(){
+    	selectedServer = SelectedServer.EXTERNALTOMCAT;
+        inputTomcatPath.setEnabled(true);
+        onChange();
+    }
+
     private void pickMysql(){
         dbTypeSelected = true;
-        
+
         mysqlGroup.setEnabled(true);
         h2Group.setEnabled(false);
-        
+
         inputDBHost.setEnabled(true);
         inputDBName.setEnabled(true);
         inputDBPass.setEnabled(true);
         inputDBUser.setEnabled(true);
 
+        bCreateDrop.setEnabled(true);
+        bUpdate.setEnabled(true);
+        bFalse.setEnabled(true);
+
         inputDBFile.setEnabled(false);
-        
+
         mysqlGroup.setFocus();
         selectedDatabase = SelectedDatabase.MYSQL;
-        
+
         onChange();
     }
-    
+
     private void pickH2(){
         dbTypeSelected = true;
-        
+
         mysqlGroup.setEnabled(false);
         h2Group.setEnabled(true);
-        
-        inputDBHost.setEnabled(false);
-        inputDBName.setEnabled(false);
-        inputDBPass.setEnabled(false);
-        inputDBUser.setEnabled(false);
-        
-        inputDBFile.setEnabled(true);
-        
-        h2Group.setFocus();
-        selectedDatabase = SelectedDatabase.H2;
-        
-        onChange();
-    }
-    
-    private void pickH2mem(){
-        dbTypeSelected = true;
-        
-        mysqlGroup.setEnabled(false);
-        h2Group.setEnabled(false);
-        
+
         inputDBHost.setEnabled(false);
         inputDBName.setEnabled(false);
         inputDBPass.setEnabled(false);
         inputDBUser.setEnabled(false);
 
+        bCreateDrop.setEnabled(true);
+        bUpdate.setEnabled(true);
+        bFalse.setEnabled(true);
+
+        inputDBFile.setEnabled(true);
+
+        h2Group.setFocus();
+        selectedDatabase = SelectedDatabase.H2;
+
+        onChange();
+    }
+
+    private void pickH2mem(){
+        dbTypeSelected = true;
+
+        mysqlGroup.setEnabled(false);
+        h2Group.setEnabled(false);
+
+        inputDBHost.setEnabled(false);
+        inputDBName.setEnabled(false);
+        inputDBPass.setEnabled(false);
+        inputDBUser.setEnabled(false);
+
+        bUpdate.setSelection(false);
+        bFalse.setSelection(false);
+        bCreateDrop.setSelection(true);
+        pickDbCreateDrop();
+        bCreateDrop.setEnabled(false);
+        bUpdate.setEnabled(false);
+        bFalse.setEnabled(false);
+
         inputDBFile.setEnabled(false);
-        
+
         selectedDatabase = SelectedDatabase.H2MEM;
-        
+
         onChange();
     }
 
@@ -569,7 +620,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     protected void onChange() {
         if (!ignoreEvents) {
             setErrorMessage(null);
-            
+
             if (getInputProjectName().length() == 0) {
                 setErrorStatus("Project name must be specified");
                 return;
@@ -577,8 +628,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
             if (getInputAppName().length() == 0) {
                 setErrorStatus("Application name must be specified");
                 return;
-            }	
-            
+            }
+
             if (!isValidProjectName(getInputProjectName())) {
                 setErrorStatus("Project name must be valid");
                 return;
@@ -588,16 +639,16 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 return;
             }
             if (!dbTypeSelected) {
-                setErrorStatus("Mysql or Sqlite database must be selected");
+                setErrorStatus("Mysql or H2 database must be selected");
                 return;
             }
             if (!selectedDbMode) {
                 setErrorStatus("Database mode must be selected");
                 return;
             }
-    
+
             if(!projectNameAvailable()){return;}
-    
+
             if (getInputProjectName().indexOf(' ') != -1) {
                 setWarningStatus("Project names with spaces may not be supported depending on your configuration");
             } else {
@@ -605,7 +656,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         }
     }
-    
+
     protected boolean projectNameAvailable() {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         if (workspace.getRoot().getProject(getInputProjectName()).exists()) {
@@ -649,7 +700,8 @@ public class WebDSLEditorWizardPage extends WizardPage {
             output.setCharAt(0, Character.toUpperCase(output.charAt(0))); // SDF wants a capital here
         return output.toString();*/
     }
-    
+
+    /*
     private static String toPackageName(String name) {
         char[] input = name.replace(' ', '-').toCharArray();
         StringBuilder output = new StringBuilder();
@@ -668,12 +720,12 @@ public class WebDSLEditorWizardPage extends WizardPage {
         }
         return output.toString();
     }
-    
+
     private static String toExtension(String name) {
         String input = name.toLowerCase().replace("-", "").replace(".", "").replace(" ", "").replace(":", "");
         String prefix = input.substring(0, Math.min(input.length(), 3));
         if (input.length() == 0) return "";
-        
+
         for (int i = input.length() - 1;; i--) {
             if (!Character.isDigit(input.charAt(i)) && input.charAt(i) != '.') {
                 return prefix + input.substring(Math.max(prefix.length(), Math.min(input.length(), i + 1)));
@@ -682,6 +734,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             }
         }
     }
+    */
 
     protected void setErrorStatus(String message) {
         setErrorMessage(message);
@@ -692,7 +745,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
         if (getErrorMessage() == null)
             setErrorMessage(message);
     }
-    
+
     protected Label red(Label label){
         Color color = new Color(this.getShell().getDisplay(), new RGB(255,0,0));
         label.setForeground(color);
