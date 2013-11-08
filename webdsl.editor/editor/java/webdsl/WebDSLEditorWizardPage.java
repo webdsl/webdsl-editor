@@ -499,7 +499,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
     	bWTP.setSelection(true);
     	pickWTPTomcat();
 
-        inputProjectName.setFocus();
+        if(inputProjectName != null) { // in convert project wizard it will be null
+        	inputProjectName.setFocus();
+        }
     }
 
     private void pickDbCreateDrop(){
