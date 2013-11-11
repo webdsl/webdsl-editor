@@ -96,7 +96,7 @@ rules //transformation
 	 		]| 
 	 		  	
   build-minimal-json-function: props -> function
-	 with filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-derived-prop-cons))> props  
+	 with filterdProperties := <filter(where(?VersionProperty1() + ?IdProperty1 + is-toplevel-name-property))> props  
 	 	; stat_puts := <filter(property-to-json-without-null); flatten-list> filterdProperties
 	 	; function := fun 
 	 		|[
@@ -106,6 +106,13 @@ rules //transformation
 	 		  	 	return object;
 	 		  	}
 	 		]| 
+	
+  is-toplevel-name-property: property -> property
+  	where name := <get-property-name> property
+  		; entity := <get-anno(?FromEntity(x);!x) > property
+  		; tname := <TopEntity> entity
+  		; <?tname> name
+  		
 	 		
   build-json-function: props -> function
 	 with stat_puts := <filter(property-to-json)> props

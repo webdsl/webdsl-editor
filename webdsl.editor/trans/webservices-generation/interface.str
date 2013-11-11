@@ -148,7 +148,7 @@ rules// generation
 	  			var jsonobj := JSONObject();
 	  			for(topent : x_entity in  x_entity.all()){
 	  				if(topent.mayReadSynchronize()) {
-	  					array.put(topent.toSimpleJSON());
+	  					array.put(topent.toMinimalJSON());
 	  				}
 	            }
 	            jsonobj.put("name", x_entityString );
