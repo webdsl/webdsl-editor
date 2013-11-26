@@ -31,11 +31,11 @@ import static webdsl.FileUtils.*;
 public class WebDSLEditorWizard extends Wizard implements INewWizard {
 
     protected WebDSLEditorWizardPage input;
-    
+
     private IProject lastProject;
 
     // TODO: Support external directory and working set selection in wizard
-            
+
     public WebDSLEditorWizard() {
         setNeedsProgressMonitor(true);
         input = new WebDSLEditorWizardPage();
@@ -44,7 +44,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
     public void init(IWorkbench workbench, IStructuredSelection selection) {
         // No further initialization required
     }
-    
+
     @Override
     public void addPages() {
         addPage(input);
@@ -74,7 +74,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         final String smtppass = input.getInputSmtpPass();
         final boolean isRootApp = input.isRootApp();
         System.out.println(appName+projectName);
-        
+
         IRunnableWithProgress op = new IRunnableWithProgress() {
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
                 try {
@@ -86,7 +86,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
                 }
             }
         };
-        
+
         try {
             getContainer().run(true, false, op);
         } catch (InterruptedException e) {
@@ -101,7 +101,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         }
         return true;
     }
-    
+
     private void rollback() {
         // monitor.setTaskName("Undoing workspace operations");
         try {
@@ -110,20 +110,20 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             Environment.logException("Could not remove new project", e);
         }
     }
-    
+
     public static String getPluginDir(){
         return webdsl.WebDSLEditorWizard.class.getProtectionDomain().getCodeSource().getLocation().getFile();
     }
-    
+
      private void doFinish(String appName, String projectName, SelectedDatabase selectedDatabase, SelectedServer selectedServer, String host, String user, String pass, String name, String mode, String file, String tomcatpath, String smtphost, String smtpport, String smtpuser, String smtppass, boolean isRootApp, IProgressMonitor monitor) throws IOException, CoreException {
         enableAutoBuild();
-         
+
         final int TASK_COUNT = 3;
         lastProject = null;
         monitor.beginTask("Creating " + appName + " application", TASK_COUNT);
-        
+
         IProject project = createNewProject(projectName, monitor);
-        
+
         monitor.setTaskName("Copying example application files");
 
         String plugindir = getPluginDir();
@@ -131,11 +131,11 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             plugindir = plugindir.substring(1);
         }
         System.out.println("path: "+plugindir);
-        
-        try { 
+
+        try {
             String appinifilename = project.getLocation()+"/application.ini";
             System.out.println(appinifilename);
-            BufferedWriter out = new BufferedWriter(new FileWriter(appinifilename)); 
+            BufferedWriter out = new BufferedWriter(new FileWriter(appinifilename));
             out.write("appname="+appName+"\n");
             out.write("backend=servlet\n");
             out.write("sessiontimeout=120\n");
@@ -147,8 +147,8 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
             out.write("httpport=8080\n");
             out.write("httpsport=8443\n");
             if(selectedDatabase == SelectedDatabase.MYSQL){
-                out.write("dbserver="+host+"\n"); 
-                out.write("dbuser="+user+"\n"); 
+                out.write("dbserver="+host+"\n");
+                out.write("dbuser="+user+"\n");
                 out.write("dbpassword="+pass+"\n");
                 out.write("dbname="+name+"\n");
                 out.write("dbmode="+mode+"\n");
@@ -170,22 +170,26 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
                 out.write("compile-units-cache=true\n");
                 out.write("jrebel=true\n");
             }
-            out.close(); 
-        } 
-        catch (IOException e) { 
+            out.write("pluginbuildpollserver="+true+"\n");
+            out.write("pluginbuildpollwaittime="+10000+"\n");
+            out.write("pluginbuildpollnumberoftries="+3+"\n");
+            out.write("pluginbuildrestartserver="+false+"\n");
+            out.close();
+        }
+        catch (IOException e) {
             Environment.logException(e);
             throw e;
-        } 
-        
+        }
+
         writeExampleApplicationFiles(project, appName, plugindir);
-        
+
         monitor.worked(1);
 
-        // use .settings directory for clean-project.xml-launch 
-        // for eclipse clean project function, 
+        // use .settings directory for clean-project.xml-launch
+        // for eclipse clean project function,
         // since it is needed anyway for WTP settings
         createDirs(project.getLocation()+"/.settings");
-        
+
         writeBuildXmlFile(project, selectedServer);
         if(selectedServer==SelectedServer.WTPTOMCAT || selectedServer==SelectedServer.WTPJ2EEPREVIEW || selectedServer==SelectedServer.WTPJ2EEPREVIEWJREBEL){
           writeBuildXmlLaunchFile(project, appName, plugindir);
@@ -195,27 +199,27 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
         }
         writeCleanProjectXmlFile(project);
         writeCleanProjectXmlLaunchFile(project, appName, plugindir);
-        
+
         writeClassPathFile(project);
-        
+
         //write .settings/* files
         writeJdtPrefsFile(project);
         writeWstComponentFile(project, isRootApp);
         writeWstFacetFile(project);
-        
+
         writeProjectFileWithoutWebDSLBuilder(project);
-        
+
         refreshProject(project);
         //initWtpServerConfig(plugindir,project,projectName,monitor);
         writeProjectFile(project,selectedServer);
         refreshProject(project);
-        
+
         // don't open files in editor tabs, because both the editor analysis and first compilation will copy built-in.app to the project, 
         // which seems to cause build issues for clean builds on windows, where it complains about not being able to delete built-in.app
         // subsequent builds (not clean) will not copy this file anymore, so avoiding this issue in the first build should be enough
         //openEditorsForExampleApp(appName, project,monitor);
     }
-     
+
      public static void disableAutoBuild() {
          IWorkspace ws = ResourcesPlugin.getWorkspace();
          IWorkspaceDescription desc = ws.getDescription();
@@ -236,7 +240,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
              e.printStackTrace();
          }
      }
-     
+
      protected void openEditorsForExampleApp(String appName, IProject project, IProgressMonitor monitor){
          monitor.setTaskName("Opening editor tabs");
          Display display = getShell().getDisplay();
@@ -244,7 +248,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          EditorState.asyncOpenEditor(display, project.getFile(appName+".app"), true);
          monitor.worked(1);    	 
      }
-     
+
      protected IProject createNewProject(String projectName, IProgressMonitor monitor) throws CoreException{
          monitor.setTaskName("Creating Eclipse project");
          IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -254,7 +258,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          monitor.worked(1);
          return project;
      }
-     
+
      public void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{
          copyFile(plugindir+"webdsl-template/new_project/templates.app", project.getLocation()+"/templates.app");
          copyFile(plugindir+"webdsl-template/new_project/APPLICATION_NAME.app", project.getLocation()+"/"+appName+".app");
@@ -264,24 +268,24 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          copyFile(plugindir+"webdsl-template/new_project/stylesheets/common_.css", project.getLocation()+"/stylesheets/common_.css");
          createDirs(project.getLocation()+"/search");
          copyFile(plugindir+"webdsl-template/new_project/search/searchconfiguration.app", project.getLocation()+"/search/searchconfiguration.app");
-      
+
          copyWebDSLSrcLibrary(project, appName, plugindir);
-         
+
          //create other special dirs, to avoid seeing red warnings in build, also helps to see what you can modify/extend
          createDirs(project.getLocation()+"/html");
          createDirs(project.getLocation()+"/javascript");
          createDirs(project.getLocation()+"/lib");
          createDirs(project.getLocation()+"/nativejava");
-         
+
          writeStringToFile("needed to start initial build", project.getLocation()+"/.saved-but-not-built");
      }
-     
+
      public static void copyWebDSLSrcLibrary(IProject project, String appName, String plugindir) throws IOException{
          //copy the webdsl src library for the first time, this will also be performed for clean builds
          createDirs(project.getLocation()+"/.servletapp/src-webdsl-template");
          copyFile(plugindir+"webdsl-template/template-webdsl/built-in.app", project.getLocation()+"/.servletapp/src-webdsl-template/built-in.app");
      }
-     
+
      public static void writeBuildXmlFile(IProject project, SelectedServer selectedServer) throws IOException{
          StringBuffer ant = new StringBuffer();
          ant.append("<project name=\"webdsl-eclipse-plugin\" default=\"plugin-eclipse-build\">\n");
@@ -291,7 +295,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          ant.append("\t<property name=\"currentdir\" value=\"${basedir}\"/>\n");
          ant.append("\t<property name=\"webdsl-java-cp\" value=\"${plugindir}/include/webdsl.jar\"/>\n");
          ant.append("\t<property name=\"webdslexec\" value=\"java\"/>\n");
-         ant.append("\t<!-- command-line build only uses .servletapp, plugin build also uses WebContent to deploy with WTP -->\n");         
+         ant.append("\t<!-- command-line build only uses .servletapp, plugin build also uses WebContent to deploy with WTP -->\n");
          if(selectedServer==SelectedServer.WTPTOMCAT || selectedServer==SelectedServer.WTPJ2EEPREVIEW || selectedServer==SelectedServer.WTPJ2EEPREVIEWJREBEL){
            ant.append("\t<property name=\"generate-dir\" value=\"WebContent\"/>\n");
          }
@@ -299,27 +303,27 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
            ant.append("\t<property name=\"generate-dir\" value=\".servletapp\"/>\n");
          }
          if(selectedServer==SelectedServer.WTPJ2EEPREVIEWJREBEL){
-           ant.append("\t<property name=\"disable-forced-eclipse-build\" value=\"true\"/>\n"); 
+           ant.append("\t<property name=\"disable-forced-eclipse-build\" value=\"true\"/>\n");
          }
          ant.append("\t<property name=\"webcontentdir\" value=\"${currentdir}/${generate-dir}\"/>\n");
          ant.append("\t<import file=\"${plugindir}/webdsl-template/webdsl-build-eclipse-plugin-entry.xml\"/>\n");
-        
+
          ant.append("\t<target name=\"plugin-eclipse-build\">\n");
          ant.append("\t\t<antcall target=\"eclipse-build\"/>\n");
          ant.append("\t</target>\n");
-         
+
          ant.append("\t<target name=\"plugin-war\" depends=\"load-config\">\n");
          ant.append("\t\t<property name=\"buildoptions\" value=\"build-war\" />\n");
          ant.append("\t\t<antcall target=\"eclipse-build\"/><!-- assumes project builder for wtp deployment is disabled in .project file -->\n");
          ant.append("\t\t<ant dir=\"${currentdir}/${generate-dir}\" antfile=\"${currentdir}/${generate-dir}/build.xml\" target=\"war\"/>\n");
          ant.append("\t\t<if><equals arg1=\"${rootapp}\" arg2=\"true\"/><then><copy overwrite=\"true\" file=\"${generate-dir}/ROOT.war\" todir=\"${tomcatpath}/webapps/\"/></then><else><copy overwrite=\"true\" file=\"${generate-dir}/"+project.getName()+".war\" todir=\"${tomcatpath}/webapps/\"/></else></if>\n");
          ant.append("\t</target>\n");
-         
+
          ant.append("\t<target name=\"plugin-build\">\n");
          ant.append("\t\t<property name=\"buildoptions\" value=\"build\" />\n");
          ant.append("\t\t<antcall target=\"command\"/>\n");
          ant.append("\t</target>\n");
-          
+
          /*copy overwrite="false" file="${templatedir}/tomcat/tomcat.zip" todir="${generate-dir}/tomcat/"/>
         <copy overwrite="false" file="${templatedir}/tomcat/.keystore" todir="${generate-dir}/tomcat/"/>
         <property name="passtestoption" value="--test" />
@@ -328,28 +332,28 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
           ant.append("\t\t<property name=\"buildoptions\" value=\"run\" />\n");
           ant.append("\t\t<antcall target=\"command\"/>\n");
           ant.append("\t</target>\n");
-          
+
           ant.append("\t<target name=\"plugin-deploy\">\n");
           ant.append("\t\t<property name=\"buildoptions\" value=\"deploy\" />\n");
           ant.append("\t\t<antcall target=\"command\"/>\n");
           ant.append("\t</target>\n");
-          
+
           ant.append("\t<target name=\"plugin-tomcatdeploy\">\n");
           ant.append("\t\t<property name=\"buildoptions\" value=\"tomcatdeploy\" />\n");
           ant.append("\t\t<antcall target=\"command\"/>\n");
           ant.append("\t</target>\n");
-          
+
           ant.append("\t<target name=\"plugin-cleanall\">\n");
           ant.append("\t\t<property name=\"buildoptions\" value=\"cleanall\" />\n");
           ant.append("\t\t<antcall target=\"command\"/>\n");
           ant.append("\t</target>\n");
-          
+
          ant.append("</project>");
-         
+
          writeStringToFile(ant.toString(), project.getLocation()+"/build.xml");
-         
+
      }
-     
+
      public static void writeCleanProjectXmlFile(IProject project) throws IOException{
          StringBuffer ant = new StringBuffer();
          ant.append("<project name=\"clean-project\" default=\"clean-project\">\n");
@@ -371,14 +375,14 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          ant.append("\t\t<eclipse.convertPath fileSystemPath=\"${basedir}\" property=\"resourcePath\" />\n");
          ant.append("\t\t<eclipse.refreshLocal resource=\"${resourcePath}\" depth=\"infinite\" />\n");
          ant.append("\t</target>\n");
-         ant.append("</project>"); 
+         ant.append("</project>");
          writeStringToFile(ant.toString(), project.getLocation()+"/clean-project.xml");
      }
-     
+
      public static void writeCleanProjectXmlLaunchFile(IProject project, String appName, String plugindir) throws IOException{
          //launch file for run as Ant
          writeAntXmlLaunchFile(project,appName,plugindir,"clean-project.xml","clean-project", "\t<stringAttribute key=\"org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS\" value=\"clean\"/>\n");
-         
+
          //launch file for Eclipse project clean
          String antfile = "clean-project.xml";
          StringBuffer buildLaunchFile = new StringBuffer();
@@ -435,7 +439,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          buildLaunchFile.append("</launchConfiguration>\n");
          writeStringToFile(buildLaunchFile.toString(), project.getLocation()+"/"+appName+" "+antfile+".launch");
      }
-     
+
      public static void writeClassPathFile(IProject project) throws IOException{
         //write a .classpath for java nature of project
          StringBuffer classpathFile = new StringBuffer();
@@ -484,9 +488,9 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/webdsl-support.jar\"/>\n");
          classpathFile.append("\t<classpathentry kind=\"lib\" path=\".servletapp/bin/WEB-INF/lib/xercesImpl.jar\"/>\n");
          classpathFile.append("</classpath>\n");
-         writeStringToFile(classpathFile.toString(), project.getLocation()+"/.classpath"); 
+         writeStringToFile(classpathFile.toString(), project.getLocation()+"/.classpath");
      }
-     
+
      public static void writeJdtPrefsFile(IProject project) throws IOException{
          StringBuffer jdtprefsFile = new StringBuffer();
          jdtprefsFile.append("eclipse.preferences.version=1\n");
@@ -518,7 +522,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          wstcomponentFile.append("</project-modules>\n");
          writeStringToFile(wstcomponentFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.component");
      }
-     
+
      public static void writeWstFacetFile(IProject project) throws IOException{
          StringBuffer wstfacetFile = new StringBuffer();
          wstfacetFile.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -528,7 +532,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          wstfacetFile.append("</faceted-project>\n");
          writeStringToFile(wstfacetFile.toString(), project.getLocation()+"/.settings/org.eclipse.wst.common.project.facet.core.xml");
      }
-     
+
      /**
       * Using this .project file will prevent the webdsl builder from running if eclipse is set to 'build automatically'.
       * The configuration as server module needs to be created before running an actual build.
@@ -606,7 +610,7 @@ public class WebDSLEditorWizard extends Wizard implements INewWizard {
          projectFile.append("\t\t\t</dictionary></arguments>\n");
          projectFile.append("\t\t</buildCommand>\n");
          projectFile.append("\t</buildSpec>\n");
-         
+
          projectFile.append("\t<natures>\n");
          projectFile.append("\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n");
          projectFile.append("\t\t<nature>org.eclipse.wst.common.project.facet.core.nature</nature>\n");

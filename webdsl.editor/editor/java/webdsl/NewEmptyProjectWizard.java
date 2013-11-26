@@ -18,8 +18,8 @@ public class NewEmptyProjectWizard extends WebDSLEditorWizard {
 
     @Override
     public void writeExampleApplicationFiles(IProject project, String appName, String plugindir) throws IOException{
-        writeStringToFile("application "+appName+"\n\n\tdefine page root(){ \"Hello world\" }", project.getLocation()+"/"+appName+".app");
-        
+        writeStringToFile("application "+appName+"\n\n  page root(){ \"Hello world\" }", project.getLocation()+"/"+appName+".app");
+
         createDirs(project.getLocation()+"/images");
         copyFile(plugindir+"webdsl-template/new_project/images/logosmall.png", project.getLocation()+"/images/logosmall.png");
         createDirs(project.getLocation()+"/stylesheets");
@@ -30,21 +30,21 @@ public class NewEmptyProjectWizard extends WebDSLEditorWizard {
         copyFile(plugindir+"webdsl-template/new_project/search/analyzerfiles/stopwords.txt", project.getLocation()+"/search/analyzerfiles/stopwords.txt");
         copyFile(plugindir+"webdsl-template/new_project/search/analyzerfiles/synonyms.txt", project.getLocation()+"/search/analyzerfiles/synonyms.txt");
         copyWebDSLSrcLibrary(project, appName, plugindir);
-        
+
         //create other special dirs, to avoid seeing red warnings in build, also helps to see what you can modify/extend
         createDirs(project.getLocation()+"/html");
         createDirs(project.getLocation()+"/javascript");
         createDirs(project.getLocation()+"/lib");
         createDirs(project.getLocation()+"/nativejava");
-        
+
         writeStringToFile("needed to start initial build", project.getLocation()+"/.saved-but-not-built");
     }
-    
+
     @Override
     protected void openEditorsForExampleApp(String appName, IProject project, IProgressMonitor monitor){
         monitor.setTaskName("Opening editor tabs");
         Display display = getShell().getDisplay();
         EditorState.asyncOpenEditor(display, project.getFile(appName+".app"), true);
-        monitor.worked(1);    	 
+        monitor.worked(1);
     }
 }

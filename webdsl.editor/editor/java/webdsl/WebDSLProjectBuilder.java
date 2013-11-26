@@ -25,13 +25,13 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.browser.IWebBrowser;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
-//import org.eclipse.wst.server.core.IPublishListener;
 import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.ServerUtil;
-//import org.eclipse.wst.server.core.util.PublishAdapter;
 import org.eclipse.wst.server.ui.internal.ServerUIPlugin;
 
 import static webdsl.FileUtils.*;
+
+import static webdsl.EclipseConsoleUtils.*;
 
 @SuppressWarnings("restriction")
 public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
@@ -53,11 +53,8 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         try{
             final IProject project = getProject();
 
-            // trying refresh here instead of in Ant build file, http://yellowgrass.org/issue/WebDSL/762
-            refresh(project, monitor);
-
             final String buildid = getBuildIdCompleted(project);
-            
+
             //check that last build completed, sometimes this builder is started when compiler is still running
             if(buildid != null && !isWebDSLProjectBuilderStarted(project)){
               markWebDSLProjectBuilderStarted(project);
@@ -66,16 +63,26 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
               initWtpServerConfig(WebDSLEditorWizard.getPluginDir(),project,project.getName(),monitor);
 
+              ReadApplicationIni.init(project);
+
               tryStartServer(project, monitor,
                   new ChainedJob(){
                       public void run(){
-                          pollDeployedAppAndOpenBrowser(project, buildid, 0);
+                          // trying refresh here instead of in Ant build file, http://yellowgrass.org/issue/WebDSL/762
+                          refresh(project, monitor);
+                          if(ReadApplicationIni.isPluginBuildPollServerEnabled()){
+                        	  log("automatic poll of server is enabled");
+                              pollDeployedAppAndOpenBrowser(project, buildid, 0);
+                          }
+                          else{
+                        	  log("automatic poll of server is disabled");
+                          }
                       }
                   }, 0);
               //pollDeployedAppAndOpenBrowser(project, buildid, 1000);
             }
             worked( monitor, 1 );
-            //System.out.println("build done");
+            //log("build done");
         }
         catch(Exception e){
             e.printStackTrace();
@@ -114,7 +121,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             bufRead.close();
         }
         catch(Exception e){
-            System.out.println("Could not find a build id in .servletapp/"+fileName);
+            log("Could not find a build id in .servletapp/"+fileName);
         }
         return buildid;
     }
@@ -153,7 +160,6 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
     }
 
-
     /*
      * tried several ways of calling ant, but none of them is working as needed, ant is now called from .project builder directly instead
      */
@@ -164,14 +170,14 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
         AntLaunchShortcut launcher = new AntLaunchShortcut();
         IPath p = Path.fromPortableString(buildFile.toString());
-        System.out.println(p);
+        log(p);
         launcher.setShowDialog(false);
         launcher.launch(new AntProjectNodeProxy(buildFile.toString()),org.eclipse.debug.core.ILaunchManager.RUN_MODE);
       */
         /*
         AntLaunchShortcut launcher = new AntLaunchShortcut();
         IPath p = Path.fromPortableString(buildFile.toString());
-        System.out.println(p);
+        log(p);
         launcher.launch(p, project, org.eclipse.debug.core.ILaunchManager.RUN_MODE, "plugin-eclipse-build");
         */
 
@@ -179,7 +185,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         AntRunner builder = new AntRunner();
         builder.setBuildFileLocation(buildFile.toString());
         //builder.setMessageOutputLevel(org.apache.tools.ant.Project.MSG_INFO);
-        System.out.println(new webdsl.AntConsoleLogger().getClass().getName());
+        log(new webdsl.AntConsoleLogger().getClass().getName());
         builder.addBuildLogger(new webdsl.AntConsoleLogger().getClass().getName());
         builder.run(monitor);
         */
@@ -191,7 +197,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
         String plugindir = new WebDSLJarAntPropertyProvider().getAntPropertyValue("plugindir");
         String strjdir = StrategoAppl.class.getProtectionDomain().getCodeSource().getLocation().getFile();
-        System.out.println(strjdir);
+        log(strjdir);
         p.setUserProperty("plugindir", plugindir);
         p.setUserProperty("stratego-jar-cp",strjdir);
         p.setUserProperty("build-id",buildid);
@@ -234,8 +240,19 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
       if(buildid != null){
         Job job = new Job("poll deployed app and open browser") {
            public IStatus run(IProgressMonitor monitor){
+        	   log("waiting for server to start");
+        	   log("number of milliseconds to wait before polling: "+ReadApplicationIni.getPluginBuildPollWaitTime());
+        	   try {
+        	   //monitor.wait(ReadApplicationIni.getPluginBuildPollWaitTime());// delay in job.schedule(delay) seems to be ignored, trying this way
+				Thread.sleep(ReadApplicationIni.getPluginBuildPollWaitTime());
+
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			log("polling");
                boolean deployed = pollDeployedAppForNewBuildId(project,buildid);
                if(deployed){
+            	   log("opening tab");
                    //opens default external browser
                    try {
                        IWorkbenchBrowserSupport browserSupport = ServerUIPlugin.getInstance().getWorkbench().getBrowserSupport();
@@ -246,6 +263,9 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                    } catch (PartInitException e) {
                        e.printStackTrace();
                    }
+               }
+               else{
+            	   log("poll failed");
                }
                return Status.OK_STATUS;
            }
@@ -270,7 +290,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
 
             public void publishFinished(IServer server, IStatus status) {
                 //showServersView(false);
-                System.out.println("status: " + status);
+                log("status: " + status);
                 Job job = new Job("poll deployed app and open browser") {
                     public IStatus run(IProgressMonitor monitor){
                         boolean deployed = pollDeployedAppForNewBuildId(project,buildid);
@@ -295,7 +315,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                 job.schedule(defaultDelay);
             }
           };
-          System.out.println("Adding publish listener.");
+          log("Adding publish listener.");
           tomcatserver.addPublishListener(publishListener);
         }
 
@@ -324,10 +344,12 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             e.printStackTrace();
         }
         String searchfor = "build-id:"+buildid;
-        System.out.println("searching for: "+searchfor);
+        log("searching for: "+searchfor);
         boolean found = false;
-        int tries = 3;
+        int tries = ReadApplicationIni.getPluginBuildPollNumberOfTries();
+        log("total tries: "+tries);
         while(tries > 0 && !found){
+        	log("tries left: "+tries);
           tries = tries - 1;
           try {
             URLConnection con = url.openConnection();
@@ -344,7 +366,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             }
             inreader.close();
           } catch (Exception e) {
-            System.out.println("Error while requesting page "+url+" : "+e.getMessage());
+            log("error while requesting page "+url+" : "+e.getMessage());
             //e.printStackTrace();
           }
           try {
@@ -355,10 +377,10 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
           }
         }
         if(found){
-          System.out.println("Application deployed, opening browser tab.");
+          log("application deployed, opening browser tab");
         }
         else{
-          System.out.println("Application not deployed yet, cancelled opening browser tab.");
+          log("application not deployed yet, cancelled opening browser tab");
         }
         return found;
     }
@@ -410,14 +432,19 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     }
 
     public static void checkServerStarted(IServer server, IProject project, ChainedJob cj){
-           System.out.println("Polling server status.");
+           log("polling Tomcat server status");
             if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
                 addStartServerJob(server,cj,defaultDelay);
             }
             else{
-                System.out.println("Server already started.");
+                log("server already started");
+                if(ReadApplicationIni.isPluginBuildRestartServer()){
+                	log("configured to restart Tomcat on each deploy");
+                	addRestartServerJob(server,cj,defaultDelay);
+                }
                 if(restartWhenNewAppIsBuildFirstTime && !alreadyStarted.contains(project.getName())){
-                    addRestartServerJob(server,cj,defaultDelay);
+                	log("restarting Tomcat for first deploy");
+                	addRestartServerJob(server,cj,defaultDelay);
                 }
                 else{
                     if(cj!=null){cj.run();}
@@ -435,7 +462,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
                 try {
                   //server might have been started in the mean time
                   if(server.canStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE).equals(Status.OK_STATUS)){
-                    System.out.println("Starting server.");
+                    log("starting server");
                     server.synchronousStart(org.eclipse.debug.core.ILaunchManager.RUN_MODE,monitor);
                   }
                 } catch (CoreException e) {
@@ -453,7 +480,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         Job job = new Job("stop server") {
             @SuppressWarnings("deprecation")
             public IStatus run(IProgressMonitor monitor){
-                System.out.println("Stopping server.");
+                log("Stopping server.");
                 server.synchronousStop(true);
                 if(cj!=null){cj.run();}
                 return Status.OK_STATUS;
@@ -466,7 +493,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
         Job job = new Job("Restarting server.") {
             @SuppressWarnings("deprecation")
             public IStatus run(IProgressMonitor monitor){
-                System.out.println("Stopping server.");
+                log("stopping server");
                 /* stop and start or restart */
                 /*server.stop(true);
                 addStartServerJob(server, cj, delay);*/
@@ -494,7 +521,7 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
     }
 
     public static void publish(IServer server, IProgressMonitor monitor){
-       System.out.println("Publishing server.");
+       log("publishing server");
        server.publish(IServer.PUBLISH_STATE_INCREMENTAL,monitor);
     }
 
@@ -515,4 +542,5 @@ public class WebDSLProjectBuilder extends IncrementalProjectBuilder{
             e.printStackTrace();
         }
     }
+
 }
