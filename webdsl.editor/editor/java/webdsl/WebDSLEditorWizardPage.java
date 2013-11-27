@@ -10,6 +10,8 @@ import org.eclipse.jface.dialogs.IDialogPage;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
@@ -67,6 +69,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
     public String getInputDBName() { return inputDBName.getText().trim(); }
     protected Label labelDBFile;
     protected Text inputDBFile;
+    protected boolean inputDBFileEdited = false;
     public String getInputDBFile() { return inputDBFile.getText().trim(); }
 
     protected Label labelTestConnection;
@@ -279,7 +282,17 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
-        inputDBFile.setText("temp.db");
+        inputDBFile.setText("WebDSLappH2database.db");
+        inputDBFile.addKeyListener(new KeyListener() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				inputDBFileEdited = true;
+			}
+			@Override
+			public void keyReleased(KeyEvent e) {
+				inputDBFileEdited = true;
+			}
+        });
 
         dbmodeGroup = new Group(container, SWT.NULL);
         GridData dbmodeGridData = new GridData();
@@ -608,9 +621,13 @@ public class WebDSLEditorWizardPage extends WizardPage {
 
     private void distributeProjectName() {
         if (!isInputProjectNameChanged || getInputAppName().length() == 0
-                || getInputAppName().equals(toLanguageName(getInputProjectName()))) {
+                || getInputAppName().equals(getInputProjectName())) {
             ignoreEvents = true;
-            inputAppName.setText(toLanguageName(getInputProjectName()));
+            final String lang = getInputProjectName();
+            inputAppName.setText(lang);
+            if(!inputDBFileEdited){
+            	inputDBFile.setText(lang+".db");
+            }
             isInputProjectNameChanged = false;
             ignoreEvents = false;
         }
@@ -636,7 +653,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 setErrorStatus("Project name must be valid");
                 return;
             }
-            if (!toLanguageName(getInputAppName()).equalsIgnoreCase(getInputAppName())) {
+            if (!getInputAppName().equalsIgnoreCase(getInputAppName())) {
                 setErrorStatus("Application name must be valid");
                 return;
             }
@@ -679,64 +696,6 @@ public class WebDSLEditorWizardPage extends WizardPage {
         }
         return true;
     }
-
-    private static String toLanguageName(String name) {
-        return name;
-        /*
-        char[] input = name.replace(' ', '-').toCharArray();
-        StringBuilder output = new StringBuilder();
-        int i = 0;
-        while (i < input.length) {
-            char c = input[i++];
-            if (Character.isLetter(c) || c == '-' || c == '_') {
-                output.append(c);
-                break;
-            }
-        }
-        while (i < input.length) {
-            char c = input[i++];
-            if (Character.isLetterOrDigit(c) || c == '-' || c == '_')
-                output.append(c);
-        }
-        if (output.length() > 0)
-            output.setCharAt(0, Character.toUpperCase(output.charAt(0))); // SDF wants a capital here
-        return output.toString();*/
-    }
-
-    /*
-    private static String toPackageName(String name) {
-        char[] input = name.replace(' ', '-').toCharArray();
-        StringBuilder output = new StringBuilder();
-        int i = 0;
-        while (i < input.length) {
-            char c = input[i++];
-            if (Character.isLetter(c) || c == '.' || c == '_') {
-                output.append(c);
-                break;
-            }
-        }
-        while (i < input.length) {
-            char c = input[i++];
-            if (Character.isLetterOrDigit(c) || c == '.' || c == '_')
-                output.append(c);
-        }
-        return output.toString();
-    }
-
-    private static String toExtension(String name) {
-        String input = name.toLowerCase().replace("-", "").replace(".", "").replace(" ", "").replace(":", "");
-        String prefix = input.substring(0, Math.min(input.length(), 3));
-        if (input.length() == 0) return "";
-
-        for (int i = input.length() - 1;; i--) {
-            if (!Character.isDigit(input.charAt(i)) && input.charAt(i) != '.') {
-                return prefix + input.substring(Math.max(prefix.length(), Math.min(input.length(), i + 1)));
-            } else if (i == prefix.length()) {
-                return prefix + input.substring(i);
-            }
-        }
-    }
-    */
 
     protected void setErrorStatus(String message) {
         setErrorMessage(message);
