@@ -284,11 +284,9 @@ public class WebDSLEditorWizardPage extends WizardPage {
         });
         inputDBFile.setText("WebDSLappH2database.db");
         inputDBFile.addKeyListener(new KeyListener() {
-			@Override
 			public void keyPressed(KeyEvent e) {
 				inputDBFileEdited = true;
 			}
-			@Override
 			public void keyReleased(KeyEvent e) {
 				inputDBFileEdited = true;
 			}
