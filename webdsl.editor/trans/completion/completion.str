@@ -11,8 +11,7 @@ strategies
   
   editor-complete :
     a@(node, position, ast, path, project-path) -> result
-    with  <editor-analyze> (ast, path, project-path)
-        ; result := <collect-all(editor-complete-proposal); flatten-list>
+    with  result := <collect-all(editor-complete-proposal); flatten-list> ast
 
 rules // inverse property annotation completion foo -> Foo (inverse=Foo.bar) 
   
