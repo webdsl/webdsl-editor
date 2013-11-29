@@ -1,6 +1,6 @@
 package webdsl;
 
-import java.io.IOException;
+import static webdsl.WTPUtils.removeProjectModuleFromServer;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -9,8 +9,6 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.wst.server.core.IServer;
-
-import static webdsl.WTPUtils.*;
 
 //hoped this would help with redeploying after context path change, but it doesn't
 public class RemoveServerModuleTask extends Task {

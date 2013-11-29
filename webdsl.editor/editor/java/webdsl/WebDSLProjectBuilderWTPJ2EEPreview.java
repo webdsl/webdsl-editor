@@ -3,7 +3,6 @@ package webdsl;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.wst.server.core.IServer;
 
 public class WebDSLProjectBuilderWTPJ2EEPreview extends WebDSLProjectBuilder{

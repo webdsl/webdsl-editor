@@ -1,12 +1,13 @@
 package webdsl;
 
+import static webdsl.FileUtils.createDirs;
+import static webdsl.FileUtils.writeStringToFile;
+
 import java.io.IOException;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-
-import static webdsl.FileUtils.*;
 
 public class ConvertProjectWizard extends WebDSLEditorWizard {
 

@@ -1,6 +1,8 @@
 package webdsl;
 
-import java.util.List;
+import static webdsl.EclipseConsoleUtils.log;
+import static webdsl.FileUtils.writeStringToFile;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -10,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -28,10 +31,6 @@ import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.ServerUtil;
 import org.eclipse.wst.server.ui.internal.ServerUIPlugin;
-
-import static webdsl.FileUtils.*;
-
-import static webdsl.EclipseConsoleUtils.*;
 
 @SuppressWarnings("restriction")
 public class WebDSLProjectBuilder extends IncrementalProjectBuilder{

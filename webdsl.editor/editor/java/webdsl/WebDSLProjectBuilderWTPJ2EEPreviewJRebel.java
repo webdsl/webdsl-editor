@@ -1,11 +1,11 @@
 package webdsl;
 
+import static webdsl.FileUtils.fileExists;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.wst.server.core.IServer;
-
-import static webdsl.FileUtils.*;
 
 public class WebDSLProjectBuilderWTPJ2EEPreviewJRebel extends WebDSLProjectBuilderWTPJ2EEPreview{
 

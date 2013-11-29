@@ -6,8 +6,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 
-import webdsl.WebDSLProjectBuilder;
-
 public class ScheduleRefreshTask extends Task {
     private String projectname;
 

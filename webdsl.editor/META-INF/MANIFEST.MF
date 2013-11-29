@@ -26,20 +26,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.debug.ui,
  org.eclipse.ui.ide,
  org.eclipse.jdt.core,
- org.apache.ant,
- org.eclipse.wst.sse.core
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Export-Package: org.acoda.editor,
- org.webdsl.back_end_transformations,
- org.webdsl.java_pp_fake,
- org.webdsl.java_transformations,
- org.webdsl.to_java_servlet,
- org.webdsl.webdsl_config,
- org.webdsl.webdsl_front,
- org.webdsl.webdsl_generator,
- org.webdsl.webdslc,
- org.webdsl.write_files,
- webdsl
+ org.apache.ant
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: include/webdsl_editor.jar,
  bin/,
  .,

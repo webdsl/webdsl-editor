@@ -1,19 +1,16 @@
 package webdsl;
 
+import static webdsl.FileUtils.fileExists;
+import static webdsl.FileUtils.refreshProject;
+import static webdsl.FileUtils.writeStringToFile;
+
 import java.io.IOException;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.wst.server.core.IRuntime;
-import org.eclipse.wst.server.core.IRuntimeType;
-import org.eclipse.wst.server.core.IRuntimeWorkingCopy;
-import org.eclipse.wst.server.core.IServer;
-import org.eclipse.wst.server.core.IServerType;
-import org.eclipse.wst.server.core.IServerWorkingCopy;
-import static webdsl.FileUtils.*;
-import static webdsl.WTPUtils.*;
 
 public class WTPJ2EEPreviewSetupJRebel extends WTPJ2EEPreviewSetup {
   

@@ -1,9 +1,15 @@
 package webdsl;
 
+import static webdsl.FileUtils.copyFile;
+import static webdsl.FileUtils.createDirs;
+import static webdsl.FileUtils.refreshProject;
+import static webdsl.FileUtils.writeStringToFile;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceDescription;
@@ -20,10 +26,9 @@ import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
 import org.strategoxt.imp.runtime.EditorState;
 import org.strategoxt.imp.runtime.Environment;
+
 import webdsl.WebDSLEditorWizardPage.SelectedDatabase;
 import webdsl.WebDSLEditorWizardPage.SelectedServer;
-
-import static webdsl.FileUtils.*;
 
 /**
  * A wizard for creating new WebDSL projects.

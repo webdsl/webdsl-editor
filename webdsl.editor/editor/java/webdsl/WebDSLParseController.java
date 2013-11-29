@@ -1,7 +1,8 @@
 package webdsl;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+
 import org.eclipse.imp.parser.IParseController;
 import org.strategoxt.imp.runtime.Environment;
 import org.strategoxt.imp.runtime.dynamicloading.BadDescriptorException;

@@ -1,6 +1,17 @@
 package webdsl;
 
+import static webdsl.FileUtils.fileExists;
+import static webdsl.FileUtils.getWebDSLVersion;
+import static webdsl.FileUtils.refreshProject;
+import static webdsl.FileUtils.writeStringToFile;
+import static webdsl.WTPUtils.addProjectModuleToServer;
+import static webdsl.WTPUtils.getCompatibleServerType;
+import static webdsl.WTPUtils.getRuntime;
+import static webdsl.WTPUtils.getRuntimeType;
+import static webdsl.WTPUtils.getServer;
+
 import java.io.IOException;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -12,8 +23,6 @@ import org.eclipse.wst.server.core.IRuntimeWorkingCopy;
 import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.IServerType;
 import org.eclipse.wst.server.core.IServerWorkingCopy;
-import static webdsl.FileUtils.*;
-import static webdsl.WTPUtils.*;
 
 public class WTPJ2EEPreviewSetup  {
    

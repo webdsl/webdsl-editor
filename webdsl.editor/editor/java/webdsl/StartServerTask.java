@@ -8,8 +8,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 
-import webdsl.WebDSLProjectBuilder;
-
 public class StartServerTask extends Task {
     private String projectname;
 
