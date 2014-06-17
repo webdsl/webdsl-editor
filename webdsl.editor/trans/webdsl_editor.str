@@ -220,6 +220,8 @@ strategies // editor service interface
   desugar-all =
       preserve(innermost(desugar-def))
   
+  desugar-def = normalize-constructor // reuse pre-declare-step constructor normalization rules that are defined in the compiler, e.g. template x(){} -> define x(){}
+  
   import-main-file: ast -> ast
     with  appname := <AppName>
         ; where(!appname; debug(!"Explicitly importing main file: ")) 
