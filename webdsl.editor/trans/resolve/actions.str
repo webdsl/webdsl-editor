@@ -16,11 +16,6 @@ rules
   get-ajax-target-id: AjaxRestyle(thediv,_) -> thediv
   get-ajax-target-id: AjaxClear(thediv) -> thediv
     
-  declaration-of: element -> placeholder
-    where div := <get-ajax-target-id; is-string> element
-        ; not("this" := div)  // TODO
-    with  placeholder := <HtmlEntityId> div
-    
 rules  
     
   hover: Action(name, arg*, _) -> text
