@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="WebDSL" default="all">
-  
-  <taskdef resource="net/sf/antcontrib/antcontrib.properties">
-    <classpath>
-      <pathelement location="lib/ant-contrib-1.0b3.jar"/>
-    </classpath>
-  </taskdef>   
 
   <!-- Key input modules -->
   <property name="sdfmodule" value="WebDSL" />
@@ -22,6 +16,20 @@
   <property name="build" location="bin" />
   <property name="dist" location="bin/dist" />
   <property name="java-runtime" location="java-runtime/src" />
+	
+  <!-- migration guide: https://github.com/metaborg/doc/blob/master/releases/spoofax/SDF3%20Migration%20Guide%20-%20Nightly.md -->	
+  <property name="ppmodule" value="WebDSL-pp"/>
+  <property name="sigmodule" value="WebDSL-sig"/> 
+  <property name="sdf-src-gen" location="src-gen"/>
+  <property name="pp" location="${sdf-src-gen}/pp"/>
+  <property name="signatures" location="${sdf-src-gen}/signatures"/>
+  <property name="lib-gen" location="${include}"/>
+  <property name="syntax.rel" location="${syntax}" relative="yes"/>
+  <property name="trans.rel" location="trans" relative="yes"/>
+  <property name="include.rel" location="${include}" relative="yes"/>
+  <property name="lib-gen.rel" location="${lib-gen}" relative="yes"/>
+  <property name="syntax" location="${sdf-src-gen}/syntax"/>
+  <property name="nativepath" value="${eclipse.spoofaximp.nativeprefix}"/>
 
   <!-- WEBDSL: import compiler properties -->
   <loadproperties srcFile="import.webdsl.properties" />
@@ -47,20 +55,6 @@
                         -I ${webdsl.home}" />
   
   <import file="dr-analysis/build.xml" />
-    
-  <!--
-    External .def and .jar locations <property name="externaldef"
-    location="syntax/${sdfmodule}.def"/> <property name="externaljar"
-    value="../lib.jar"/> <property name="externaljarflags" value="-la
-    org.lib"/>
-  -->
-
-  <!-- Environment configuration for command-line builds -->
-  <condition property="build.strategoxt.sdf" value="${eclipse.spoofaximp.nativeprefix}"
-    else="">
-    <isset property="eclipse.spoofaximp.nativeprefix" />
-  </condition>
-  <property name="build.strategoxt.stratego" location="${user.home}/.nix-profile/bin" />
 
   <import file="build.generated.xml" />
   <import file="build.clean.xml" />
@@ -68,23 +62,28 @@
   <!-- WEBDSL: custom main target, don't use spoofaximp.default -->
   <target name="all" depends="check.editor-ts.present, all.release" />
   <target name="all.release" depends="
-  	update.editor-ts,
+    update.editor-ts,
   	import-webdsl-template,
   	import-rtrees-for-editor-checks,
-  	check-classpath,
-  	init,
-  	sdf2table,
-  	meta-sdf2table,
-  	ppgen,
-  	pppack,
-  	stratego.aster,
-  	create-dr-term,
-  	java.jar,
-  	stratego.compile,
-  	sdf2imp,
-  	refresh,
-  	sdf2imp.eclipse.load" />
-  
+    check-classpath,
+    call-onsave,
+    init,
+    sdf2table,
+    meta-sdf2table,
+  	generate-pp,
+    pppack,
+    sdf2imp.eclipse,
+    sdf2imp.standalone,
+    sdf2parenthesize,
+    stratego.aster,
+    create-dr-term,
+    stratego.jar.helper,
+    compile-java-files,
+    stratego.jar.makejar,
+    java.jar,
+    refresh,
+    sdf2imp.eclipse.load"/>
+
   <!-- WEBDSL: Custom targets .................................................................... -->
 
   <target name="stratego.compile">
