@@ -1,1 +1,70 @@
 build instructions: http://webdsl.org/selectpage/Download/buildplugin
+
+
+
+command-line Maven build Mac OS X:
+
+
+    brew install maven
+
+
+Assuming there is no ~/.m2/settings.xml file yet:
+
+
+    echo '<?xml version="1.0" ?>
+<settings
+  xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd"
+>
+  <profiles>
+    <profile>
+      <id>add-ossrh-repositories</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+        <repository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/content/groups/staging</url>
+          <releases>
+              <enabled>false</enabled>
+          </releases>
+          <snapshots>
+              <enabled>true</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>spoofax-nightly</id>
+          <url>http://download.spoofax.org/update/nightly</url>
+          <layout>p2</layout>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>ossrh-plugins</id>
+          <url>https://oss.sonatype.org/content/groups/staging</url>
+          <releases>
+              <enabled>false</enabled>
+          </releases>
+          <snapshots>
+              <enabled>true</enabled>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+</settings>' > ~/.m2/settings.xml
+
+
+Because the default JVM heap and stack settings in Maven are quite low, add to ~/.profile:
+
+
+    export MAVEN_OPTS="-Xmx512m -Xms512m -Xss16m"
+
+
+Then run (also a pom.xml in the directory above webdsl.editor to include feature and updatesite):
+
+
+    mvn clean verify
+

@@ -26,7 +26,10 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.debug.ui,
  org.eclipse.ui.ide,
  org.eclipse.jdt.core,
- org.apache.ant
+ org.apache.ant,
+ org.spoofax.terms,
+ org.spoofax.interpreter.externaldeps,
+ org.strategoxt.imp.runtime
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: include/webdsl_editor.jar,
  bin/,

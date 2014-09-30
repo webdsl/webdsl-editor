@@ -31,6 +31,10 @@
   <property name="syntax" location="${sdf-src-gen}/syntax"/>
   <property name="nativepath" value="${eclipse.spoofaximp.nativeprefix}"/>
 
+  <!-- Maven build targets for command-line build of editor -->
+  <target name="generate-sources" depends="generate-sources-java" />
+  <target name="package" depends="package-java" />
+
   <!-- WEBDSL: import compiler properties -->
   <loadproperties srcFile="import.webdsl.properties" />
   <fail message="ERROR: externaljarflags is no longer user-configurable. Please remove it from import.webdsl.properties">
