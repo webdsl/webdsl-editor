@@ -16,10 +16,10 @@
   <property name="build" location="bin" />
   <property name="dist" location="bin/dist" />
   <property name="java-runtime" location="java-runtime/src" />
-	
-  <!-- migration guide: https://github.com/metaborg/doc/blob/master/releases/spoofax/SDF3%20Migration%20Guide%20-%20Nightly.md -->	
+
+  <!-- migration guide: https://github.com/metaborg/doc/blob/master/releases/spoofax/SDF3%20Migration%20Guide%20-%20Nightly.md -->
   <property name="ppmodule" value="WebDSL-pp"/>
-  <property name="sigmodule" value="WebDSL-sig"/> 
+  <property name="sigmodule" value="WebDSL-sig"/>
   <property name="sdf-src-gen" location="src-gen"/>
   <property name="pp" location="${sdf-src-gen}/pp"/>
   <property name="signatures" location="${sdf-src-gen}/signatures"/>
@@ -40,10 +40,10 @@
   </fail>
   <property name="externaljarflags" value="-la org.webdsl.webdsl_generator -la org.webdsl.webdsl_front" />
   <property name="externaljarflags.set" value="true" />
-      
+
   <!-- WEBDSL: for spoofax.output.type (ctree/jar) -->
   <loadproperties srcFile="build.properties" />
-  
+
   <!-- Imports -->
   <property name="build.sdf.imports" value="" />
 
@@ -53,7 +53,7 @@
                         -I &quot;${trans}&quot; -I &quot;${basedir}&quot; -I &quot;${include}&quot; -I &quot;${lib}&quot;
                         -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm -la stratego-parallel
                         -I ${webdsl.home}" />
-  
+
   <import file="dr-analysis/build.xml" />
 
   <import file="build.generated.xml" />
@@ -62,6 +62,7 @@
   <!-- WEBDSL: custom main target, don't use spoofaximp.default -->
   <target name="all" depends="check.editor-ts.present, all.release" />
   <target name="all.release" depends="
+  	generate-WebDSL-Builders.esv,
     update.editor-ts,
   	import-webdsl-template,
   	import-rtrees-for-editor-checks,
@@ -70,7 +71,7 @@
     init,
     sdf2table,
     meta-sdf2table,
-  	generate-pp,
+  	ppgen,
     pppack,
     sdf2imp.eclipse,
     sdf2imp.standalone,
@@ -86,7 +87,7 @@
 
   <!-- WEBDSL: Custom targets .................................................................... -->
 
-  <target name="stratego.compile">
+  <target name="generate-WebDSL-Builders.esv">
     <property name="stratego.compile.target" value="stratego.${spoofax.output.type}"/>
     <!-- update builder -->
     <copy file="editor/${esvmodule}-Builders.template.esv" tofile="editor/${esvmodule}-Builders.esv" overwrite="true"/>
@@ -96,10 +97,6 @@
         <replace file="editor/${esvmodule}-Builders.esv" token="//acoda disabled " value="" />
       </then>
     </if>
-    <antcall target="${stratego.compile.target}" />
-    <jar update="true" destfile="${include}/${strmodule}.jar">
-     <fileset dir="${src-gen}" excludes="**/*.java" />
-    </jar>
   </target>
 
   <!-- import template to plugin -->
@@ -118,13 +115,13 @@
         <exclude name="**/plugin-build-deps/**" />
       </fileset>
     </sync>
-    
+
     <unzip overwrite="false" src="webdsl-template/template-java-servlet/tomcat/tomcat.zip" dest="webdsl-template/tomcat/"/>
     <!-- untar task used previously created ._filename copies, even in lib/, which tomcat will then compain about when starting up -->
-  
+
     <move overwrite="true" file="webdsl-template/webdsl-eclipseplugin" tofile="webdsl-template/webdsl"/>
     <move overwrite="true" file="webdsl-template/webdsl-eclipseplugin.bat" tofile="webdsl-template/webdsl.bat"/>
-    
+
   </target>
 
   <!--  copy rtrees of webdsl for stratego editor -->
@@ -145,20 +142,20 @@
       <then>
         <copy file="${acoda.home}/bin/org/acoda/editor/editor.rtree"
           preservelastmodified="true" todir="lib" />
-        <copy file="${acoda.home}/bin/dist/acoda.jar"		
+        <copy file="${acoda.home}/bin/dist/acoda.jar"
           preservelastmodified="true" todir="include" />  <!-- FIXME: I am putting a jar import here, which is ugly and temporary. Spoofax currently supports a single external jar, we need two. I posted a feature reqeust on YellowGrass. -->
       </then>
     </if>
   </target>
 
   <property name="path.timestamp.term" value="${include}/editor.timestamp.aterm" />
-  
+
   <target name="check.editor-ts.present">
     <available file="${path.timestamp.term}" property="available.editor-ts" />
   </target>
-  
+
   <target name="declare-get-unix-ts" >
-     <taskdef name="taskget-unix-ts"  classname="org.webdsl.ant.TaskGetUnixTs" classpath="lib/webdsl-editor-antTasks.jar"/>  
+     <taskdef name="taskget-unix-ts"  classname="org.webdsl.ant.TaskGetUnixTs" classpath="lib/webdsl-editor-antTasks.jar"/>
   </target>
   <target name="update.editor-ts" unless="available.editor-ts" depends="declare-get-unix-ts">
     <taskget-unix-ts/>

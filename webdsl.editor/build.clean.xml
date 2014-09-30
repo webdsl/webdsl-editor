@@ -7,6 +7,7 @@
       <fileset dir="./include" includes="**/*" erroronmissingdir="false"/>
       <fileset dir="./.cache" includes="**/*" erroronmissingdir="false"/>
     </delete>
+    <delete file="./editor/WebDSL-Builders.esv"/>
     <eclipse.convertPath fileSystemPath="." property="resourcePath"/>
     <eclipse.refreshLocal resource="${resourcePath}" depth="infinite"/>
   </target>
