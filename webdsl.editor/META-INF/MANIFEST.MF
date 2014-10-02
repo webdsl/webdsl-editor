@@ -32,7 +32,6 @@ Require-Bundle: org.eclipse.core.runtime,
  org.strategoxt.imp.runtime
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: include/webdsl_editor.jar,
- bin/,
  .,
  include/webdsl.jar,
  include/acoda.jar

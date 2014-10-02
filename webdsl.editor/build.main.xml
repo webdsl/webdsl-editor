@@ -9,11 +9,11 @@
 
   <!-- Project directories -->
   <property name="trans" location="trans" />
-  <property name="src-gen" location="editor/java-generated" />
+  <property name="src-gen" location="editor/java" />
   <property name="syntax" location="syntax" />
   <property name="include" location="include" />
   <property name="lib" location="lib" />
-  <property name="build" location="bin" />
+  <property name="build" location="target/classes" />
   <property name="dist" location="bin/dist" />
   <property name="java-runtime" location="java-runtime/src" />
 
@@ -32,7 +32,7 @@
   <property name="nativepath" value="${eclipse.spoofaximp.nativeprefix}"/>
 
   <!-- Maven build targets for command-line build of editor -->
-  <target name="generate-sources" depends="generate-sources-java" />
+  <target name="generate-sources" depends="pre-maven-build, generate-sources-java" />
   <target name="package" depends="package-java" />
 
   <!-- WEBDSL: import compiler properties -->
@@ -88,6 +88,13 @@
     java.jar,
     refresh,
     sdf2imp.eclipse.load"/>
+
+  <target name="pre-maven-build" depends="
+  	generate-WebDSL-Builders.esv,
+    update.editor-ts,
+  	import-webdsl-template,
+  	import-rtrees-for-editor-checks,
+    create-dr-term"/>
 
   <!-- WEBDSL: Custom targets .................................................................... -->
 
