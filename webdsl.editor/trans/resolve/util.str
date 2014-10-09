@@ -11,11 +11,11 @@ signature constructors
   FromModule : Term -> Term
 
 strategies
-  
+
   editor-resolve-internal =
     remove-hover-info
   ; if editor-resolve => tgt then
-        <find-declaration> tgt
+        <find-declaration> tgt // if referred element is another file, opens the file
       ; try(where(get-anno(?FromEntity(_)); set-hover-info))
       ; try(where(get-hover-info; debug(!"Got hover info: ")))
       ; debug(!"Resolved: ")
@@ -24,64 +24,74 @@ strategies
       ; debug(!"No resolve for: ")
       ; fail
     end
-  
-  remove-module-info = try(dr-end-scope(|"LookupFromModule")); dr-begin-scope(|"LookupFromModule")
-    
-  // Default resolve
-  editor-resolve: (node, position, ast, path, project-path) -> <parent-at-position(|position);declaration-of> ast
-  editor-hover: (node, position, ast, path, project-path) -> <hover-1> node
-    
-  hover-1 = 
+
+  remove-module-info =
+  	try(dr-end-scope(|"LookupFromModule"))
+  ; dr-begin-scope(|"LookupFromModule")
+
+rules // Default resolve
+
+  editor-resolve:
+  	(node, position, ast, path, project-path) -> <declaration-of> node // e.g. template variable
+
+  editor-resolve:
+  	(node, position, ast, path, project-path) -> <parent-at-position(|position); declaration-of> ast // some resolve triggers do not give enough context, e.g. for templatecall only the name string
+
+rules
+
+  editor-hover:
+  	(node, position, ast, path, project-path) -> <hover-1> node
+
+  hover-1 =
     desugar-all;
     (
        <hover-with-info> (<id>, <get-hover-info>)
     <+ hover
     <+ debug(!"No hover for: "); fail
     )
-  
+
   // dummies
   declaration-of = fail
   hover = fail
   hover-with-info = fail
-    
+
 rules // lookup definition across modules
 // If the given declaration is in another module, reparse that file and return node with position information
-  
+
   // 1. Local ast, non-generated: has ast mapping
   // 2. Local ast, generated: LookupFromModule is unset, rule fails
   // 3. Module ast, non-generated: find-declaration looks up the node
   // 4. Module ast, generated: has IsGeneratedAnno(), rule fails
-  find-declaration = 
+  find-declaration =
       has-ast-mapping
    <+ not(get-anno(?IsGeneratedAnno())); find-declaration(LookupFromModule)
-  
+
   find-declaration(def-to-mod): decl1 -> decl
     where FullPath => mainmod
         ; decl2 := <desugar-all; alltd(strip-bodies)> decl1
         ; mod := <def-to-mod; debug(!".. loading def from: ")> decl2
         ; decl := <get-imported-decl(|mod) <+ debug(!"get-imported-def failed.")> decl2
-  
+
 rules   // Rules to store hover info between resolve and hover
-  
+
   // try to remove hover info from previous resolve
   remove-hover-info = try(dr-end-scope(|"HoverInfo")); dr-begin-scope(|"HoverInfo")
   set-hover-info = ?info; rules(HoverInfo := info)
   get-hover-info = HoverInfo
 
-rules   // Helper to find context information 
-  
+rules   // Helper to find context information
+
   // Apply s along the AST, starting at the root and ending at the given position and return first succeeded application
-  walk-ast(s | pos) = s 
+  walk-ast(s | pos) = s
   walk-ast(s | pos) =
       where([x|xs] := pos)
     ; subterm-at(|x)
     ; walk-ast(s | xs)
-  
+
 rules   // Context sensitive resolving
-  
+
   in-context(find-context, s):
     a@(node, position, ast, path, project-path) -> res
     where context := <walk-ast(find-context | position)> ast
         ; debug(!"Got context: ")
         ; res := <s(|context)> node
-  
