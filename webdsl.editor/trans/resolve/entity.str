@@ -28,26 +28,39 @@ rules // lookup
   	; not(get-anno(?IsGeneratedProperty()))
   find-property': (x_class, propname) -> decl
     where decl := <debug(!"Trying: ");PropertyDecl; debug(!"Got: "); add-anno(|FromEntity(x_class))> (x_class, propname)
-  
+
 rules // resolve
-    
-  // Explicit field access (x.y, this.x)
+
+  // Explicit property access (x.y, this.x)
   declaration-of: f@FieldAccess(var, prop) -> decl
     where SimpleSort(ent) := <type-of; debug> var
         ; decl := <find-property(|ent)> prop
-        
-  // Non-renamed field access (derived property with expression containing 'this')
+
+  // Non-renamed property access (derived property with expression containing 'this')
   declaration-in-entity(|ent): FieldAccess(Var("this"{}), prop) -> decl
     where decl := <find-property(|ent)> prop
-        
-  // Implicit field access 
-  declaration-in-entity(|ent): Var(x) -> decl
-    where decl := <find-property(|ent)> (<strip-annos> x)
+
+rules // variable inside entity
+
+  declaration-in-entity(|ent) =
+     declaration-in-entity-var-this(|ent)
+  <+ declaration-in-entity-var-resolved(|ent)
+  <+ declaration-in-entity-var-prop(|ent)
 
   // "this"
-  declaration-in-entity(|ent): Var("this") -> decl
-    where decl := <EntDecl> ent
-  
+  declaration-in-entity-var-this(|ent): 
+    Var("this") -> <EntDecl> ent 
+
+  // Regular local or global variable reference
+  declaration-in-entity-var-resolved(|ent): 
+    Var(x) -> <declaration-of>
+
+  // Property access
+  declaration-in-entity-var-prop(|ent): 
+    Var(x) -> <find-property(|ent)> (<strip-annos> x)
+
+rules
+
   // inverse anno
   declaration-of: InverseAnno(ent, prop) -> decl
     where decl := <find-property(|ent)> prop
