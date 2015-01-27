@@ -6,31 +6,31 @@ module WebDSL-Builders
 imports WebDSL-Builders.generated
 
 builders
-                                                                                                                                          
-  // This file can be used for custom analysis and builder rules.                                                                         
-  // See the imported file for a brief introduction and examples.                                                                         
-  /*                                                                                                                                        
-  provider                                                        : include/webdsl.ctree                                                  
-  observer                                                        : editor-analyze                                                        
-  builder                                                         : "Generate Java code" = generate-java (openeditor) (realtime)          
-  builder                                                         : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)  
+
+  // This file can be used for custom analysis and builder rules.
+  // See the imported file for a brief introduction and examples.
+  /*
+  provider                                                        : include/webdsl.ctree
+  observer                                                        : editor-analyze
+  builder                                                         : "Generate Java code" = generate-java (openeditor) (realtime)
+  builder                                                         : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)
   */
 /*
   observer : editor-analyze
   provider : include/webdsl.ctree
   provider : include/webdsl.jar
   provider : include/invoke-webdsl-script.jar
-  builder  : "Build" = build-webdsl  
+  builder  : "Build" = build-webdsl
 */
-  
+
   observer : editor-analyze
-  
+
   on save   : on-save
-  
+
   provider  : include/webdsl_editor.@spoofax.output.type@
   provider  : include/webdsl.jar
 //acoda disabled   provider	: include/acoda.jar
-  
+
 //acoda disabled   builder		: "Create Database Schema"		= editor-createdatabase
 //acoda disabled   builder		: "Show Database Schema"		= editor-wdl2schema (openeditor) (realtime)
 //acoda disabled   builder   	: "Visualize Data Model"		= editor-wdl2dot (openeditor) (persistent) (realtime)
@@ -39,9 +39,10 @@ builders
 //acoda disabled   builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
 //acoda disabled   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
   builder   : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)
-  builder   : "Extract Datalog"         = datalog-extraction (openeditor) (realtime) (meta)
-  builder   : "Extract Benchmark"         = extract-benchmark (openeditor) (realtime) (meta)
-  builder   : "Generate random entities"         = generate-entities (openeditor) (realtime) (meta)
+  builder   : "Extract Datalog"                   = datalog-extraction (openeditor) (realtime) (meta)
+  builder   : "Extract benchmark"                 = extract-benchmark (openeditor) (realtime) (meta)
+  builder   : "Extract application statistics"    = app-statistics (openeditor) (realtime) (meta)
+  builder   : "Generate random entities"          = generate-entities (openeditor) (realtime) (meta)
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
   builder 	: "Generate entity files"             = generate-entity-files (source)
@@ -55,6 +56,6 @@ builders
 //  refactoring : "Rename Entity" = rename-entity /*(source)*/ (cursor)
 //    shortcut : "org.eclipse.jdt.ui.edit.text.java.rename.element"
 //    input
-//      identifier : "new name" = ""    
-  
+//      identifier : "new name" = ""
+
 //  !!!!     WebDSL-Builders.esv is generated from WebDSL-Builders.template.esv in this project     !!!!

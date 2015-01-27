@@ -5,17 +5,20 @@ imports
   libwebdsl-generator
   libwebdsl-front
   libwrite-files
-  
+
   typecheck/import		// for ExtraWarnings
   trans/-
   lib/editor-common.generated
-  
+
   //for builders
   entity-extraction/generate-entity-files
   entity-extraction/generate-entity-pages
- 
+
+  fact-extraction/datalog
+  fact-extraction/app-statistics
+
   webservices-generation/json
-  webservices-generation/mobl/model-to-mobl 
+  webservices-generation/mobl/model-to-mobl
   webservices-generation/interface
   webservices-generation/objectsizes
 
@@ -24,12 +27,12 @@ imports
 
 signature constructors
   FILE : Term -> Term
-  
+
 strategies // editor service interface
 
   main-webdsl =
      fatal-err(|"Not designed to be invoked directly")
-  
+
   editor-check(|fullpath): ast -> (ast-renamed, errors, warns, notes)
     with
         // Typecheck local
@@ -40,10 +43,10 @@ strategies // editor service interface
             |}
           ; not(find-extra-errors)       // collected in dr
           ; warn3 := <bagof-ExtraWarnings>
-          ; (err1, warn1) := 
+          ; (err1, warn1) :=
               <dbg-time(catch-errors-editor(constraint-error-all) | "typecheck")> ast-renamed
           ; disable-dr-usage-tracking
-            
+
             // remove {DR_DUMMY()}
           ; all-keys-DynamicRulesUsed; remove-dr-dummies => drs
           ; rules(RulesUsedBy : fullpath -> drs)
@@ -60,12 +63,12 @@ strategies // editor service interface
            ; warns  := <concat> [warn1,warn2,warn3]
            ; notes  := []
         end
-  
+
   //show only this warning, remove all other errors and warnings
   add-exclusive-warning = ?x; rules( ExclusiveWarning := x )
-  
+
   normalize-windows-path = string-replace(|"\\\\", "/"); string-replace(|"\\", "/")
-  
+
   // Path is relative to project, without leading slash
   // Projectpath is an absolute path to the project root, without trailing slash
   webdsl-editor-init =
@@ -74,7 +77,7 @@ strategies // editor service interface
     ; fullpath := <concat-strings; normalize-windows-path> [projectpath, "/", path]
     ; rules( FullPath := fullpath )
     ; <desugar-compat; try(get-main-file-name)> ast      // set ApplicationIniDir
-  
+
   // Normal analysis entry point
   editor-analyze: input@(ast, path, projectpath) -> result
     with  disable-dr-usage-tracking     // avoid overhead
@@ -98,16 +101,16 @@ strategies // editor service interface
             ; <queue-strategy(|"editor-update-modules", "Complete typecheck...")> dependent-mods
           end
         ; enable-dr-usage-tracking      // for dr -> module resolving
-          
+
   editor-analyze-work:
     ast -> (ast-desugared, errors, warnings, notes)
     with
       <desugar-compat> ast
     ; in-typechecking-phase(
-        
+
         // Set up built-in types before doing any declares
         typecheck-init
-        
+
         // Get built-in imports
       ; where({| ExtraModulesToImport:
             try(import-extra-modules-hook; debug(!"INTERNAL ERROR: import-extra-modules-hook strategies must fail");<exit>1)
@@ -130,7 +133,7 @@ strategies // editor service interface
     ; ast-desugared := <dbg-time(desugar-all | "resolving")> ast-renamed    // declare for resolving
     ; errors := <concat> [err1, <bagof-ImportErrors>]
     ; print-total-log-time
-  
+
   // Call this after editor-analyze-work to calculate dependencies.
   // Returns a list of modules that need to be updated.
   editor-analyze-multifile :
@@ -147,13 +150,13 @@ strategies // editor service interface
             ; filter(not(?fullpath))
             ; ?dependent-mods
             ; debug(!"... dependent modules to check: ")
-            | "finding dependent mods")  
+            | "finding dependent mods")
 
-  
+
   // Analyze a given set of modules.
   // The modules can queue another set to modules to be checked.
   editor-update-modules =
-    rules(Queued := 0); 
+    rules(Queued := 0);
     repeat(
       not(?[]);
       {n,updated:
@@ -169,7 +172,7 @@ strategies // editor service interface
         rules(Queued := n)
       }
    )
-  
+
   // Parse and analyze a module for errors.
   // * clears all dynamic rules ! *
   update-module: fullpath -> deps
@@ -181,17 +184,17 @@ strategies // editor service interface
         ; deps := <editor-analyze-multifile>
         ; complete-work-unit
         ; <set-markers(|ast)> errors
-  
+
   disable-on-save-analyze = write-disable-on-save-analysis-file; <debug> "disabled on-save analysis of other files"; !None()
   enable-on-save-analyze = delete-disable-on-save-analysis-file; <debug> "enabled on-save analysis of other files"; !None()
-  
+
   // Expect that editor-analyze has analyzed the file.
   // Find dependent modules, and queue them for analysis.
   // Also save a cache of our new signature.
   on-save: (selected, position, ast, path, project-path) -> None()
     with on-save-generate-file-to-enable-build
     with skip-on-save-analysis <+ on-save-analyze-other-files
-      
+
   on-save-analyze-other-files :
     (selected, position, ast, path, project-path) -> None()
     with  mods := <editor-analyze-multifile>
@@ -202,35 +205,35 @@ strategies // editor service interface
             ; FileSignature
             ; write-cache
           |}
-      
+
   on-save-generate-file-to-enable-build = write-saved-but-not-built-file
-      
+
   write-saved-but-not-built-file =
-    <WriteToTextFile> (<concat-strings>[<project-path>,"/.saved-but-not-built"], "saved")     
-  
+    <WriteToTextFile> (<concat-strings>[<project-path>,"/.saved-but-not-built"], "saved")
+
   write-disable-on-save-analysis-file =
-    <WriteToTextFile> (<concat-strings>[<project-path>,"/.disable-on-save-analysis"], "")     
-  delete-disable-on-save-analysis-file = 
+    <WriteToTextFile> (<concat-strings>[<project-path>,"/.disable-on-save-analysis"], "")
+  delete-disable-on-save-analysis-file =
     <remove-file> <concat-strings>[<project-path>,"/.disable-on-save-analysis"]
-  skip-on-save-analysis = 
-    where(<ReadFromFile> <concat-strings>[<project-path>,"/.disable-on-save-analysis"])    
-   
+  skip-on-save-analysis =
+    where(<ReadFromFile> <concat-strings>[<project-path>,"/.disable-on-save-analysis"])
+
   find-extra-errors = fail
-  
+
   desugar-all =
       preserve(innermost(desugar-def))
-  
+
   desugar-def = normalize-constructor // reuse pre-declare-step constructor normalization rules that are defined in the compiler, e.g. template x(){} -> define x(){}
-  
+
   import-main-file: ast -> ast
     with  appname := <AppName>
-        ; where(!appname; debug(!"Explicitly importing main file: ")) 
+        ; where(!appname; debug(!"Explicitly importing main file: "))
           // TODO: add specific warning referencing application.ini if the main file is not found
         ; <try(get-imports)> Imports(appname) // try: import error is added if failed.
-          
+
   add-app-ini-error: ast -> ast
     with rules(ExtraWarnings :+= (ast, "Cannot find application.ini"))
-             
+
   get-main-import: ast -> ast
     with  FullPath => fullpath
         ; {| ParsingModule:
@@ -242,10 +245,10 @@ strategies // editor service interface
                 ?Module(_,_); import-main-file
               )
         |}
- 
-  get-imports: 
+
+  get-imports:
     imp@Imports(x) -> imp
-    where {| TopImport: 
+    where {| TopImport:
          where(try(not(TopImport); rules(TopImport := imp)))
       ; <editor-parse-webdsl-module> x
      |}
