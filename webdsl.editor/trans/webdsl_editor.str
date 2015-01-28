@@ -16,6 +16,7 @@ imports
 
   fact-extraction/datalog
   fact-extraction/app-statistics
+  fact-extraction/lines-of-code
 
   webservices-generation/json
   webservices-generation/mobl/model-to-mobl

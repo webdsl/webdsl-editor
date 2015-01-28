@@ -38,13 +38,18 @@ builders
 //acoda disabled   builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
 //acoda disabled   builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
 //acoda disabled   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
-  builder   : "Show ATerm"         = generate-aterm (openeditor) (realtime) (meta)
-  builder   : "Extract Datalog"                   = datalog-extraction (openeditor) (realtime) (meta)
-  builder   : "Extract benchmark"                 = extract-benchmark (openeditor) (realtime) (meta)
-  builder   : "Extract application statistics"    = app-statistics (openeditor) (realtime) (meta)
-  builder   : "Generate random entities"          = generate-entities (openeditor) (realtime) (meta)
+  builder   : "Show ATerm" = generate-aterm (openeditor) (realtime)
+
+  builder   : "Extract application statistics"    = app-statistics (openeditor) (realtime)
+  builder   : "Extract lines of code statistics"  = lines-of-code (openeditor) (realtime) (source)
+  builder   : "Extract Datalog"                   = datalog-extraction (openeditor) (realtime)
+
   builder   : "Enable on-save analysis (default)" = enable-on-save-analyze
   builder   : "Disable on-save analysis"          = disable-on-save-analyze
+
+  builder   : "Generate page for random entities" = generate-entities (openeditor) (realtime)
+  builder   : "Extract benchmark"                 = extract-benchmark (openeditor) (realtime)
+
   builder 	: "Generate entity files"             = generate-entity-files (source)
   builder 	: "Generate entity pages"             = generate-entity-pages (source)
   builder   : "Generate JSON Functions"           = generate-json-functions-for-entities (source)
