@@ -22,6 +22,10 @@
          id="org.strategoxt.imp"
          version="0.0.0"
          search-location="both"/>
+   <includes
+         id="org.strategoxt.imp.meta"
+         version="0.0.0"
+         search-location="both"/>
 
    <requires>
       <import feature="org.eclipse.jst.enterprise_core.feature" version="3.1.1" match="greaterOrEqual"/>
