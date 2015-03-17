@@ -38,6 +38,8 @@ builders
 //acoda disabled   builder		: "Derive Data Model Evolution"	= editor-detect-transformation (openeditor) (persistent)
 //acoda disabled   builder		: "Derive M3"					= editor-wdldm2m3 (openeditor) (realtime) (meta)
 //acoda disabled   builder   : "Database Integrity Check"  = editor-integrity-check (openeditor) (persistent)
+  builder   : "Show unused templates" = show-unused-templates (openeditor) (source)
+
   builder   : "Show ATerm" = generate-aterm (openeditor) (realtime)
 
   builder   : "Extract application statistics"    = app-statistics (openeditor) (realtime)

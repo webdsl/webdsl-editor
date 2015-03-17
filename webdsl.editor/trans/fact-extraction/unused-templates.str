@@ -1,0 +1,19 @@
+module fact-extraction/unused-templates
+
+imports
+   libwebdsl-front
+   libwebdsl-generator
+
+rules
+
+  // not run on any change because editor cache does not contain template body information
+  show-unused-templates : 
+    a@(node, position, ast, path, project-path) -> (filename, result)
+    with  filename := <guarantee-extension(|"unused-templates")> path
+    with  <debug> "Show unused templates analysis should be used on main .app file."
+        ; <webdsl-editor-init> (path, project-path, ast) // cleanup DR, set 'Appname' DR
+        ; webdsl-enable-unused-template-warning
+        ; <full-app-load(|<dirname> path)> ast // full application analysis
+        ; mark-unused-templates
+        ; constraint-error-all 
+        ; result := <bagof-AllUnusedTemplateWarnings; reverse; separate-by(|"\n"); concat-strings> // reverse to show built-in.app library stuff last
