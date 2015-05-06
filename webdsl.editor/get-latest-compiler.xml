@@ -16,8 +16,8 @@
   	<echo>downloading WebDSL compiler to: ${cdir}</echo>
   	<delete dir="${cdir}" />
   	<mkdir dir="${cdir}" />
-  	<get dest="${cdir}" src="http://hydra.nixos.org/job/webdsl/trunk/buildJavaZip/latest/download/1/webdsl-java.zip"/>
-  	<unzip src="${cdir}/webdsl-java.zip" dest="${cdir}"/>    
+  	<get dest="${cdir}" src="http://webdsl-test.ewi.tudelft.nl/compiler/webdsl.zip"/>
+  	<unzip src="${cdir}/webdsl.zip" dest="${cdir}"/>    
   </target>
 	
   <target name="set-import">
