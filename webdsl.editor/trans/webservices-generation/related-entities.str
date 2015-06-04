@@ -145,7 +145,7 @@ rules // main file
 			]| 
 
   is-top-level-entity-function: x -> function
-	with e_tlentities* := <all-keys-TopEntity; map(\x -> String(x)\)>
+	with e_tlentities := SetCreation(<all-keys-TopEntity; map(\x -> String(x)\)>)
 		; function := def* 
 			|[
 				function isTopLevelEntity(ent : Entity) : Bool {
@@ -153,7 +153,7 @@ rules // main file
 				}	
 				
 				function isTopLevelEntity(str : String) : Bool {
-					var toplevelEntities := {e_tlentities*};
+					var toplevelEntities := e_tlentities;
 					return str in toplevelEntities ;
 				}
 			]|

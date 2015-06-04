@@ -81,11 +81,11 @@ rules// generation
 	
   generate-available-services-function: x -> function
 	with services := <bagof-Service>
-		; e_services* := <map(\x -> String(x)\)> services
+		; e_services := SetCreation(<map(\x -> String(x)\)> services)
       	; function := def 
       		|[
       		 	function getAvailableServices() : Set<String> {
-      		  		return {e_services*};
+      		  		return e_services;
       		  	}
       		]|
       		
