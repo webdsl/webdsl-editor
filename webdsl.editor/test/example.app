@@ -1,10 +1,13 @@
 application example
 
-  imports testimport/util
-  imports ui/test1
-  
-  define page root() {}
-  
+imports testimport/util
+imports ui/test1
+imports ui/derivetemplate
+
+page root(){
+  navigate testpage(){""}
+}
+
 
 session SomeSession {
   

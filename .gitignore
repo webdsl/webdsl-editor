@@ -36,3 +36,6 @@ webdsl.editor/lib/compilation-library.generated.str
 webdsl.editor/lib/editor-common.generated.str
 webdsl.editor/lib/index-library.generated.str
 webdsl.editor/lib/nbl-library.generated.str
+.downloaded-webdsl-compiler
+webdsl.editor/editor/java/trans
+webdsl.editor/lib

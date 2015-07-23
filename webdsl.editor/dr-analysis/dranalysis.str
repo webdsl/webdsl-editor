@@ -118,10 +118,10 @@ rules     // main
   main-work =
       read-from
     ; ?ast
-    
-    ; create-rules := ["declare","declare-override"]
-    ; use-rules := ["constraint-error", "constraint-error-global", "declare-override", "rename-top"] 
-     
+
+    ; create-rules := ["declare","declare-override", "register-derive"]
+    ; use-rules := ["constraint-error", "constraint-error-global", "declare-override", "rename-top", "apply-derive"]
+
     ; rename-strategy-declare
     ; (nodes, edges) := <create-call-graph> ast
     ; dr-creations := <find-dr-creations> ast

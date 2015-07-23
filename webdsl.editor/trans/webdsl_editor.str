@@ -110,8 +110,11 @@ strategies // editor service interface
       <desugar-compat> ast
     ; in-typechecking-phase(
 
+        // Expand derivetemplate macros
+        derive-templates-editor
+
         // Set up built-in types before doing any declares
-        typecheck-init
+      ; typecheck-init
 
         // Get built-in imports
       ; where({| ExtraModulesToImport:
@@ -254,3 +257,13 @@ strategies // editor service interface
          where(try(not(TopImport); rules(TopImport := imp)))
       ; <editor-parse-webdsl-module> x
      |}
+
+rules
+
+  // only works on Application(_,_) constructor
+  derive-templates-editor = derive-templates
+
+  // in editor the top constructor can also be Module(_,_)
+  derive-templates-editor :
+    Module(qid1,sections1){anno1*} -> Module(qid2,sections2){anno2*}
+    with  Application(qid2,sections2){anno2*} := <derive-templates> Application(qid1,sections1){anno1*}
