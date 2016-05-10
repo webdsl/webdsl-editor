@@ -93,7 +93,8 @@ rules
       ; filter(get-imports)
     )
     ; start-record-dynamic-rules
-    ;	desugar-compat
+    ; desugar-compat
+    ; derive-templates-editor  // Expand derivetemplate macros
     ; try(where(store-module))
     ; typecheck-declare
     ; end-record-dynamic-rules

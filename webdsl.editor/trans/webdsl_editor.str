@@ -110,11 +110,8 @@ strategies // editor service interface
       <desugar-compat> ast
     ; in-typechecking-phase(
 
-        // Expand derivetemplate macros
-        derive-templates-editor
-
         // Set up built-in types before doing any declares
-      ; typecheck-init
+        typecheck-init
 
         // Get built-in imports
       ; where({| ExtraModulesToImport:
@@ -261,7 +258,7 @@ strategies // editor service interface
 rules
 
   // only works on Application(_,_) constructor
-  derive-templates-editor = derive-templates
+  derive-templates-editor = ?Application(_,_); derive-templates
 
   // in editor the top constructor can also be Module(_,_)
   derive-templates-editor :
