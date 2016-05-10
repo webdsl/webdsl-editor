@@ -129,6 +129,7 @@ strategies // editor service interface
             ; rules(FileSignature := sig)
           )
         |}
+      ; alltd(\ DeriveTemplateDefinition(_,_,_) -> RemoveMe() \)  // unexpanded derivetemplate definition should not be analyzed
       ; typechecker-after-declare
       ; editor-check(|<FullPath>) => (ast-renamed, err1, warnings, notes)
     )
