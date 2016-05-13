@@ -124,11 +124,13 @@ strategies // editor service interface
       ; {| CurrentFile:
            rules(CurrentFile := <FullPath>)
           ; where(
-              declare-globals => sig
+              declare-globals => (ruleset, imports, ast-after-declare)
+            ; sig := (ruleset, imports)
             ; <write-cache> sig
             ; rules(FileSignature := sig)
           )
         |}
+      ; !ast-after-declare
       ; alltd(\ DeriveTemplateDefinition(_,_,_) -> RemoveMe() \)  // unexpanded derivetemplate definition should not be analyzed
       ; typechecker-after-declare
       ; editor-check(|<FullPath>) => (ast-renamed, err1, warnings, notes)

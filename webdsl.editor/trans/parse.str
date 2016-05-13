@@ -97,12 +97,13 @@ rules
     ; derive-templates-editor  // Expand derivetemplate macros
     ; try(where(store-module))
     ; typecheck-declare
+    ; ?ast
     ; end-record-dynamic-rules
     ; filter(where(Fst; is-used-dr))
       // strip bodies of generated definitions
     ; map-dr-values(strip-and-annotate-dr-value)
-    ; !(<id>, imports)
-      
+    ; !(<id>, imports, ast)
+
   read-import-sigs: (ruleset, imports) -> (ruleset, imports)
     with <log-time-helper(load-dynamic-rule-closure(|<CurrentFile>) | "load drs")> ruleset
        ; <filter(get-imports)> imports
