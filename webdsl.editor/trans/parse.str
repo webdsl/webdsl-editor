@@ -74,7 +74,7 @@ rules
   read-import(|fullpath) =
       desugar-compat  // simplify module/app constructor
     ; preserve(try(fix-module-name(|fullpath)))
-    ; where(declare-globals => (ruleset, imports))
+    ; where(declare-globals => (ruleset, imports, _))
     ; <try(not(PerformingUpdate); queue-analysis)> fullpath   // import has changed; recheck it
     ; !(ruleset, imports)
   
