@@ -14,4 +14,13 @@
 		<version>1.5.0</version>
 		<relativePath />
 	</parent>
+  
+  <repositories>
+    <repository>
+      <id>spoofax-updatesite</id>
+      <url>http://download.spoofax.org/update/release/1.5.0</url>
+      <layout>p2</layout>
+    </repository>
+  </repositories>
+
 </project>
