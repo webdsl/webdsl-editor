@@ -94,7 +94,7 @@ rules
     )
     ; start-record-dynamic-rules
     ; desugar-compat
-    ; derive-templates-editor  // Expand derivetemplate macros
+    ; expand-templates-editor  // Expand 'expandtemplate' macros
     ; try(where(store-module))
     ; typecheck-declare
     ; ?ast
