@@ -16,11 +16,19 @@
 	</parent>
   
   <repositories>
+
     <repository>
       <id>spoofax-updatesite</id>
       <url>https://raw.githubusercontent.com/webdsl/webdsl-editor-deps/master/update/release/1.5.0</url>
       <layout>p2</layout>
     </repository>
+
+    <repository>
+      <id>eclipse-luna</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/releases/luna/</url>
+    </repository>
+
   </repositories>
 
 </project>
