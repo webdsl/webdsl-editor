@@ -3,7 +3,6 @@ module fact-extraction/datalog
 imports
    libwebdsl-front
    libwebdsl-generator
-   typecheck/template
    webdsl_editor
    resolve/function
 
