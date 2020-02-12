@@ -81,7 +81,7 @@ rules
   		; fill := <copy-chars(|length)> char
   	
   		  
-  prop-to-table-tuple(|entityname): PropertyNoAnno(name, sort, type) -> (name, typestring)
+  prop-to-table-tuple(|entityname): Property(name, sort, type, annos) -> (name, typestring)
 	where typestring := <type-to-json-type> type
 
   type-to-json-type: SimpleSort(type) -> "String"
@@ -112,18 +112,16 @@ rules//helpers
   	
   copy-chars(|number): x -> ""	
    where not (<gt>(number,0))
-   
-   
-  remove-annos-from-property: p@Property(x_name, sort, type, annos) -> PropertyNoAnno(x_name, sort, type)
-  
-  remove-property-with-name: p@PropertyNoAnno("sync", sort, type) -> p
-  
-  remove-property-with-name: p@PropertyNoAnno("lastSynced", sort, type) -> p
-  
-  remove-property-with-name: p@PropertyNoAnno(name, sort, type) -> p
-  	where <string-starts-with(|"generatedPropertyForInverse_")> name
-  
-  
+
+  remove-annos-from-property: p@Property(x_name, sort, type, annos) -> Property(x_name, sort, type, [])
+
+  remove-property-with-name: p@Property("sync", sort, type, annos) -> p
+
+  remove-property-with-name: p@Property("lastSynced", sort, type, annos) -> p
+
+  remove-property-with-name: p@Property(name, sort, type, annos) -> p
+    where <string-starts-with(|"generatedPropertyForInverse_")> name
+
 rules 
   documentation-service: x -> documentation
 	with headerdocumentation := <documentation-service-header> None()

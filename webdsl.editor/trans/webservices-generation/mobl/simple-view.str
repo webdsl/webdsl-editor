@@ -41,10 +41,7 @@ rules
 
   mobl-property-to-view: Property(_, name, type, _) -> view 
   	where view := <type-to-view> (name, type) 
-  	
-  mobl-property-to-view: PropertyNoAnnos(_, name, type) -> view
-  	where view := <type-to-view> (name, type) 
-  	
+
 rules// transform types to viewcalls
 	
   type-to-view: (x_name, SimpleType("String")) -> result

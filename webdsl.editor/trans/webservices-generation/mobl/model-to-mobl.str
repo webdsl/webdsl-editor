@@ -109,16 +109,7 @@ rules //rename(subclasses stuf)
   rename-prop-by-dr: DerivedProperty(name, k, str, annos, derive){anno*} -> DerivedProperty(newname, k, str, annos, derive){anno*}
 	with class := <fetch-elem(?FromEntity(x)); !x> anno* 
 		; newname := <get-renamed-prop <+ !name> (class, name) 
-		  				  
-  rename-prop-by-dr: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
-	with class := <fetch-elem(?FromEntity(x)); !x> anno* 
-		; newname := <get-renamed-prop <+ !name> (class, name) 
-				  
-  rename-prop-by-dr: DerivedPropertyNoAnno(name, k, str, derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
-	with class := <fetch-elem(?FromEntity(x)); !x> anno* 
-		; newname := <get-renamed-prop <+ !name> (class, name) 
- 				  
- 				  
+
   rename-prop-with-classname: Property(name, k, str,annos){anno*} -> Property(newname, k, str,annos){anno*}
 	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
 	with <fetch-elem(?FromEntity(x))> anno*
@@ -126,28 +117,9 @@ rules //rename(subclasses stuf)
 		; rules(
 			get-renamed-prop :+ (x, name) -> newname
 		 	get-original-propname-name :+ newname -> name
-		) 
+		)
 
   rename-prop-with-classname: DerivedProperty(name, k, str,annos, derive){anno*} -> DerivedProperty(newname, k, str,annos, derive){anno*}
-	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
-	with <fetch-elem(?FromEntity(x))> anno*
-		; newname := $[[x]_[name]] 
-		; rules(
-			get-renamed-prop :+ (x, name) -> newname
-			get-original-propname-name :+ newname -> name
-		) 
-				  				  
-  rename-prop-with-classname: PropertyNoAnno(name, k, str){anno*} -> PropertyNoAnno(newname, k, str){anno*}
-	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
-	with <fetch-elem(?FromEntity(x))> anno*
-		; newname := $[[x]_[name]] 
-		; rules(
-			get-renamed-prop :+ (x, name) -> newname
-			get-original-propname-name :+ newname -> name
-		) 
-
-				  
-  rename-prop-with-classname: DerivedPropertyNoAnno(name, k, str,derive){anno*} -> DerivedPropertyNoAnno(newname, k, str, derive){anno*}
 	where not(<string-starts-with(|"generatedPropertyForInverse_")> name)
 	with <fetch-elem(?FromEntity(x))> anno*
 		; newname := $[[x]_[name]] 
@@ -203,16 +175,16 @@ rules //generation
   generate-extra-type-property: entityname -> entityname
   	where  <entity-has-no-super> entityname
   		; <SubClass> entityname
-  	with property := PropertyNoAnno("typeField", Simple(), SimpleSort("String"))
+  	with property := Property("typeField", Simple(), SimpleSort("String"), [])
    		; rules( ExtraProperty:+ entityname -> property)
   		
   generate-top-level-SyncProperty: entityname -> entityname
-   	with property := PropertyNoAnno("sync", Simple(), SimpleSort("Bool"))
+   	with property := Property("sync", Simple(), SimpleSort("Bool"), [])
    		; entityname':= <find-highest-parent> entityname
    		; rules( ExtraProperty:+ entityname' -> property) 
    
   generate-top-level-lastSynced-Property: entityname -> entityname
-   	with property := PropertyNoAnno("lastSynced", Simple(), SimpleSort("Int"))
+   	with property := Property("lastSynced", Simple(), SimpleSort("Int"), [])
    		; entityname':= <find-highest-parent> entityname
    		; rules( ExtraProperty:+ entityname' -> property) 		  
    
@@ -221,7 +193,7 @@ rules //generation
     with propertyname := <get-property-name> property
     	; name := $[generatedPropertyForInverse_[class]_[propertyname]]    
    
-  generate-inverse-property(|class): property -> PropertyNoAnno(name, Ref() , SimpleSort(class))
+  generate-inverse-property(|class): property -> Property(name, Ref() , SimpleSort(class), [])
     where proptype := <get-property-type; ?GenericSort("Set", _)> property
     with propertyname := <get-property-name> property
     	; name := $[generatedPropertyForInverse_[class]_[propertyname]]  	
@@ -244,14 +216,7 @@ rules //transform
   			then  result := mobl-entBodyElem |[x_name : t_newType (a_newannos) ]| 
   			else  result := mobl-entBodyElem |[x_name : t_newType ]| 
   		end
-  			
-  property-to-mobl-property(|class): p@PropertyNoAnno(x_name, sort, type) -> result
-  	where t_newType := <type-to-mobl-type> type
-  	with if (a_newannos := <annos-to-mobl-annos(|class)> p) 
-  			then  result :=  mobl-entBodyElem |[x_name : t_newType (a_newannos) ]|
-  			else  result :=  mobl-entBodyElem |[x_name : t_newType ]| 
-  		end
-  
+
   annos-to-mobl-annos(|class): property -> result
   	with anno* := [<check-searchable-anno <+ !None()> property|[]]
   		; anno'' := [< check-inverse-anno <+ check-inverse-anno(|class) <+ !None()> property|anno*]

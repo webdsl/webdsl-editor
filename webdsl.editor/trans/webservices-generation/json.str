@@ -49,14 +49,14 @@ rules //lookup
   		; props* := <map(rename-prop-by-dr)> props' //check for overwriting of nameProperty
  
   get-extra-type-property: entityname -> property
-  	where superclass := <Extends> entityname
-  	where not (<?"Entity"> superclass)
-  	with property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 		
-  
+    where superclass := <Extends> entityname
+    where not (<?"Entity"> superclass)
+    with property := Property("typeField", Simple(), SimpleSort("String"), [])
+
   get-extra-type-property: entityname -> property
-  	where <SubClass> entityname
-  	with property := PropertyNoAnno("typeField", Simple(), SimpleSort("String")) 
-  					  	  
+    where <SubClass> entityname
+    with property := Property("typeField", Simple(), SimpleSort("String"), [])
+
 rules //file generation 
 	
  props-to-jsonfile(|dirname): t@(name,props) -> t
@@ -140,9 +140,7 @@ rules //transformation
 	 
   property-to-json-without-null: property -> statements
 	 where (?Property(x_name, _, type, _) 
-	 		<+ ?PropertyNoAnno(x_name, _, type)
-	 		<+ ?DerivedProperty(x_name, _, type, _, _)
-	 		<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	 		<+ ?DerivedProperty(x_name, _, type, _, _))
 	 where not (<?"typeField"> x_name)
 	 with x_orgname := <try(get-original-propname-name)>  x_name 
 	 where exp := <exp-to-value-statement> (FieldAccess(Var("this"), x_orgname), type)  
@@ -160,9 +158,7 @@ rules //transformation
    
   property-to-json: property -> statements
 	where (?Property(x_name, _, type, _) 
-			<+ ?PropertyNoAnno(x_name, _, type)
-	 		<+ ?DerivedProperty(x_name, _, type, _, _)
-	 		<+ ?DerivedPropertyNoAnno(x_name, _, type, _))
+	 		<+ ?DerivedProperty(x_name, _, type, _, _))
 	where not (<?"typeField"> x_name)
 	with x_orgname := <try(get-original-propname-name)>  x_name 
 	 	; stat_pre := <property-to-value-array-pre(|)> (x_orgname, type) 

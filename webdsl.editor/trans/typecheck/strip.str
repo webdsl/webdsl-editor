@@ -15,7 +15,6 @@ rules
   strip-bodies: ExtendSessionEntity(class,body) -> ExtendSessionEntity(class,<strip-ent-body> body)
   
   strip-bodies: DerivedProperty(x,type,sort,annos,e) -> DerivedProperty(x,type,sort,annos,None())
-  strip-bodies: DerivedPropertyNoAnno(x,type,sort,e) -> DerivedPropertyNoAnno(x,type,sort,None())
   
   strip-bodies: Function(name,args,ret,_) -> Function(name,args,ret,None())
   

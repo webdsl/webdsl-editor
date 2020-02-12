@@ -61,8 +61,7 @@ rules//transformation
 			]|
 			  
   property-to-add: property -> statement
-	where (?Property(x_name, _, SimpleSort(_), _) 
-	 		<+ ?PropertyNoAnno(x_name, _, SimpleSort(_)))
+	where ?Property(x_name, _, SimpleSort(_), _)
    	with statement := webdsl 
    			|[ 
    				if(this.x_name != null) {
@@ -71,8 +70,7 @@ rules//transformation
    			]| 
    			  	
   property-to-add: property -> statement
-	where (?Property(x_name, _, GenericSort(_, _), _) 
-	 		<+ ?PropertyNoAnno(x_name, _, GenericSort(_, _)))
+	where ?Property(x_name, _, GenericSort(_, _), _)
 	with statement := webdsl	
 			|[ 
    			 	if(this.x_name != null) {

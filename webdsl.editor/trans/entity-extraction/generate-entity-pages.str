@@ -104,9 +104,7 @@ rules //converting
 		
   remove-derive-from-property: DerivedProperty(t1, t2, t3, t4, t5) -> Property(t1, t2, t3, t4)
 	
-  remove-derive-from-property: DerivedPropertyNoAnno(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3)
-	
-  remove-Anno-from-property: Property(t1, t2, t3, t4) -> PropertyNoAnno(t1, t2, t3) 	
+  remove-Anno-from-property: Property(t1, t2, t3, t4) -> Property(t1, t2, t3, [])
 	
   remove-body-from-function: Function(t1, t2, t3, t4) -> Function(t1, t2, t3,None())
   
@@ -125,7 +123,7 @@ rules//custom way to pp
 		; typestring := <sort-to-navigate <+ sort-to-text> type
 		;  result := [begin, typestring]  
 	
-  property-to-webdsl-ast-string-represatation: PropertyNoAnno(name, sort, type) -> result
+  property-to-webdsl-ast-string-represatation: Property(name, sort, type, _) -> result
 	 with begin := String(name) 
 	 	; middle := String(<pp-webdsl-to-string> sort)  
 	 	; typestring := <sort-to-navigate <+ sort-to-text> type
