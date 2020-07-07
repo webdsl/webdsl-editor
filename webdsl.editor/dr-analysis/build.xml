@@ -35,7 +35,7 @@
       <arg line="-I &quot;${webdsl.sources}/org/webdsl/dsl/syntax/mobl&quot;" />
       <arg line="-I &quot;${javafront.share}&quot;" /> <!-- TODO; remove -->
       <arg value="-o"/>
-      <arg file="${dir}/bin/webdsl-generator-packed.str" />
+      <arg file="${dir}/bin/webdsl-generator-packed.strpacked" />
     </java>
     
     <echo>Analyzing dynamic rule dependencies...</echo>
@@ -45,7 +45,7 @@
         <path refid="strj" />
         </classpath>
       <arg value="-i"/>
-      <arg file="${dir}/bin/webdsl-generator-packed.str" />
+      <arg file="${dir}/bin/webdsl-generator-packed.strpacked" />
       <arg value="-o"/>
       <arg file="${out}" />
     </java>
