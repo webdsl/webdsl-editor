@@ -276,7 +276,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
                 onChange();
             }
         });
-        inputDBFile.setText("WebDSLappH2database.db");
+        inputDBFile.setText("./WebDSLappH2database.db");
         inputDBFile.addKeyListener(new KeyListener() {
 			public void keyPressed(KeyEvent e) {
 				inputDBFileEdited = true;
@@ -618,7 +618,7 @@ public class WebDSLEditorWizardPage extends WizardPage {
             final String lang = getInputProjectName();
             inputAppName.setText(lang);
             if(!inputDBFileEdited){
-            	inputDBFile.setText(lang+".db");
+            	inputDBFile.setText("./"+lang+".db");
             }
             isInputProjectNameChanged = false;
             ignoreEvents = false;
