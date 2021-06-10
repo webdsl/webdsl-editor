@@ -35,6 +35,7 @@ rules
     where(<chdir> dir) //set current dir to main app file
   ; import-modules
   ; remove-string-position-annos
+  ; expand-templates
   ; in-typechecking-phase(
         typecheck-init
       ; typecheck-declare
