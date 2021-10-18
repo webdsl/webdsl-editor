@@ -11,5 +11,4 @@ rules //extract lines of code per language element
     a@(node, position, ast, path, project-path) -> (filename, result)
     with  filename := <guarantee-extension(|"lines-of-code")> path
     with  <webdsl-editor-init> (path, project-path, ast)  // cleanup DR, set 'Appname' DR
-        ; <full-app-load(|<dirname> path)> ast  // full application analysis
-        ; result := <get-lines-of-code>
+        ; result := <get-lines-of-code> ast
