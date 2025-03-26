@@ -5,8 +5,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>webdsl</groupId>
 	<artifactId>webdsl.editor.updatesite</artifactId>
-	<version>1.2.9.qualifier</version>
+	<version>1.2.9-SNAPSHOT</version>
 	<packaging>eclipse-update-site</packaging>
+
+  <!-- override tycho version, which is at 0.20.0 in parent -->
+  <properties>
+      <tycho-version>2.7.5</tycho-version>
+  </properties>
 
 	<parent>
 		<groupId>org.metaborg</groupId>
