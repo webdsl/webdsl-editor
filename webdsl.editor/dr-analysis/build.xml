@@ -72,7 +72,7 @@
     </dependset>
     <available file="${dir}/bin/${file}.java" property="compile-str.${file}.available" />
     <antcall target="-compile-str-helper" />
-    <javac srcdir="${dir}/bin" destdir="${dir}/bin" classpathref="strj" source="1.5" target="1.5"/>
+    <javac srcdir="${dir}/bin" destdir="${dir}/bin" classpathref="strj" source="7" target="7"/>
     
   </target>
     
