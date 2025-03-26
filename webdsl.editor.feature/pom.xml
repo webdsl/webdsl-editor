@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>webdsl</groupId>
 	<artifactId>webdsl.editor.feature</artifactId>
-	<version>1.2.9-SNAPSHOT</version>
+	<version>1.2.9.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 
   <!-- override tycho version, which is at 0.20.0 in parent -->
