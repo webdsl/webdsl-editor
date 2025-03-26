@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>webdsl</groupId>
-	<artifactId>webdsl.editor</artifactId>
-	<version>1.2.9.qualifier</version>
-	<packaging>eclipse-plugin</packaging>
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+  xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>webdsl</groupId>
+  <artifactId>webdsl.editor</artifactId>
+  <version>1.2.9.qualifier</version>
+  <packaging>eclipse-plugin</packaging>
 
-	<parent>
-		<groupId>org.metaborg</groupId>
-		<artifactId>org.metaborg.maven.parent.language</artifactId>
-		<version>1.5.0</version>
-		<relativePath />
-	</parent>
-	
+  <parent>
+    <groupId>org.metaborg</groupId>
+    <artifactId>org.metaborg.maven.parent.language</artifactId>
+    <version>1.5.0</version>
+    <relativePath />
+  </parent>
+  
   <repositories>
 
     <repository>
@@ -24,9 +24,9 @@
     </repository>
 
     <repository>
-      <id>eclipse-luna</id>
+      <id>eclipse-2021-06</id>
       <layout>p2</layout>
-      <url>http://download.eclipse.org/releases/luna/</url>
+      <url>https://download.eclipse.org/releases/2021-06/</url>
     </repository>
 
   </repositories>
