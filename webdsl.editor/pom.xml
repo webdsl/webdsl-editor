@@ -28,6 +28,13 @@
       <layout>p2</layout>
       <url>https://download.eclipse.org/releases/2021-06/</url>
     </repository>
+    
+    <!--  override repo used in parent -->
+    <repository>
+        <id>eclipse-luna</id> <!-- Same ID as the one in the parent POM -->
+        <layout>p2</layout>
+        <url>https://download.eclipse.org/releases/2021-06/</url> <!-- Updated Eclipse repo -->
+    </repository>
 
   </repositories>
 
