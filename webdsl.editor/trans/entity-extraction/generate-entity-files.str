@@ -70,4 +70,4 @@ rules //entity manipulation
 	// override asfix-anno-location : x->x 
 	// override  implode-asfix : x->x
 	override  implode-with-location-annos(|path) =
-		topdown(!<id>{ At(path, <origin-line>, <origin-column>) }) 
+		topdown(!<id>{ At(path, <origin-line>, <origin-column>, 0, 0) }) 
